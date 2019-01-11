@@ -75,38 +75,45 @@ def main():
 
         # placing variables
         speed_set = 2000.0
-        safety_z_height = 20.0
-        drill_speed_in = .1
-        drill_speed_out = 1
+        safety_z_height = 60.0
+        drill_speed_in = 2
+        drill_speed_out = 20
         picking_cnt = 0
         angle = 5.0
         radAngle = 3.14 * angle / 180.0
 
-        # first move command
-        print ("start with the first, safety, plane")
-        x0, y0, z0, ax0, ay0, az0, speed, radius = commands_drilling[0]
-        print (commands_drilling[0])
-        ur.send_command_movel([x0, y0, safety_z_height, ax0, ay0, az0], v=speed_set, r=radius)
-        print ("done with the first, safety, plane")
+        # # first move command
+        # print ("start with the first, safety, plane")
+        # x0, y0, z0, ax0, ay0, az0, speed, radius = commands_drilling[0]
+        # print (commands_drilling[0])
+        # ur.send_command_movel([x0, y0, safety_z_height, ax0, ay0, az0], v=speed_set, r=radius)
+        # print ("done with the first, safety, plane")
 
         # drilling movements
         print ("\nstarting with the main loop")
-        for i in range(1, len(commands_flattened_drilling), 2):
+        for i in range(0, len(commands_flattened_drilling) - 2, 3):
             sequence_count = round((i + 1)/2)
             print ("\tstart %i" % sequence_count)
             x1, y1, z1, ax1, ay1, az1, speed, radius = commands_drilling[i]
             x2, y2, z2, ax2, ay2, az2, speed, radius = commands_drilling[i + 1]
+            x3, y3, z3, ax3, ay3, az3, speed, radius = commands_drilling[i + 2]
 
             # moving to start position
             ur.send_command_movel([x1, y1, z1, ax1, ay1, az1], v=speed_set, r=radius)
+            # moving to safety plane
+            ur.send_command_movel([x2, y2, z2, ax2, ay2, az2], v=speed_set, r=radius)
             # starting the drill
             ur.send_command_digital_out(0, True)
             # drill movement
-            ur.send_command_movel([x2, y2, z2, ax2, ay2, az2], v=drill_speed_in, r=radius)
+            ur.send_command_movel([x3, y3, z3, ax3, ay3, az3], v=drill_speed_in, r=radius)
             # stop the drill
             ur.send_command_digital_out(0, False)
             # moving out
-            ur.send_command_movel([x1, y1, z1, ax1, ay1, az1], v=drill_speed_out, r=radius)
+            ur.send_command_movel([x2, y2, z2, ax2, ay2, az2], v=drill_speed_out, r=radius)
+            # moving back to safety plane
+            ur.send_command_movel([x1, y1, z1, ax1, ay1, az1], v=speed_set, r=radius)
+            # # moving back to the center position
+            # ur.send_command_movel([x0, y0, safety_z_height, ax0, ay0, az0], v=speed_set, r=radius)
 
             print ("\tdone with sequence %i" % sequence_count)
 
