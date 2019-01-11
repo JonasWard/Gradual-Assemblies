@@ -75,7 +75,7 @@ def main():
 
         # placing variables
         speed_set = 2000.0
-        safety_z_height = 60.0
+        safety_z_height = 80.0
         drill_speed_in = 2
         drill_speed_out = 20
         picking_cnt = 0
