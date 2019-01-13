@@ -35,8 +35,11 @@ class SimpleBeam(object):
         local_box = rg.Box(self.o_plane, self.x_int, self.y_int, self.z_int)
         return local_box
 
-    def beam_in_base_position(self):
-        return generate_box(self, plane = xy_plane)
+    def beam_in_xyPlane(self):
+        return beam_in_other_frame(self, rg.Plane.WorldXY)
+
+    def beam_in_other_frame(self, other_plane):
+        pass
 
     def beam_line_intersection(self, lines, coll_off_w = 0, coll_off_l = 0):
         top_pl, bot_pl = rg.Plane(self.o_plane), rg.Plane(self.o_plane)
