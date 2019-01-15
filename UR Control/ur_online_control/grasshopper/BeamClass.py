@@ -29,7 +29,7 @@ class SimpleDowel(object):
 
     def brep_representation(self):
         flat = rg.PipeCapMode.Flat
-        brep = rg.Brep.CreatePipe(rg.LineCurve(self.line), self.rod_r, False, flat, False, .01, .01)
+        brep = rg.Brep.CreatePipe(rg.LineCurve(self.line), self.r, False, flat, False, .01, .01)
         return brep
 
 class SimpleBeam(object):
@@ -41,21 +41,33 @@ class SimpleBeam(object):
         self.size_y = s_y
         self.size_z = s_z
 
+        self.box_geom = self.generate_box()
         # statement to indicate that no intersections have been calculated yet
         self.intersections_calculated = False
         # statement to indicate that there are no wrongly place holes
         self.bad_points = True
 
+        self.safety_l = 2.0
+
     def interval_gen(self, range, offset = 0):
         value = range * .5 - offset
         return rg.Interval(-value, value)
 
-    def generate_box(self, plane = self.o_plane):
+    def generate_box(self, plane = True):
+        if plane:
+            plane = self.o_plane
+
         self.x_int = self.interval_gen(self.size_x)
         self.y_int = self.interval_gen(self.size_y)
         self.z_int = self.interval_gen(self.size_z)
         local_box = rg.Box(plane, self.x_int, self.y_int, self.z_int)
         return local_box
+
+    def calculate_midpoint(self, point_a, point_b):
+        distance = point_a.DistanceTo(point_b)
+        x1, y1, z1 = point_a.X, point_a.Y, point_a.Z
+        x2, y2, z2 = point_b.X, point_b.Y, point_b.Z
+        return rg.Point3d((x1 + x2) / 2, (y1 + y2) / 2, (z1 + z2) / 2), distance
 
     def beam_line_intersection(self, dowels, coll_off_w = 0, coll_off_l = 0):
         # generating the top & bottom plane of a beam
@@ -68,29 +80,36 @@ class SimpleBeam(object):
         self.bot_pl.Translate(move_down)
 
         # setting up global variables
-        self.top_pts, self.bot_pts, self.dowel_ds = [], [], []
-        self.local_int_lines = []
+        self.dow_top_pls, self.dow_bot_pls, self.dow_r = [], [], []
+        self.dow_lines, self.dow_rad = [], []
 
         for dowel in dowels:
             line = dowel.line
             r = dowel.r
 
             temp, top_pt_p = rg.Intersect.Intersection.LinePlane(line, self.top_pl)
+            top_pt_p = line.PointAt(top_pt_p)
             temp, bot_pt_p = rg.Intersect.Intersection.LinePlane(line, self.bot_pl)
+            bot_pt_p = line.PointAt(bot_pt_p)
 
             # implementing a scale_up to the geometry to allow for full overlap
             # with the bottom & top plane
-            center_pt = rg.Point3d(top_pt_p - bot_pt_p) / 2
+            center_pt, dis = self.calculate_midpoint(top_pt_p, bot_pt_p)
 
-            normal = self.o_plane.normal
-            vector = rg.Vector3d(top_pt_p - bot_pt_p)
-            alfa = m.pi / 2 - rg.Vector3d(vector, normal)
-            local_l = self.size_z + r / m.tan(alfa) + self.safety_l
+            normal = self.o_plane.Normal
+            vector = rg.Vector3d(rg.Point3d.Subtract(top_pt_p, bot_pt_p))
+            alfa = m.pi / 2 - rg.Vector3d.VectorAngle(vector, normal)
+            local_l = (self.size_z + r / m.tan(alfa) - 2 * self.safety_l - dis) / (dis * 2.0)
+            top_pt_p -= rg.Vector3d(vector) * local_l
+            bot_pt_p += rg.Vector3d(vector) * local_l
 
-            self.dowel_ds.append(r)
-            self.top_pts.append(line.PointAt(top_pt_p))
-            self.bot_pts.append(line.PointAt(bot_pt_p))
-            self.local_int_lines.append(rg.Line(line.PointAt(top_pt_p),line.PointAt(bot_pt_p)))
+            top_pl = rg.Plane(top_pt_p, vector)
+            bot_pl = rg.Plane(bot_pt_p, vector)
+
+            self.dow_rad.append(r)
+            self.dow_top_pls.append(top_pl)
+            self.dow_bot_pls.append(bot_pl)
+            self.dow_lines.append(rg.Line(top_pt_p,bot_pt_p))
 
         # indicating that the intersections have been calculated
         self.intersections_calculated = True
@@ -121,33 +140,89 @@ class SimpleBeam(object):
         pass
 
     def transform_to_other_plane(self, other_plane):
+        self.trans_dow_line, self.trans_dow_top_pl, self.trans_dow_bot_pl = [], [], []
+
+        self.trans_box = self.generate_box(other_plane)
+        self.trans_plane = other_plane
+
         self.transform_plane = other_plane
-        trans = rg.Transform.PlaneToPlane(self.o_plane, other_plane)
-        self.lines_transformed = []
-        for line in self.local_int_lines:
-            line_transformed = rg.LineCurve(line)
-            line_transformed.Transform(trans)
-            self.lines_transformed.append(line_transformed)
+        trans_matrix = rg.Transform.PlaneToPlane(self.o_plane, other_plane)
 
-    def brep_subtraction(self, holes, plane = self.o_plane):
-        self.brep_repr = self.generate_box(plane)
-        for hole in holes:
-            self.brep_repr = rg.Brep.CreateBooleanDifference(self.brep_repr, hole, 0.1)[0]
-        return box_geom
+        for i, line in self.dow_lines:
+            trans_line = rg.LineCurve(line)
+            trans_top_pl = rg.Plane(self.dow_top_pls[i])
+            trans_bot_pl = rg.Plane(self.dow_bot_pls[i])
+            trans_line.Transform(trans_matrix)
+            trans_top_pl.Transform(trans_matrix)
+            trans_bot_pl.Transform(trans_matrix)
+            self.trans_dow_line.append(line_transformed)
+            self.trans_dow_top_pls.append(trans_top_pl)
+            self.trans_dow_bot_pls.append(trans_bot_pl)
 
-    def gen_3D_geom(self, plane = self.o_plane):
-        if (plane == self.o_plane):
-            if (self.intersections_calculated):
-                local_box = self.generate_box(self.o_plane)
-                dowel = SimpleDowel(self.lines, self.rod_ds)
-                dowel_postives = self.brep_subtraction(local_box, dowels)
-            else:
-                return self.generate_box(self.o_plane)
-        else:
-            if (self.intersections_calculated):
-            return self.generate_box(self.transform_plane)
+    def transform_to_drill_plane(self, drill_plane = False):
+        print drill_plane
+        if not drill_plane:
+            drill_plane = rg.Plane.WorldXY
 
-test_dowels = SimpleDowel(lines, rod_d).brep_representation()
+        self.drill_plane = drill_plane
+
+        self.drill_top_pls, self.drill_bot_pls = [], []
+        self.drill_top_box, self.drill_bot_box = [], []
+
+        for top_pl in self.dow_top_pls:
+            trans_matrix = rg.Transform.PlaneToPlane(top_pl, drill_plane)
+            drill_top_pl = rg.Plane(self.o_plane)
+            drill_top_box = self.generate_box()
+            drill_top_pl.Transform(trans_matrix)
+            drill_top_box.Transform(trans_matrix)
+            self.drill_top_pls.append(drill_top_pl)
+            self.drill_top_box.append(drill_top_box)
+
+        for bot_pl in self.dow_bot_pls:
+            trans_matrix = rg.Transform.PlaneToPlane(bot_pl, drill_plane)
+            drill_bot_pl = rg.Plane(self.o_plane)
+            drill_bot_box = self.generate_box()
+            drill_bot_pl.Transform(trans_matrix)
+            drill_bot_box.Transform(trans_matrix)
+            self.drill_bot_pls.append(drill_bot_pl)
+            self.drill_bot_box.append(drill_bot_box)
+
+    #
+    # def brep_subtraction(self, holes, plane = 0):
+    #     if (plane == 0):
+    #         plane = self.o_plane
+    #
+    #     self.brep_repr = self.generate_box(plane)
+    #     for hole in holes:
+    #         self.brep_repr = rg.Brep.CreateBooleanDifference(self.brep_repr, hole, 0.1)[0]
+    #     return box_geom
+    #
+    # def gen_3D_geom(self, plane = 0):
+    #     if plane == 0:
+    #         plane = self.o_plane
+    #         if (self.intersections_calculated):
+    #             local_box = self.generate_box(self.o_plane)
+    #             dowel = SimpleDowel(self.lines, self.rod_ds)
+    #             dowel_postives = self.brep_subtraction(local_box, dowels)
+    #         else:
+    #             return self.generate_box(self.o_plane)
+    #     else:
+    #         if (self.intersections_calculated):
+    #             return self.generate_box(self.transform_plane)
+
+test_dowels = []
+for line in lines:
+    test_dowels.append(SimpleDowel(line, rod_d))
+test_box_ref_1 = SimpleBeam(origin_plane[0], size_x, size_y, size_z)
+test_box_ref_1.beam_line_intersection(test_dowels)
+test_box_ref_1.transform_to_drill_plane(drill_plane)
+boxes_top = test_box_ref_1.drill_top_box
+boxes_bot = test_box_ref_1.drill_bot_box
+test_box_0 = test_box_ref_1.generate_box()
+test_box_0_lines = test_box_ref_1.dow_lines
+test_box_ref_2 = SimpleBeam(origin_plane[1], size_x, size_y, size_z)
+test_box_ref_2.beam_line_intersection(test_dowels)
+test_box_1 = test_box_ref_2.generate_box()
 
 # test_beam = SimpleBeam(origin_plane, size_x, size_y, size_z)
 # test_beam.beam_line_intersection(lines)
