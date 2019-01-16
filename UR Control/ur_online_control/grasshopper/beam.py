@@ -84,7 +84,7 @@ class Hole:
                 angle = rg.Vector3d.VectorAngle(gripping_plane.Normal, plane.Normal)
                 if math.pi * 0.5 < angle and angle < math.pi * 1.5:
                     plane.Flip()
-            
+
             hole = Hole(gripping_plane=rg.Plane(gripping_plane),
                 top_plane=hole_plane_list[0],
                 bottom_plane=hole_plane_list[1],
@@ -120,7 +120,7 @@ class Hole:
         safe_plane = rg.Plane(self.bottom_plane)
         safe_plane.Translate(safe_plane.ZAxis * -diff)
         return safe_plane
-        
+
 class Beam:
 
     """
@@ -259,11 +259,11 @@ class Beam:
         tree = datatree[System.Object]()
 
         for i, beam in enumerate(beams):
-            
+
             path = ghpath(i)
-            
+
             for dowel in beam.dowel_list:
-                
+
                 tree.Add(dowel.get_calculated_line(), path)
 
         return tree
@@ -305,7 +305,7 @@ class Dowel:
         """
 
         return list(set(self.beam_list))
-    
+
     def get_plane(self):
 
         """
@@ -314,18 +314,18 @@ class Dowel:
         """
 
         if self.base_plane:
-        
+
             return self.base_plane
-        
+
         else:
-            
+
             p1 = self.line.PointAt(0)
             pc = self.line.PointAt(0.5)
             p2 = self.line.PointAt(1)
             return rg.Plane(pc, rg.Vector3d.Subtract(rg.Vector3d(p1),
                 rg.Vector3d(p2)))
-        
-        
+
+
     def get_calculated_line(self):
 
         """
@@ -342,14 +342,14 @@ class Dowel:
         p2 = rg.Point3d.Subtract(self.base_plane.Origin, -diff)
 
         dowel_line = rg.Line(p1, p2)
-        
+
         smallest_val  = 9999
         biggest_val   = -9999
         smallest_beam = None
         biggest_beam  = None
-        
+
         dowel_plane  = self.get_plane()
-        dowel_normal = dowel_plane.Normal 
+        dowel_normal = dowel_plane.Normal
 
         # get both ends of this dowel
         for beam in self.beam_list:
@@ -357,28 +357,28 @@ class Dowel:
             beam_line = beam.get_baseline()
 
             _, dowel_v, beam_v = rg.Intersect.Intersection.LineLine(dowel_line, beam_line)
-            
+
             if dowel_v < smallest_val:
                 smallest_val = dowel_v
                 smallest_beam = beam
-                
+
             elif biggest_val < dowel_v:
                 biggest_val = dowel_v
                 biggest_beam = beam
 
         actual_dowel_line = rg.Line(dowel_line.PointAt(smallest_val), dowel_line.PointAt(biggest_val))
 
-        # entend the dowel        
+        # entend the dowel
         angle = rg.Vector3d.VectorAngle(dowel_normal, smallest_beam.base_plane.XAxis)
         exntension_1 = smallest_beam.dz * 0.5 / math.sin(angle)
 
         angle = rg.Vector3d.VectorAngle(dowel_normal, biggest_beam.base_plane.XAxis)
         exntension_2 = biggest_beam.dz * 0.5 / math.sin(angle)
-        
+
         actual_dowel_line.Extend(exntension_1, exntension_2)
-        
+
         return actual_dowel_line
-        
+
     def brep_representation(self):
 
         """
@@ -436,7 +436,7 @@ class Dowel:
         return rg.Cylinder(circle, line.Length)
 
 # instanciate objects
-beam_1  = Beam(base_plane=beam_base_plane_1, dx=300, dy=50, dz=25)
+beam_1  = Beam(base_plane=origin_plane, dx=size_x, dy=size_y, dz=size_z)
 beam_2  = Beam(base_plane=beam_base_plane_2, dx=300, dy=50, dz=25)
 dowel_1 = Dowel(base_plane=dowel_base_plane_1)
 dowel_2 = Dowel(base_plane=dowel_base_plane_2)
@@ -469,7 +469,7 @@ for hole in holes:
     bottom_planes.append(hole.bottom_plane)
     gripping_planes.append(hole.gripping_plane)
     safe_planes.append(hole.get_safe_plane())
-    
+
 tmp.append(holes[1].beam_brep)
 tmp.append(holes[0].beam_brep)
 
@@ -482,7 +482,7 @@ for hole in holes:
     bottom_planes.append(hole.bottom_plane)
     gripping_planes.append(hole.gripping_plane)
     safe_planes.append(hole.get_safe_plane())
-    
+
 tmp.append(holes[1].beam_brep)
 tmp.append(holes[0].beam_brep)
 
