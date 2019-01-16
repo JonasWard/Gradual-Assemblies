@@ -8,6 +8,9 @@ __version__ = "0.0.1"
 __date__    = "15 January 2019"
 
 import Rhino.Geometry as rg
+import Grasshopper.Kernel.Data.GH_Path as ghpath
+import Grasshopper.DataTree as datatree
+import System
 import math
 
 tmp = []
@@ -204,7 +207,7 @@ class Beam:
         :return line object of this beam
         """
 
-        diff = self.base_plane.Normal * self.dz * 0.5
+        diff = self.base_plane.XAxis * self.dx * 0.5
         p1 = rg.Point3d.Subtract(self.base_plane.Origin, diff)
         p2 = rg.Point3d.Subtract(self.base_plane.Origin, -diff)
 
@@ -262,6 +265,28 @@ class Beam:
 
         return beam
 
+
+    @staticmethod
+    def get_strucutured_data(beams):
+
+        """
+        get a data tree with the length of each dowel
+        :param beams:  beams to be structured
+        :return DataTree
+        """
+
+        tree = datatree[System.Object]()
+
+        for i, beam in enumerate(beams):
+            
+            path = ghpath(i)
+            
+            for dowel in beam.dowel_list:
+                
+                tree.Add(dowel.get_length(), path)
+
+        return tree
+
 class Dowel:
 
     """
@@ -299,7 +324,51 @@ class Dowel:
         """
 
         return list(set(self.beam_list))
+    
+    def get_length(self):
 
+        if self.line:
+            return self.line.Length
+
+        # get an infinite line
+        diff = self.base_plane.Normal * 9999
+        p1 = rg.Point3d.Subtract(self.base_plane.Origin, diff)
+        p2 = rg.Point3d.Subtract(self.base_plane.Origin, -diff)
+
+        dowel_line = rg.Line(p1, p2)
+        
+        smallest_val = 9999
+        biggest_val  = -9999
+        smallest_beam = None
+        biggest_beam = None
+
+        # the dowel is connected to multiple beams
+        for beam in self.beam_list:
+
+            beam_line = beam.get_baseline()
+
+            _, dowel_v, beam_v = rg.Intersect.Intersection.LineLine(dowel_line, beam_line)
+            
+            if dowel_v < smallest_val:
+                smallest_val = dowel_v
+                smallest_beam = beam
+                
+            elif biggest_val < dowel_v:
+                biggest_val = dowel_v
+                biggest_beam = beam
+
+        actual_dowel_line = rg.Line(dowel_line.PointAt(smallest_val), dowel_line.PointAt(biggest_val))
+        
+        angle = rg.Vector3d.VectorAngle(self.base_plane.Normal, smallest_beam.base_plane.XAxis)
+        exntension_1 = smallest_beam.dz * 0.5 / math.sin(angle)
+
+        angle = rg.Vector3d.VectorAngle(self.base_plane.Normal, biggest_beam.base_plane.XAxis)
+        exntension_2 = biggest_beam.dz * 0.5 / math.sin(angle)
+        
+        actual_dowel_line.Extend(exntension_1, exntension_2)
+        
+        return actual_dowel_line.Length
+        
     def brep_representation(self):
 
         """
@@ -356,6 +425,7 @@ class Dowel:
         circle = rg.Circle(plane, radius)
         return rg.Cylinder(circle, line.Length)
 
+
 # instanciate objects
 beam_1  = Beam(base_plane=beam_base_plane_1, dx=300, dy=50, dz=25)
 beam_2  = Beam(base_plane=beam_base_plane_2, dx=300, dy=50, dz=25)
@@ -366,6 +436,8 @@ beam_1.add_dowel(dowel_1)
 beam_1.add_dowel(dowel_2)
 beam_2.add_dowel(dowel_1)
 beam_2.add_dowel(dowel_2)
+
+dowel_2.get_length()
 
 # visualize the beams positioned in space
 beams = [b.brep_representation() for b in [beam_1, beam_2]]
@@ -401,3 +473,5 @@ for hole in holes:
 
 tmp.append(holes[1].beam.brep_representation())
 tmp.append(holes[0].beam.brep_representation())
+
+tree = Beam.get_strucutured_data([beam_1, beam_2])
