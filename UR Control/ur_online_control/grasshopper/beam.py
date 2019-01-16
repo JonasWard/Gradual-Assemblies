@@ -46,12 +46,9 @@ class Hole:
         holes = []
 
         # can be optimized (for now it holds the very middle part of the beam)
-        _, gripping_plane = beam.get_baseline().ToNurbsCurve().FrameAt(0.5)
+        gripping_plane = beam.base_plane
 
-        line = beam.get_baseline()
-        succeeded, frame = line.ToNurbsCurve().FrameAt(0)
-
-        vector_1 = beam.base_plane.Normal
+        vector_1 = beam.base_plane.XAxis
 
         for dowel in beam.dowel_list:
 
@@ -65,8 +62,8 @@ class Hole:
 
             diff = beam.dy * 0.5 + abs(dowel.inner_radius / math.tan(angle)) + safe_buffer
 
-            top_frame.Translate(beam.base_plane.YAxis * diff)
-            bottom_frame.Translate(-beam.base_plane.YAxis * diff)
+            top_frame.Translate(beam.base_plane.ZAxis * diff)
+            bottom_frame.Translate(-beam.base_plane.ZAxis * diff)
 
             hole_plane_list = []
 
@@ -107,7 +104,7 @@ class Hole:
 
 
         if self.beam:
-            self.beam.transform_duplicate_from_frame_to_frame(copied, target_frame)
+            self.beam.transform_instance_from_frame_to_frame(copied, target_frame)
 
 
 class Beam:
@@ -121,9 +118,9 @@ class Beam:
         """
         initialization
         :param base_plane: base plane which the beam is along with
-        :param dx:  the length along the local x-axis
+        :param dx:  the length along the local x-axis (= the length of this beam)
         :param dy:  the length along the local y-axis
-        :param dz:  the length along the local z-axis (= the length of this beam)
+        :param dz:  the length along the local z-axis
         """
 
         self.base_plane = base_plane
@@ -303,7 +300,7 @@ class Dowel:
 
         return list(set(self.beam_list))
 
-    def materialize(self):
+    def brep_representation(self):
 
         """
         make a brep of this dowel (for now with pseudo end points)
@@ -360,8 +357,8 @@ class Dowel:
         return rg.Cylinder(circle, line.Length)
 
 # instanciate objects
-beam_1  = Beam(base_plane=beam_base_plane_1, dx=50, dy=25, dz=300)
-beam_2  = Beam(base_plane=beam_base_plane_2, dx=50, dy=25, dz=300)
+beam_1  = Beam(base_plane=beam_base_plane_1, dx=300, dy=50, dz=25)
+beam_2  = Beam(base_plane=beam_base_plane_2, dx=300, dy=50, dz=25)
 dowel_1 = Dowel(base_plane=dowel_base_plane_1)
 dowel_2 = Dowel(base_plane=dowel_base_plane_2)
 
@@ -371,7 +368,7 @@ beam_2.add_dowel(dowel_1)
 beam_2.add_dowel(dowel_2)
 
 # visualize the beams positioned in space
-beams = [b.materialize() for b in [beam_1, beam_2]]
+beams = [b.brep_representation() for b in [beam_1, beam_2]]
 
 # create holes
 frame = rg.Plane(rg.Plane.WorldXY.Origin, rg.Plane.WorldXY.ZAxis)
@@ -390,8 +387,8 @@ for hole in holes:
     bottom_planes.append(hole.bottom_plane)
     gripping_planes.append(hole.gripping_plane)
 
-tmp.append(holes[1].beam.materialize())
-tmp.append(holes[0].beam.materialize())
+tmp.append(holes[1].beam.brep_representation())
+tmp.append(holes[0].beam.brep_representation())
 
 holes = Hole.create_holes(beam_2)
 for hole in holes:
@@ -402,5 +399,5 @@ for hole in holes:
     bottom_planes.append(hole.bottom_plane)
     gripping_planes.append(hole.gripping_plane)
 
-tmp.append(holes[1].beam.materialize())
-tmp.append(holes[0].beam.materialize())
+tmp.append(holes[1].beam.brep_representation())
+tmp.append(holes[0].beam.brep_representation())
