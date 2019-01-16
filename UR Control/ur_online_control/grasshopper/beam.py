@@ -374,10 +374,13 @@ class Dowel:
 
         dowel_line = rg.Line(p1, p2)
         
-        smallest_val = 9999
-        biggest_val  = -9999
+        smallest_val  = 9999
+        biggest_val   = -9999
         smallest_beam = None
-        biggest_beam = None
+        biggest_beam  = None
+        
+        dowel_plane  = self.get_plane()
+        dowel_normal = dowel_plane.Normal 
 
         # the dowel is connected to multiple beams
         for beam in self.beam_list:
@@ -396,10 +399,10 @@ class Dowel:
 
         actual_dowel_line = rg.Line(dowel_line.PointAt(smallest_val), dowel_line.PointAt(biggest_val))
         
-        angle = rg.Vector3d.VectorAngle(self.base_plane.Normal, smallest_beam.base_plane.XAxis)
+        angle = rg.Vector3d.VectorAngle(dowel_normal, smallest_beam.base_plane.XAxis)
         exntension_1 = smallest_beam.dz * 0.5 / math.sin(angle)
 
-        angle = rg.Vector3d.VectorAngle(self.base_plane.Normal, biggest_beam.base_plane.XAxis)
+        angle = rg.Vector3d.VectorAngle(dowel_normal, biggest_beam.base_plane.XAxis)
         exntension_2 = biggest_beam.dz * 0.5 / math.sin(angle)
         
         actual_dowel_line.Extend(exntension_1, exntension_2)
@@ -514,3 +517,5 @@ tmp.append(holes[1].beam.brep_representation())
 tmp.append(holes[0].beam.brep_representation())
 
 tree = Beam.get_strucutured_data([beam_1, beam_2])
+
+#tree = Beam.get_strucutured_data([holes[0].beam, holes[1].beam])
