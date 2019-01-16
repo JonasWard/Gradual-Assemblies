@@ -222,19 +222,30 @@ class SimpleBeam(object):
         return brep_repr
 
 test_dowels = []
-for line in lines:
-    test_dowels.append(SimpleDowel(line, rod_d))
-test_box_ref_1 = SimpleBeam(origin_plane[0], size_x, size_y, size_z)
-test_box_ref_1.beam_line_intersection(test_dowels)
-test_box_ref_1.transform_to_drill_plane(drill_plane)
-test_box = test_box_ref_1.generate_box()
-# hole_box = test_box_ref_1.brep_generator()
-top_pls = test_box_ref_1.drill_top_pls
-bot_pls = test_box_ref_1.drill_bot_pls
-safety_pls = test_box_ref_1.drill_safety_pls
 
-boxes_top = test_box_ref_1.drill_top_box
-boxes_bot = test_box_ref_1.drill_bot_box
+# for line in lines:
+#     test_dowels.append(SimpleDowel(line, rod_d))
+
+test_box_ref_1 = []
+for i in range (len(origin_plane)):
+    ref = SimpleBeam(origin_plane[i], size_x, size_y, size_z)
+    test_box_ref_1.append(ref)
+    box_rep = ref.generate_box()
+
+# test_box_ref_1.beam_line_intersection(test_dowels)
+# test_box_ref_1.transform_to_drill_plane(drill_plane)
+
+test_box = []
+for i in range (len(origin_plane)):
+    test_box.append(test_box_ref_1[i].generate_box())
+
+# hole_box = test_box_ref_1.brep_generator()
+# top_pls = test_box_ref_1.drill_top_pls
+# bot_pls = test_box_ref_1.drill_bot_pls
+# safety_pls = test_box_ref_1.drill_safety_pls
+#
+# boxes_top = test_box_ref_1.drill_top_box
+# boxes_bot = test_box_ref_1.drill_bot_box
 # test_box_0 = test_box_ref_1.trans_brep_repr
 # test_box_0_lines = test_box_ref_1.dow_lines
 # test_box_ref_2 = SimpleBeam(origin_plane[1], size_x, size_y, size_z)
