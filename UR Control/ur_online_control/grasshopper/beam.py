@@ -51,14 +51,15 @@ class Hole:
         # can be optimized (for now it holds the very middle part of the beam)
         gripping_plane = beam.base_plane
 
-        vector_1 = beam.base_plane.XAxis
+        beam_normal = beam.base_plane.XAxis
 
         for dowel in beam.dowel_list:
 
             line = dowel.get_line()
 
-            vector_2 = dowel.base_plane.Normal
-            angle = rg.Vector3d.VectorAngle(vector_1, vector_2)
+            dowel_plane = dowel.get_plane()
+            dowel_normal = dowel_plane.Normal
+            angle = rg.Vector3d.VectorAngle(beam_normal, dowel_normal)
 
             top_frame = rg.Plane(beam.base_plane)
             bottom_frame = rg.Plane(beam.base_plane)
@@ -75,7 +76,7 @@ class Hole:
                 succeeded, v = rg.Intersect.Intersection.LinePlane(line, f)
 
                 p = line.PointAt(v)
-                plane = rg.Plane(dowel.base_plane)
+                plane = rg.Plane(dowel_plane)
                 plane.Origin = p
                 hole_plane_list.append(plane)
 
@@ -83,7 +84,7 @@ class Hole:
                 angle = rg.Vector3d.VectorAngle(gripping_plane.Normal, plane.Normal)
                 if math.pi * 0.5 < angle and angle < math.pi * 1.5:
                     plane.Flip()
-
+            
             hole = Hole(gripping_plane=rg.Plane(gripping_plane),
                 top_plane=hole_plane_list[0],
                 bottom_plane=hole_plane_list[1],
@@ -105,11 +106,21 @@ class Hole:
         self.top_plane.Transform(transform)
         self.bottom_plane.Transform(transform)
 
-
         if self.beam:
             self.beam.transform_instance_from_frame_to_frame(copied, target_frame)
 
+    def get_safe_plane(self, diff=100):
 
+        """
+        get a safe plane to drill
+        :param diff:  offset for the safe plane
+        :return rg.Plane
+        """
+
+        safe_plane = rg.Plane(self.bottom_plane)
+        safe_plane.Translate(safe_plane.ZAxis * -diff)
+        return safe_plane
+        
 class Beam:
 
     """
@@ -145,9 +156,10 @@ class Beam:
                 dz=self.dz)
 
         for d in self.dowel_list:
-
-            dowel = Dowel(base_plane=rg.Plane(d.base_plane),
-                line=d.line)
+            
+            dowel = Dowel(
+                base_plane=rg.Plane(d.base_plane) if d.base_plane else None,
+                line=rg.Line(d.line.PointAt(0), d.line.PointAt(1)) if d.line else None)
             beam.add_dowel(dowel)
 
         return beam
@@ -325,7 +337,32 @@ class Dowel:
 
         return list(set(self.beam_list))
     
+    def get_plane(self):
+
+        """
+        get the plane on this dowel
+        :return rg.Vector3d
+        """
+
+        if self.base_plane:
+        
+            return self.base_plane
+        
+        else:
+            
+            p1 = self.line.PointAt(0)
+            pc = self.line.PointAt(0.5)
+            p2 = self.line.PointAt(1)
+            return rg.Plane(pc, rg.Vector3d.Subtract(rg.Vector3d(p1),
+                rg.Vector3d(p2)))
+        
+        
     def get_length(self):
+
+        """
+        get the length of this dowel
+        :return float
+        """
 
         if self.line:
             return self.line.Length
@@ -425,7 +462,6 @@ class Dowel:
         circle = rg.Circle(plane, radius)
         return rg.Cylinder(circle, line.Length)
 
-
 # instanciate objects
 beam_1  = Beam(base_plane=beam_base_plane_1, dx=300, dy=50, dz=25)
 beam_2  = Beam(base_plane=beam_base_plane_2, dx=300, dy=50, dz=25)
@@ -449,6 +485,7 @@ frame.Translate(rg.Vector3d(-200, -200, 0))
 gripping_planes = []
 top_planes = []
 bottom_planes = []
+safe_planes = []
 
 holes = Hole.create_holes(beam_1)
 for hole in holes:
@@ -458,7 +495,8 @@ for hole in holes:
     top_planes.append(hole.top_plane)
     bottom_planes.append(hole.bottom_plane)
     gripping_planes.append(hole.gripping_plane)
-
+    safe_planes.append(hole.get_safe_plane())
+    
 tmp.append(holes[1].beam.brep_representation())
 tmp.append(holes[0].beam.brep_representation())
 
@@ -470,7 +508,8 @@ for hole in holes:
     top_planes.append(hole.top_plane)
     bottom_planes.append(hole.bottom_plane)
     gripping_planes.append(hole.gripping_plane)
-
+    safe_planes.append(hole.get_safe_plane())
+    
 tmp.append(holes[1].beam.brep_representation())
 tmp.append(holes[0].beam.brep_representation())
 
