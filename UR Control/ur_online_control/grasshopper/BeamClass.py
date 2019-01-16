@@ -118,27 +118,27 @@ class SimpleBeam(object):
         self.intersections_calculated = True
         self.intersections_count = len(self.dow_lines)
 
-    def beam_line_intersection_collision(self, coll_off_w = 0, coll_off_l = 0):
-        if (self.intersections_calculated):
-            x_rec_int = self.interval_gen(self.size_x, coll_off_w)
-            y_rec_int = self.interval_gen(self.size_y, coll_off_l)
-            rec_up = rg.Rectangle3d(self.o_plane, x_rec_int, y_rec_int)
-            rec_down = rg.Rectangle3d(self.o_plane, x_rec_int, y_rec_int)
-
-            for top_pt in self.top_pts:
-                value = rec_up.Contains(top_pt, self.top_pl)
-                if (value == 2 or value == 0):
-                    break
-            else:
-                self.bad_points = True
-            for bot_pt in self.bot_pts:
-                value = rec_down.Contains(bot_pt, self.bot_pl)
-                if (value == 2 or value == 0):
-                    break
-            else:
-                self.bad_points = True
-        else:
-            print "beam_line_intersection_collision requires some intersections"
+    # def beam_line_intersection_collision(self, coll_off_w = 0, coll_off_l = 0):
+    #     if (self.intersections_calculated):
+    #         x_rec_int = self.interval_gen(self.size_x, coll_off_w)
+    #         y_rec_int = self.interval_gen(self.size_y, coll_off_l)
+    #         rec_up = rg.Rectangle3d(self.o_plane, x_rec_int, y_rec_int)
+    #         rec_down = rg.Rectangle3d(self.o_plane, x_rec_int, y_rec_int)
+    #
+    #         for top_pt in self.top_pts:
+    #             value = rec_up.Contains(top_pt, self.top_pl)
+    #             if (value == 2 or value == 0):
+    #                 break
+    #         else:
+    #             self.bad_points = True
+    #         for bot_pt in self.bot_pts:
+    #             value = rec_down.Contains(bot_pt, self.bot_pl)
+    #             if (value == 2 or value == 0):
+    #                 break
+    #         else:
+    #             self.bad_points = True
+    #     else:
+    #         print "beam_line_intersection_collision requires some intersections"
 
     def beam_dowel_gen(self):
         pass
@@ -169,14 +169,14 @@ class SimpleBeam(object):
             self.trans_brep_repr = self.brep_repr.Duplicate()
             self.trans_brep_repr.Transform(trans_matrix)
 
-    def transform_to_drill_plane(self, drill_plane = False):
+    def transform_to_drill_plane(self, drill_plane = False, safety_plane_distance = 50):
         print drill_plane
         if not drill_plane:
             drill_plane = rg.Plane.WorldXY
 
         self.drill_plane = drill_plane
 
-        self.drill_top_pls, self.drill_bot_pls = [], []
+        self.drill_top_pls, self.drill_bot_pls, self.drill_safety_pls = [], [], []
         self.drill_top_box, self.drill_bot_box = [], []
 
         for top_pl in self.dow_top_pls:
@@ -190,12 +190,22 @@ class SimpleBeam(object):
 
         for bot_pl in self.dow_bot_pls:
             trans_matrix = rg.Transform.PlaneToPlane(bot_pl, drill_plane)
+
             drill_bot_pl = rg.Plane(self.o_plane)
             drill_bot_box = self.generate_box()
             drill_bot_pl.Transform(trans_matrix)
             drill_bot_box.Transform(trans_matrix)
             self.drill_bot_pls.append(drill_bot_pl)
             self.drill_bot_box.append(drill_bot_box)
+
+            safety_pl = rg.Plane(bot_pl)
+            normal_vector = rg.Vector3d(safety_pl.Normal)
+            safety_pl.Translate(-safety_plane_distance * normal_vector)
+
+            trans_matrix = rg.Transform.PlaneToPlane(safety_pl, drill_plane)
+            drill_safety_plane = rg.Plane(self.o_plane)
+            drill_safety_plane.Transform(trans_matrix)
+            self.drill_safety_pls.append(drill_safety_plane)
 
     def brep_generator(self):
         # this is by far the most time consuming component!
@@ -217,15 +227,19 @@ for line in lines:
 test_box_ref_1 = SimpleBeam(origin_plane[0], size_x, size_y, size_z)
 test_box_ref_1.beam_line_intersection(test_dowels)
 test_box_ref_1.transform_to_drill_plane(drill_plane)
-hole_box = test_box_ref_1.brep_generator()
-test_box_ref_1.transform_to_other_plane()
+test_box = test_box_ref_1.generate_box()
+# hole_box = test_box_ref_1.brep_generator()
+top_pls = test_box_ref_1.drill_top_pls
+bot_pls = test_box_ref_1.drill_bot_pls
+safety_pls = test_box_ref_1.drill_safety_pls
+
 boxes_top = test_box_ref_1.drill_top_box
 boxes_bot = test_box_ref_1.drill_bot_box
-test_box_0 = test_box_ref_1.trans_brep_repr
-test_box_0_lines = test_box_ref_1.dow_lines
-test_box_ref_2 = SimpleBeam(origin_plane[1], size_x, size_y, size_z)
-test_box_ref_2.beam_line_intersection(test_dowels)
-test_box_1 = test_box_ref_2.generate_box()
+# test_box_0 = test_box_ref_1.trans_brep_repr
+# test_box_0_lines = test_box_ref_1.dow_lines
+# test_box_ref_2 = SimpleBeam(origin_plane[1], size_x, size_y, size_z)
+# test_box_ref_2.beam_line_intersection(test_dowels)
+# test_box_1 = test_box_ref_2.generate_box()
 
 # test_beam = SimpleBeam(origin_plane, size_x, size_y, size_z)
 # test_beam.beam_line_intersection(lines)
