@@ -46,6 +46,9 @@ class SimpleBeam(object):
         self.intersections_calculated = False
         # statement to indicate that there are no wrongly place holes
         self.bad_points = True
+        # statement to indicate that the 3d geometry - so with boolean difference
+        # hasn't been generated yet
+        self.gen_3d_gem = False
 
         self.safety_l = 2.0
 
@@ -53,8 +56,8 @@ class SimpleBeam(object):
         value = range * .5 - offset
         return rg.Interval(-value, value)
 
-    def generate_box(self, plane = True):
-        if plane:
+    def generate_box(self, plane = False):
+        if not plane:
             plane = self.o_plane
 
         self.x_int = self.interval_gen(self.size_x)
@@ -113,6 +116,7 @@ class SimpleBeam(object):
 
         # indicating that the intersections have been calculated
         self.intersections_calculated = True
+        self.intersections_count = len(self.dow_lines)
 
     def beam_line_intersection_collision(self, coll_off_w = 0, coll_off_l = 0):
         if (self.intersections_calculated):
@@ -139,8 +143,8 @@ class SimpleBeam(object):
     def beam_dowel_gen(self):
         pass
 
-    def transform_to_other_plane(self, other_plane):
-        self.trans_dow_line, self.trans_dow_top_pl, self.trans_dow_bot_pl = [], [], []
+    def transform_to_other_plane(self, other_plane = rg.Plane.WorldXY):
+        self.trans_dow_line, self.trans_dow_top_pls, self.trans_dow_bot_pls = [], [], []
 
         self.trans_box = self.generate_box(other_plane)
         self.trans_plane = other_plane
@@ -148,16 +152,22 @@ class SimpleBeam(object):
         self.transform_plane = other_plane
         trans_matrix = rg.Transform.PlaneToPlane(self.o_plane, other_plane)
 
-        for i, line in self.dow_lines:
-            trans_line = rg.LineCurve(line)
+        for i in range(self.intersections_count):
+            trans_line = rg.LineCurve(self.dow_lines[i])
             trans_top_pl = rg.Plane(self.dow_top_pls[i])
             trans_bot_pl = rg.Plane(self.dow_bot_pls[i])
             trans_line.Transform(trans_matrix)
             trans_top_pl.Transform(trans_matrix)
             trans_bot_pl.Transform(trans_matrix)
-            self.trans_dow_line.append(line_transformed)
+            self.trans_dow_line.append(trans_line)
             self.trans_dow_top_pls.append(trans_top_pl)
             self.trans_dow_bot_pls.append(trans_bot_pl)
+
+        print self.gen_3d_gem
+
+        if self.gen_3d_gem:
+            self.trans_brep_repr = self.brep_repr.Duplicate()
+            self.trans_brep_repr.Transform(trans_matrix)
 
     def transform_to_drill_plane(self, drill_plane = False):
         print drill_plane
@@ -187,28 +197,19 @@ class SimpleBeam(object):
             self.drill_bot_pls.append(drill_bot_pl)
             self.drill_bot_box.append(drill_bot_box)
 
-    #
-    # def brep_subtraction(self, holes, plane = 0):
-    #     if (plane == 0):
-    #         plane = self.o_plane
-    #
-    #     self.brep_repr = self.generate_box(plane)
-    #     for hole in holes:
-    #         self.brep_repr = rg.Brep.CreateBooleanDifference(self.brep_repr, hole, 0.1)[0]
-    #     return box_geom
-    #
-    # def gen_3D_geom(self, plane = 0):
-    #     if plane == 0:
-    #         plane = self.o_plane
-    #         if (self.intersections_calculated):
-    #             local_box = self.generate_box(self.o_plane)
-    #             dowel = SimpleDowel(self.lines, self.rod_ds)
-    #             dowel_postives = self.brep_subtraction(local_box, dowels)
-    #         else:
-    #             return self.generate_box(self.o_plane)
-    #     else:
-    #         if (self.intersections_calculated):
-    #             return self.generate_box(self.transform_plane)
+    def brep_generator(self):
+        # this is by far the most time consuming component!
+        # only generate it when you need it
+        brep_repr = self.generate_box().ToBrep()
+
+        for i in range(self.intersections_count):
+            hole = SimpleDowel(self.dow_lines[i], self.dow_rad[i]).brep_representation()
+            brep_repr_new = rg.Brep.CreateBooleanDifference([brep_repr], hole, 0.1)
+            brep_repr = brep_repr_new[0]
+
+        self.brep_repr = brep_repr
+        self.gen_3d_gem = True
+        return brep_repr
 
 test_dowels = []
 for line in lines:
@@ -216,9 +217,11 @@ for line in lines:
 test_box_ref_1 = SimpleBeam(origin_plane[0], size_x, size_y, size_z)
 test_box_ref_1.beam_line_intersection(test_dowels)
 test_box_ref_1.transform_to_drill_plane(drill_plane)
+hole_box = test_box_ref_1.brep_generator()
+test_box_ref_1.transform_to_other_plane()
 boxes_top = test_box_ref_1.drill_top_box
 boxes_bot = test_box_ref_1.drill_bot_box
-test_box_0 = test_box_ref_1.generate_box()
+test_box_0 = test_box_ref_1.trans_brep_repr
 test_box_0_lines = test_box_ref_1.dow_lines
 test_box_ref_2 = SimpleBeam(origin_plane[1], size_x, size_y, size_z)
 test_box_ref_2.beam_line_intersection(test_dowels)
