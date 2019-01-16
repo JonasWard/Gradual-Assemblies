@@ -21,20 +21,20 @@ class Hole:
     Stores the planes for the drilling process.
     """
 
-    def __init__(self, gripping_plane, top_plane, bottom_plane, beam):
+    def __init__(self, gripping_plane, top_plane, bottom_plane, beam_brep):
 
         """
         initialization
         :param gripping_plane: gripping_plane plane to grab the beam
         :param top_plane:  top_plane plane to start drilling
         :param bottom_plane:  bottom_plane plane to end drilling
-        :param beam: beam to be drilled (for debug purpose only)
+        :param beam_brep: beam brep to be drilled (for debug purpose only)
         """
 
         self.gripping_plane = gripping_plane
         self.top_plane = top_plane
         self.bottom_plane = bottom_plane
-        self.beam = beam
+        self.beam_brep = beam_brep
 
     @staticmethod
     def create_holes(beam, safe_buffer=2.0):
@@ -88,7 +88,7 @@ class Hole:
             hole = Hole(gripping_plane=rg.Plane(gripping_plane),
                 top_plane=hole_plane_list[0],
                 bottom_plane=hole_plane_list[1],
-                beam=beam.copy())
+                beam_brep=beam.brep_representation())
 
             holes.append(hole)
 
@@ -106,8 +106,8 @@ class Hole:
         self.top_plane.Transform(transform)
         self.bottom_plane.Transform(transform)
 
-        if self.beam:
-            self.beam.transform_instance_from_frame_to_frame(copied, target_frame)
+        if self.beam_brep:
+            self.beam_brep.Transform(transform)
 
     def get_safe_plane(self, diff=100):
 
@@ -142,27 +142,6 @@ class Beam:
         self.dy = dy
         self.dz = dz
         self.dowel_list = []
-
-    def copy(self):
-
-        """
-        create a copy of this instance
-        :return copied beam
-        """
-
-        beam = Beam(base_plane=rg.Plane(self.base_plane),
-                dx=self.dx,
-                dy=self.dy,
-                dz=self.dz)
-
-        for d in self.dowel_list:
-            
-            dowel = Dowel(
-                base_plane=rg.Plane(d.base_plane) if d.base_plane else None,
-                line=rg.Line(d.line.PointAt(0), d.line.PointAt(1)) if d.line else None)
-            beam.add_dowel(dowel)
-
-        return beam
 
     def add_dowel(self, dowel):
 
@@ -234,25 +213,15 @@ class Beam:
 
         Beam.__move_to_frame(self, self.base_plane, target_frame)
 
-    def transform_duplicate_to_frame(self, target_frame=None):
-
-        """
-        get the new beam transformed
-        :param target_frame:  target frame to transform according to this base_plane
-        :return Beam class
-        """
-
-        copied = self.copy()
-        return Beam.__move_to_frame(copied, self.base_plane, target_frame)
-
     def transform_instance_from_frame_to_frame(self, source_frame, target_frame=None):
 
+        """
+        in-place transform
+        :param source_frame:  source_frame frame to transform
+        :param target_frame:  target frame  to be transformed
+        """
+
         Beam.__move_to_frame(self, source_frame, target_frame)
-
-    def transform_duplicate_from_frame_to_frame(self, source_frame, target_frame=None):
-
-        copied = self.copy()
-        return Beam.__move_to_frame(copied, source_frame, target_frame)
 
     def __move_to_frame(beam, source_frame, target_frame=None):
 
@@ -282,7 +251,7 @@ class Beam:
     def get_strucutured_data(beams):
 
         """
-        get a data tree with the length of each dowel
+        get a data tree of lines with the actual length of each dowel
         :param beams:  beams to be structured
         :return DataTree
         """
@@ -295,7 +264,7 @@ class Beam:
             
             for dowel in beam.dowel_list:
                 
-                tree.Add(dowel.get_length(), path)
+                tree.Add(dowel.get_calculated_line(), path)
 
         return tree
 
@@ -357,15 +326,15 @@ class Dowel:
                 rg.Vector3d(p2)))
         
         
-    def get_length(self):
+    def get_calculated_line(self):
 
         """
-        get the length of this dowel
-        :return float
+        get the line with the actual length
+        :return rg.Line
         """
 
         if self.line:
-            return self.line.Length
+            return self.line
 
         # get an infinite line
         diff = self.base_plane.Normal * 9999
@@ -382,7 +351,7 @@ class Dowel:
         dowel_plane  = self.get_plane()
         dowel_normal = dowel_plane.Normal 
 
-        # the dowel is connected to multiple beams
+        # get both ends of this dowel
         for beam in self.beam_list:
 
             beam_line = beam.get_baseline()
@@ -398,7 +367,8 @@ class Dowel:
                 biggest_beam = beam
 
         actual_dowel_line = rg.Line(dowel_line.PointAt(smallest_val), dowel_line.PointAt(biggest_val))
-        
+
+        # entend the dowel        
         angle = rg.Vector3d.VectorAngle(dowel_normal, smallest_beam.base_plane.XAxis)
         exntension_1 = smallest_beam.dz * 0.5 / math.sin(angle)
 
@@ -407,7 +377,7 @@ class Dowel:
         
         actual_dowel_line.Extend(exntension_1, exntension_2)
         
-        return actual_dowel_line.Length
+        return actual_dowel_line
         
     def brep_representation(self):
 
@@ -476,7 +446,7 @@ beam_1.add_dowel(dowel_2)
 beam_2.add_dowel(dowel_1)
 beam_2.add_dowel(dowel_2)
 
-dowel_2.get_length()
+dowel_2.get_calculated_line()
 
 # visualize the beams positioned in space
 beams = [b.brep_representation() for b in [beam_1, beam_2]]
@@ -500,8 +470,8 @@ for hole in holes:
     gripping_planes.append(hole.gripping_plane)
     safe_planes.append(hole.get_safe_plane())
     
-tmp.append(holes[1].beam.brep_representation())
-tmp.append(holes[0].beam.brep_representation())
+tmp.append(holes[1].beam_brep)
+tmp.append(holes[0].beam_brep)
 
 holes = Hole.create_holes(beam_2)
 for hole in holes:
@@ -513,9 +483,7 @@ for hole in holes:
     gripping_planes.append(hole.gripping_plane)
     safe_planes.append(hole.get_safe_plane())
     
-tmp.append(holes[1].beam.brep_representation())
-tmp.append(holes[0].beam.brep_representation())
+tmp.append(holes[1].beam_brep)
+tmp.append(holes[0].beam_brep)
 
 tree = Beam.get_strucutured_data([beam_1, beam_2])
-
-#tree = Beam.get_strucutured_data([holes[0].beam, holes[1].beam])
