@@ -15,9 +15,9 @@ tmp = []
 class Hole:
 
     """
-    It stores the planes for drilling process.
+    Stores the planes for the drilling process.
     """
-    
+
     def __init__(self, gripping_plane, top_plane, bottom_plane, beam):
 
         """
@@ -34,10 +34,10 @@ class Hole:
         self.beam = beam
 
     @staticmethod
-    def create_holes(beam, safe_buffer=5):
+    def create_holes(beam, safe_buffer=2.0):
 
         """
-        instanciate holes from the beam
+        instanciates the holes in the beam
         :param beam:  beam plane to be drilled
         :param safe_buffer:  buffer length to drill for each side of the beam
         :return [Hole]
@@ -47,38 +47,38 @@ class Hole:
 
         # can be optimized (for now it holds the very middle part of the beam)
         _, gripping_plane = beam.get_baseline().ToNurbsCurve().FrameAt(0.5)
-        
+
         line = beam.get_baseline()
         succeeded, frame = line.ToNurbsCurve().FrameAt(0)
-                
+
         vector_1 = beam.base_plane.Normal
 
         for dowel in beam.dowel_list:
 
             line = dowel.get_line()
-            
+
             vector_2 = dowel.base_plane.Normal
             angle = rg.Vector3d.VectorAngle(vector_1, vector_2)
-            
-            top_frame = rg.Plane(frame)
-            bottom_frame = rg.Plane(frame)
-            
+
+            top_frame = rg.Plane(beam.base_plane)
+            bottom_frame = rg.Plane(beam.base_plane)
+
             diff = beam.dy * 0.5 + abs(dowel.inner_radius / math.tan(angle)) + safe_buffer
-            
+
             top_frame.Translate(beam.base_plane.YAxis * diff)
             bottom_frame.Translate(-beam.base_plane.YAxis * diff)
 
             hole_plane_list = []
 
             for f in [top_frame, bottom_frame]:
-            
+
                 succeeded, v = rg.Intersect.Intersection.LinePlane(line, f)
 
                 p = line.PointAt(v)
                 plane = rg.Plane(dowel.base_plane)
                 plane.Origin = p
                 hole_plane_list.append(plane)
-                
+
                 # to direct normals of holes to that of gripping plane
                 angle = rg.Vector3d.VectorAngle(gripping_plane.Normal, plane.Normal)
                 if math.pi * 0.5 < angle and angle < math.pi * 1.5:
@@ -88,12 +88,12 @@ class Hole:
                 top_plane=hole_plane_list[0],
                 bottom_plane=hole_plane_list[1],
                 beam=beam.copy())
-            
+
             holes.append(hole)
 
         return holes
-        
-    def orient_bottom_plane_to_frame(self, target_frame):
+
+    def orient_to_drilling_station(self, target_frame):
 
         """
         orient a bottom plane to a given frame
@@ -105,19 +105,9 @@ class Hole:
         self.top_plane.Transform(transform)
         self.bottom_plane.Transform(transform)
 
-#        if self.gripping_plane.Normal.Z < 0:
-#            
-#            normal = rg.Vector3d(
-#                self.gripping_plane.Normal.X,
-#                self.gripping_plane.Normal.Y,
-#                -self.gripping_plane.Normal.Z)
-#            
-#            self.gripping_plane = rg.Plane(
-#                self.gripping_plane.Origin,
-#                normal)
-            
+
         if self.beam:
-            self.beam.moved_from_frame_to_frame(copied, target_frame)
+            self.beam.transform_duplicate_from_frame_to_frame(copied, target_frame)
 
 
 class Beam:
@@ -127,7 +117,7 @@ class Beam:
     """
 
     def __init__(self, base_plane, dx, dy, dz):
-        
+
         """
         initialization
         :param base_plane: base plane which the beam is along with
@@ -141,29 +131,29 @@ class Beam:
         self.dy = dy
         self.dz = dz
         self.dowel_list = []
-    
+
     def copy(self):
 
         """
         create a copy of this instance
         :return copied beam
         """
-        
+
         beam = Beam(base_plane=rg.Plane(self.base_plane),
                 dx=self.dx,
                 dy=self.dy,
                 dz=self.dz)
-        
+
         for d in self.dowel_list:
-            
+
             dowel = Dowel(base_plane=rg.Plane(d.base_plane),
                 line=d.line)
             beam.add_dowel(dowel)
-        
+
         return beam
-    
+
     def add_dowel(self, dowel):
-        
+
         """
         add a dowel to this beam
         :param dowel:  the new dowel to be added
@@ -179,9 +169,9 @@ class Beam:
         """
 
         self.dowel_list = list(set(self.dowel_list))
-        
-    def materialize(self):
-        
+
+    def brep_representation(self):
+
         """
         make a brep of this beam with holes
         :return brep object of this beam
@@ -193,25 +183,25 @@ class Beam:
             rg.Interval(-self.dy*0.5, self.dy*0.5),
             rg.Interval(-self.dz*0.5, self.dz*0.5)
             )
-            
+
         box = box.ToBrep()
-        
+
         # create a dowels
         for dowel in self.dowel_list:
-            
+
             pipe = dowel.get_outer_pipe()
-            
+
             pipe = pipe.ToBrep(True, True)
 
             tmp_box = rg.Brep.CreateBooleanDifference(box, pipe, 0.1)
-            
+
             if len(tmp_box) > 0:
                 box = tmp_box[0]
 
         return box
 
     def get_baseline(self):
-        
+
         """
         get a line along with z-axis
         :return line object of this beam
@@ -222,8 +212,17 @@ class Beam:
         p2 = rg.Point3d.Subtract(self.base_plane.Origin, -diff)
 
         return rg.Line(p1, p2)
-    
-    def move_to_frame(self, target_frame=None):
+
+    def transform_instance_to_frame(self, target_frame=None):
+
+        """
+        in-place transform
+        :param target_frame:  target frame to transform according to this base_plane
+        """
+
+        Beam.__move_to_frame(self, self.base_plane, target_frame)
+
+    def transform_duplicate_to_frame(self, target_frame=None):
 
         """
         get the new beam transformed
@@ -234,23 +233,14 @@ class Beam:
         copied = self.copy()
         return Beam.__move_to_frame(copied, self.base_plane, target_frame)
 
-    def moved_to_frame(self, target_frame=None):
+    def transform_instance_from_frame_to_frame(self, source_frame, target_frame=None):
 
-        """
-        in-place transform
-        :param target_frame:  target frame to transform according to this base_plane
-        """
+        Beam.__move_to_frame(self, source_frame, target_frame)
 
-        Beam.__move_to_frame(self, self.base_plane, target_frame)
-
-    def move_from_frame_to_frame(self, source_frame, target_frame=None):
+    def transform_duplicate_from_frame_to_frame(self, source_frame, target_frame=None):
 
         copied = self.copy()
         return Beam.__move_to_frame(copied, source_frame, target_frame)
-
-    def moved_from_frame_to_frame(self, source_frame, target_frame=None):
-
-        Beam.__move_to_frame(self, source_frame, target_frame)
 
     def __move_to_frame(beam, source_frame, target_frame=None):
 
@@ -259,24 +249,24 @@ class Beam:
         """
 
         if not target_frame:
-            target_frame = beam.base_plane 
+            target_frame = beam.base_plane
 
         transform = rg.Transform.PlaneToPlane(source_frame, target_frame)
-        
+
         beam.base_plane.Transform(transform)
 
         for dowel in beam.dowel_list:
-            
+
             if dowel.base_plane:
                 dowel.base_plane.Transform(transform)
-                
+
             if dowel.line:
                 dowel.line.Transform(transform)
 
         return beam
 
 class Dowel:
-    
+
     """
     Dowel class with connected beams
     """
@@ -286,7 +276,7 @@ class Dowel:
 
     """radius to be drilled"""
     outer_radius = 12
-    
+
     def __init__(self, base_plane=None, line=None):
 
         """
@@ -302,7 +292,7 @@ class Dowel:
             return
 
         self.base_plane = base_plane
-        self.line = line 
+        self.line = line
         self.beam_list  = []
 
     def remove_duplicates_in_beam_list(self):
@@ -314,28 +304,28 @@ class Dowel:
         return list(set(self.beam_list))
 
     def materialize(self):
-        
+
         """
         make a brep of this dowel (for now with pseudo end points)
         :return cylinder object of this dowel
         """
 
         return self.get_inner_pipe()
-    
+
     def get_line(self):
 
         """
-        get a line object of this dowel 
+        get a line object of this dowel
         :return line object
         """
-        
+
         if self.line:
             return self.line
-            
+
         # get an infinite line
         diff = self.base_plane.Normal * 9999
         p1 = rg.Point3d.Subtract(self.base_plane.Origin, diff)
-        p2 = rg.Point3d.Subtract(self.base_plane.Origin, -diff)  
+        p2 = rg.Point3d.Subtract(self.base_plane.Origin, -diff)
 
         return rg.Line(p1, p2)
 
@@ -356,7 +346,7 @@ class Dowel:
         """
 
         return self.__get_pipe(self.inner_radius)
-    
+
     def __get_pipe(self, radius):
 
         """
@@ -364,7 +354,7 @@ class Dowel:
         """
 
         line = self.get_line()
-    
+
         _, plane = line.ToNurbsCurve().PerpendicularFrameAt(0)
         circle = rg.Circle(plane, radius)
         return rg.Cylinder(circle, line.Length)
@@ -394,7 +384,7 @@ bottom_planes = []
 holes = Hole.create_holes(beam_1)
 for hole in holes:
 
-    hole.orient_bottom_plane_to_frame(frame)
+    hole.orient_to_drilling_station(frame)
 
     top_planes.append(hole.top_plane)
     bottom_planes.append(hole.bottom_plane)
@@ -406,7 +396,7 @@ tmp.append(holes[0].beam.materialize())
 holes = Hole.create_holes(beam_2)
 for hole in holes:
 
-    hole.orient_bottom_plane_to_frame(frame)
+    hole.orient_to_drilling_station(frame)
 
     top_planes.append(hole.top_plane)
     bottom_planes.append(hole.bottom_plane)
