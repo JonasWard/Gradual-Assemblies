@@ -66,6 +66,9 @@ class ClientWrapper(object):
     def wait_for_float_list(self):
         return self.wait_for_message(MSG_FLOAT_LIST)
 
+    def wait_for_int_list(self):
+        return self.wait_for_message(MSG_INT_LIST)
+
     def wait_for_int(self):
         # still needs to be implemented
         return self.wait_for_message(MSG_INT)

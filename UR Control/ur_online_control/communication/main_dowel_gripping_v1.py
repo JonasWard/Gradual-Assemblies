@@ -73,11 +73,16 @@ def main():
         commands_drilling = format_commands(commands_flattened_drilling, len_command_drilling)
         print("We received %i drilling commands." % len(commands_drilling))
 
+        number_of_holes_list = gh.wait_for_float_list() #4 client.send(MSG_INT_LIST, number_of_holes_list)
+        print ("4: number of holes list")
+
+        print(number_of_holes_list)
+
         # placing variables
         speed_set = 2000.0
         safety_z_height = 80.0
-        drill_speed_in = 2
-        drill_speed_out = 20
+        drill_speed_in = 1.5
+        drill_speed_out = 10
         picking_cnt = 0
         angle = 5.0
         radAngle = 3.14 * angle / 180.0
@@ -90,38 +95,70 @@ def main():
         # print ("done with the first, safety, plane")
 
         # drilling movements
+        used_plane_count = 0
         print ("\nstarting with the main loop")
-        for i in range(0, len(commands_flattened_drilling) - 2, 5):
-            sequence_count = round((i + 1)/2)
-            print ("\tstart %i" % sequence_count)
-            x1, y1, z1, ax1, ay1, az1, speed, radius = commands_drilling[i]
-            x2, y2, z2, ax2, ay2, az2, speed, radius = commands_drilling[i + 1]
-            x3, y3, z3, ax3, ay3, az3, speed, radius = commands_drilling[i + 2]
-            x4, y4, z4, ax4, ay4, az4, speed, radius = commands_drilling[i + 3]
-            x5, y5, z5, ax5, ay5, az5, speed, radius = commands_drilling[i + 4]
 
-            # moving to picking safety plane
-            ur.send_command_movel([x1, y1, safety_z_height, ax1, ay1, az1], v=speed_set, r=radius)
-            # moving to picking plane
-            ur.send_command_movel([x1, y1, z1, ax1, ay1, az1], v=speed_set, r=radius)
-            # moving to picking safety plane
-            ur.send_command_movel([x1, y1, safety_z_height, ax1, ay1, az1], v=speed_set, r=radius)
-            # moving to safety plane
-            ur.send_command_movel([x2, y2, z2, ax2, ay2, az2], v=speed_set, r=radius)
-            # starting the drill
-            ur.send_command_digital_out(0, True)
-            # drill movement
-            ur.send_command_movel([x3, y3, z3, ax3, ay3, az3], v=drill_speed_in, r=radius)
-            # stop the drill
+        for number_of_holes in number_of_holes_list:
+
+            number_of_holes = int(number_of_holes)
+
+            x1, y1, z1, ax1, ay1, az1, speed, radius = commands_drilling[used_plane_count] #picking plane
+
+            """
+            gripper off"""
             ur.send_command_digital_out(0, False)
-            # moving out
-            ur.send_command_movel([x2, y2, z2, ax2, ay2, az2], v=drill_speed_out, r=radius)
-            # moving back to safety plane
-            ur.send_command_movel([x1, y1, z1, ax1, ay1, az1], v=speed_set, r=radius)
-            # # moving back to the center position
-            # ur.send_command_movel([x0, y0, safety_z_height, ax0, ay0, az0], v=speed_set, r=radius)
 
-            print ("\tdone with sequence %i" % sequence_count)
+            """
+            moving to picking safety plane"""
+            ur.send_command_movel([x1, y1, z1 + safety_z_height, ax1, ay1, az1], v=speed_set, r=radius)
+
+            """
+            moving to picking plane"""
+            ur.send_command_movel([x1, y1, z1, ax1, ay1, az1], v=speed_set, r=radius)
+
+            ur.send_command_wait(0.5)
+
+            """
+            gripper on"""
+            ur.send_command_digital_out(0, True)
+            """
+            moving to picking safety plane"""
+
+            ur.send_command_wait(0.5)
+
+            ur.send_command_movel([x1, y1, z1 + safety_z_height, ax1, ay1, az1], v=speed_set, r=radius)
+
+            for j in range(number_of_holes):
+
+                x2, y2, z2, ax2, ay2, az2, speed, radius = commands_drilling[used_plane_count + j * 3 + 1] #drilling safety plane
+                x3, y3, z3, ax3, ay3, az3, speed, radius = commands_drilling[used_plane_count + j * 3 + 2] #start drilling plane
+                x4, y4, z4, ax4, ay4, az4, speed, radius = commands_drilling[used_plane_count + j * 3 + 3] #end drilling plane
+
+                """
+                moving to drilling safety plane"""
+                ur.send_command_movel([x2, y2, z2, ax2, ay2, az2], v=speed_set, r=radius)
+                """
+                start drilling plane"""
+                ur.send_command_movel([x3, y3, z3, ax3, ay3, az3], v=speed_set, r=radius)
+                """
+                end drilling plane"""
+                ur.send_command_movel([x4, y4, z4, ax4, ay4, az4], v=drill_speed_in, r=radius)
+                """
+                moving to drilling safety plane"""
+                ur.send_command_movel([x2, y2, z2, ax2, ay2, az2], v=drill_speed_out, r=radius)
+                """
+            moving to placing plane"""
+
+            x5, y5, z5, ax5, ay5, az5, speed, radius = commands_drilling[used_plane_count + number_of_holes * 3 + 1] #placing plane
+
+            ur.send_command_movel([x5, y5, z5, ax5, ay5, az5], v=speed_set, r=radius)
+            """
+            gripper off"""
+            ur.send_command_digital_out(0, False)
+
+            ur.send_command_wait(0.5)
+
+            used_plane_count += number_of_holes * 3 + 2
 
         #moving back to the start
         print ("moving back to the start safety position")
