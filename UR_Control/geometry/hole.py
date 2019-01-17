@@ -130,7 +130,7 @@ class Hole:
         orient a bottom plane to a given frame
         """
 
-        transform = rg.Transform.PlaneToPlane(self.bottom_plane, target_frame)
+        transform = rg.Transform.PlaneToPlane(self.middle_plane, target_frame)
         self.gripping_plane.Transform(transform)
         self.top_plane.Transform(transform)
         self.bottom_plane.Transform(transform)
