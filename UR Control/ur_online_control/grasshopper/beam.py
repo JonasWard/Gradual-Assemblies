@@ -21,19 +21,21 @@ class Hole:
     Stores the planes for the drilling process.
     """
 
-    def __init__(self, gripping_plane, top_plane, bottom_plane, beam_brep):
+    def __init__(self, gripping_plane, top_plane, bottom_plane, middle_plane, beam_brep):
 
         """
         initialization
         :param gripping_plane: gripping_plane plane to grab the beam
-        :param top_plane:  top_plane plane to start drilling
-        :param bottom_plane:  bottom_plane plane to end drilling
+        :param top_plane:  top_plane plane to be drilled
+        :param bottom_plane:  bottom_plane plane to be drilled
+        :param middle_plane:  middle_plane plane to be drilled
         :param beam_brep: beam brep to be drilled (for debug purpose only)
         """
 
         self.gripping_plane = gripping_plane
         self.top_plane = top_plane
         self.bottom_plane = bottom_plane
+        self.middle_plane = middle_plane
         self.beam_brep = beam_brep
 
     @staticmethod
@@ -57,11 +59,12 @@ class Hole:
 
             line = dowel.get_line()
 
-            dowel_plane = dowel.get_plane()
+            dowel_plane  = dowel.get_plane()
             dowel_normal = dowel_plane.Normal
             angle = rg.Vector3d.VectorAngle(beam_normal, dowel_normal)
 
-            top_frame = rg.Plane(beam.base_plane)
+            top_frame    = rg.Plane(beam.base_plane)
+            middle_frame = rg.Plane(beam.base_plane)
             bottom_frame = rg.Plane(beam.base_plane)
 
             diff = beam.dy * 0.5 + abs(dowel.inner_radius / math.tan(angle)) + safe_buffer
@@ -71,7 +74,7 @@ class Hole:
 
             hole_plane_list = []
 
-            for f in [top_frame, bottom_frame]:
+            for f in [top_frame, middle_frame, bottom_frame]:
 
                 succeeded, v = rg.Intersect.Intersection.LinePlane(line, f)
 
@@ -87,40 +90,78 @@ class Hole:
 
             hole = Hole(gripping_plane=rg.Plane(gripping_plane),
                 top_plane=hole_plane_list[0],
-                bottom_plane=hole_plane_list[1],
+                middle_plane=hole_plane_list[1],
+                bottom_plane=hole_plane_list[2],
                 beam_brep=beam.brep_representation())
 
             holes.append(hole)
 
         return holes
 
+    @staticmethod
+    def get_tool_planes_as_tree(beams, target_plane=rg.Plane.WorldXY, safe_buffer=2.0, safe_plane_diff=100):
+        
+        safe_plane_tree   = datatree[System.Object]()
+        top_plane_tree    = datatree[System.Object]()
+        bottom_plane_tree = datatree[System.Object]()
+        beam_brep_tree    = datatree[System.Object]()
+        
+        for i, beam in enumerate(beams):
+            
+            holes = Hole.create_holes(beam, safe_buffer=safe_buffer)
+            
+            path = ghpath(i)
+            
+            for hole in holes:
+                
+                hole.orient_to_drilling_station(target_plane)
+                safe_plane, top_plane, bottom_plane = hole.get_tool_planes(safe_plane_diff=safe_plane_diff)
+                
+                safe_plane_tree.Add(safe_plane, path)
+                top_plane_tree.Add(top_plane, path)
+                bottom_plane_tree.Add(bottom_plane, path)
+                beam_brep_tree.Add(hole.beam_brep, path)
+         
+        return safe_plane_tree, top_plane_tree, bottom_plane_tree, beam_brep_tree
+                
     def orient_to_drilling_station(self, target_frame):
 
         """
         orient a bottom plane to a given frame
         """
 
-        copied = rg.Plane(self.bottom_plane)
-        transform = rg.Transform.PlaneToPlane(copied, target_frame)
+        transform = rg.Transform.PlaneToPlane(self.bottom_plane, target_frame)
         self.gripping_plane.Transform(transform)
         self.top_plane.Transform(transform)
         self.bottom_plane.Transform(transform)
+        self.middle_plane.Transform(transform)
 
         if self.beam_brep:
             self.beam_brep.Transform(transform)
 
-    def get_safe_plane(self, diff=100):
+    def get_tool_planes(self, safe_plane_diff=100):
 
         """
-        get a safe plane to drill
+        get planes to be sent to the robotic arm 
         :param diff:  offset for the safe plane
-        :return rg.Plane
+        :return (safe plane, top plane, bottom plane)
         """
 
-        safe_plane = rg.Plane(self.bottom_plane)
-        safe_plane.Translate(safe_plane.ZAxis * -diff)
-        return safe_plane
+        top_diff = self.top_plane.Origin.Z - self.middle_plane.Origin.Z
+        bottom_diff = self.bottom_plane.Origin.Z - self.middle_plane.Origin.Z
+        
+        top_gripping_plane = rg.Plane(self.gripping_plane)
+        top_gripping_plane.Translate(rg.Vector3d(0, 0, top_diff))
 
+        bottom_gripping_plane = rg.Plane(self.gripping_plane)
+        bottom_gripping_plane.Translate(rg.Vector3d(0, 0, bottom_diff))
+
+        safe_gripping_plane = rg.Plane(top_gripping_plane)
+        safe_gripping_plane.Translate(rg.Vector3d(0, 0, safe_plane_diff))
+        
+        return safe_gripping_plane, top_gripping_plane, bottom_gripping_plane
+
+        
 class Beam:
 
     """
@@ -259,11 +300,11 @@ class Beam:
         tree = datatree[System.Object]()
 
         for i, beam in enumerate(beams):
-
+            
             path = ghpath(i)
-
+            
             for dowel in beam.dowel_list:
-
+                
                 tree.Add(dowel.get_calculated_line(), path)
 
         return tree
@@ -305,7 +346,7 @@ class Dowel:
         """
 
         return list(set(self.beam_list))
-
+    
     def get_plane(self):
 
         """
@@ -314,18 +355,18 @@ class Dowel:
         """
 
         if self.base_plane:
-
+        
             return self.base_plane
-
+        
         else:
-
+            
             p1 = self.line.PointAt(0)
             pc = self.line.PointAt(0.5)
             p2 = self.line.PointAt(1)
             return rg.Plane(pc, rg.Vector3d.Subtract(rg.Vector3d(p1),
                 rg.Vector3d(p2)))
-
-
+        
+        
     def get_calculated_line(self):
 
         """
@@ -342,14 +383,14 @@ class Dowel:
         p2 = rg.Point3d.Subtract(self.base_plane.Origin, -diff)
 
         dowel_line = rg.Line(p1, p2)
-
+        
         smallest_val  = 9999
         biggest_val   = -9999
         smallest_beam = None
         biggest_beam  = None
-
+        
         dowel_plane  = self.get_plane()
-        dowel_normal = dowel_plane.Normal
+        dowel_normal = dowel_plane.Normal 
 
         # get both ends of this dowel
         for beam in self.beam_list:
@@ -357,28 +398,28 @@ class Dowel:
             beam_line = beam.get_baseline()
 
             _, dowel_v, beam_v = rg.Intersect.Intersection.LineLine(dowel_line, beam_line)
-
+            
             if dowel_v < smallest_val:
                 smallest_val = dowel_v
                 smallest_beam = beam
-
+                
             elif biggest_val < dowel_v:
                 biggest_val = dowel_v
                 biggest_beam = beam
 
         actual_dowel_line = rg.Line(dowel_line.PointAt(smallest_val), dowel_line.PointAt(biggest_val))
 
-        # entend the dowel
+        # entend the dowel        
         angle = rg.Vector3d.VectorAngle(dowel_normal, smallest_beam.base_plane.XAxis)
         exntension_1 = smallest_beam.dz * 0.5 / math.sin(angle)
 
         angle = rg.Vector3d.VectorAngle(dowel_normal, biggest_beam.base_plane.XAxis)
         exntension_2 = biggest_beam.dz * 0.5 / math.sin(angle)
-
+        
         actual_dowel_line.Extend(exntension_1, exntension_2)
-
+        
         return actual_dowel_line
-
+        
     def brep_representation(self):
 
         """
@@ -436,7 +477,7 @@ class Dowel:
         return rg.Cylinder(circle, line.Length)
 
 # instanciate objects
-beam_1  = Beam(base_plane=origin_plane, dx=size_x, dy=size_y, dz=size_z)
+beam_1  = Beam(base_plane=beam_base_plane_1, dx=300, dy=50, dz=25)
 beam_2  = Beam(base_plane=beam_base_plane_2, dx=300, dy=50, dz=25)
 dowel_1 = Dowel(base_plane=dowel_base_plane_1)
 dowel_2 = Dowel(base_plane=dowel_base_plane_2)
@@ -455,35 +496,5 @@ beams = [b.brep_representation() for b in [beam_1, beam_2]]
 frame = rg.Plane(rg.Plane.WorldXY.Origin, rg.Plane.WorldXY.ZAxis)
 frame.Translate(rg.Vector3d(-200, -200, 0))
 
-gripping_planes = []
-top_planes = []
-bottom_planes = []
-safe_planes = []
+safe_plane_tree, top_plane_tree, bottom_plane_tree, beam_brep_tree = Hole.get_tool_planes_as_tree([beam_1, beam_2], target_plane=frame, safe_buffer=2.0, safe_plane_diff=100)
 
-holes = Hole.create_holes(beam_1)
-for hole in holes:
-
-    hole.orient_to_drilling_station(frame)
-
-    top_planes.append(hole.top_plane)
-    bottom_planes.append(hole.bottom_plane)
-    gripping_planes.append(hole.gripping_plane)
-    safe_planes.append(hole.get_safe_plane())
-
-tmp.append(holes[1].beam_brep)
-tmp.append(holes[0].beam_brep)
-
-holes = Hole.create_holes(beam_2)
-for hole in holes:
-
-    hole.orient_to_drilling_station(frame)
-
-    top_planes.append(hole.top_plane)
-    bottom_planes.append(hole.bottom_plane)
-    gripping_planes.append(hole.gripping_plane)
-    safe_planes.append(hole.get_safe_plane())
-
-tmp.append(holes[1].beam_brep)
-tmp.append(holes[0].beam_brep)
-
-tree = Beam.get_strucutured_data([beam_1, beam_2])
