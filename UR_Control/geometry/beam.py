@@ -110,6 +110,7 @@ class Beam:
 
         return angles
 
+
     def transform_instance_to_frame(self, target_frame=None):
         """ in-place transform
 
