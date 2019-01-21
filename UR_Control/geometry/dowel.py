@@ -93,6 +93,9 @@ class Dowel:
         dowel_plane  = self.get_plane()
         dowel_normal = dowel_plane.Normal 
 
+        if len(self.beam_list) < 2:
+            return self.get_line()
+            
         # get both ends of this dowel
         for beam in self.beam_list:
 
@@ -104,10 +107,10 @@ class Dowel:
                 smallest_val = dowel_v
                 smallest_beam = beam
                 
-            elif biggest_val < dowel_v:
+            if biggest_val < dowel_v:
                 biggest_val = dowel_v
                 biggest_beam = beam
-
+        
         actual_dowel_line = rg.Line(dowel_line.PointAt(smallest_val), dowel_line.PointAt(biggest_val))
 
         # entend the dowel        
@@ -141,7 +144,7 @@ class Dowel:
             return self.line
 
         # get an infinite line
-        diff = self.base_plane.Normal * 9999
+        diff = self.base_plane.Normal * 999
         p1 = rg.Point3d.Subtract(self.base_plane.Origin, diff)
         p2 = rg.Point3d.Subtract(self.base_plane.Origin, -diff)
 
@@ -159,7 +162,7 @@ class Dowel:
     def get_inner_pipe(self):
         """
         get a cylinder of dowel
-        
+
         :return: cylinder object
         """
 

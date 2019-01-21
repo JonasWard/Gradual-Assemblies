@@ -34,7 +34,7 @@ class Beam:
 
     def add_dowel(self, dowel):
         """ add a dowel to this beam
-        
+
             :param dowel:  the new dowel to be added
         """
 
@@ -47,9 +47,10 @@ class Beam:
 
         self.dowel_list = list(set(self.dowel_list))
 
-    def brep_representation(self):
+    def brep_representation(self, make_holes=True):
         """ make a brep of this beam with holes
 
+            :param make_holes:  boolean value to make holes in the beam (making holes requires some computation time)
             :return: brep object of this beam
         """
 
@@ -61,6 +62,9 @@ class Beam:
             )
 
         box = box.ToBrep()
+
+        if not make_holes:
+            return box
 
         # create a dowels
         for dowel in self.dowel_list:
@@ -87,6 +91,24 @@ class Beam:
         p2 = rg.Point3d.Subtract(self.base_plane.Origin, -diff)
 
         return rg.Line(p1, p2)
+
+    def get_angle_between_beam_and_dowel(self):
+        """
+        get angles between the beam and connected dowels
+
+        :return: list of angles in radian
+        """
+        angles = []
+
+        beam_vector = self.base_plane.Normal
+
+        for dowel in self.dowel_list:
+            
+            dowel_vector = dowel.get_plane().Normal
+            angle = rg.Vector3d.VectorAngle(beam_vector, dowel_vector)
+            angles.append(angle)
+
+        return angles
 
     def transform_instance_to_frame(self, target_frame=None):
         """ in-place transform

@@ -18,7 +18,7 @@ How to Use
     beam_dz = 4
     dowel_radius = 1.0
 
-    # create beams as planes
+    # create beams from planes
     beam_plane_1 = rg.Plane(rg.Plane.WorldXY)
     beam_plane_1.Translate(rg.Vector3d(400, 30, 0))
 
@@ -27,7 +27,7 @@ How to Use
 
     beam_planes = [beam_plane_1, beam_plane_2]
 
-    # create dowels as planes
+    # create dowels from planes
     dowel_plane_1 = rg.Plane(rg.Plane.WorldXY)
     dowel_plane_1.Translate(rg.Vector3d(440, 30, 0))
     dowel_plane_2 = rg.Plane(rg.Plane.WorldXY)
