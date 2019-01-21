@@ -16,21 +16,19 @@ import beam
 import hole
 
 class Dowel:
-
     """
     Dowel class with connected beams
     """
 
     def __init__(self, base_plane=None, line=None, dowel_radius=1.0, hole_radius=1.2):
-
         """
         initialization
+        base_plane and line are exclusive!
+
         :param base_plane: base plane which the dowel is along with
         :param line: line object that corresponds to the dowel itself
         :param dowel_radius: dowel radius
         :param hole_radius: hole radius
-
-        base_plane and line are exclusive!
         """
 
         if base_plane and line:
@@ -44,7 +42,6 @@ class Dowel:
         self.beam_list  = []
 
     def remove_duplicates_in_beam_list(self):
-
         """
         resolve beam duplication
         """
@@ -52,10 +49,10 @@ class Dowel:
         return list(set(self.beam_list))
     
     def get_plane(self):
-
         """
         get the plane on this dowel
-        :return rg.Vector3d
+
+        :return: rg.Vector3d
         """
 
         if self.base_plane:
@@ -72,10 +69,10 @@ class Dowel:
         
         
     def get_calculated_line(self):
-
         """
         get the line with the actual length
-        :return rg.Line
+
+        :return: rg.Line
         """
 
         if self.line:
@@ -125,19 +122,19 @@ class Dowel:
         return actual_dowel_line
         
     def brep_representation(self):
-
         """
         make a brep of this dowel (for now with pseudo end points)
-        :return cylinder object of this dowel
+
+        :return: cylinder object of this dowel
         """
 
         return self.get_inner_pipe()
 
     def get_line(self):
-
         """
         get a line object of this dowel
-        :return line object
+
+        :return: line object
         """
 
         if self.line:
@@ -151,25 +148,24 @@ class Dowel:
         return rg.Line(p1, p2)
 
     def get_outer_pipe(self):
-
         """
         get a cylinder drilled
-        :return cylinder object
+
+        :return: cylinder object
         """
 
         return self.__get_pipe(self.hole_radius)
 
     def get_inner_pipe(self):
-
         """
         get a cylinder of dowel
-        :return cylinder object
+        
+        :return: cylinder object
         """
 
         return self.__get_pipe(self.dowel_radius)
 
     def __get_pipe(self, radius):
-
         """
         private method to create a cylinder
         """

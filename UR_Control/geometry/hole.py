@@ -16,15 +16,14 @@ import dowel
 import beam
 
 class Hole:
-
     """
     Stores the planes for the drilling process.
     """
 
-    def __init__(self, gripping_plane, top_plane, bottom_plane, middle_plane, beam_brep):
-
+    def __init__(self, gripping_plane=None, top_plane=None, bottom_plane=None, middle_plane=None, beam_brep=None):
         """
         initialization
+
         :param gripping_plane: gripping_plane plane to grab the beam
         :param top_plane:  top_plane plane to be drilled
         :param bottom_plane:  bottom_plane plane to be drilled
@@ -40,12 +39,12 @@ class Hole:
 
     @staticmethod
     def create_holes(beam, safe_buffer=2.0):
-
         """
         instanciates the holes in the beam
+
         :param beam:  beam plane to be drilled
         :param safe_buffer:  buffer length to drill for each side of the beam
-        :return [Hole]
+        :return: [Hole]
         """
 
         holes = []
@@ -99,8 +98,19 @@ class Hole:
         return holes
 
     @staticmethod
-    def get_tool_planes_as_tree(beams, target_plane=rg.Plane.WorldXY, safe_buffer=2.0, safe_plane_diff=100):
-        
+    def get_tool_planes_as_tree(beams, target_plane, safe_buffer=5.0, safe_plane_diff=100):
+        """
+        get planes for its fabrication as a data tree
+
+        :param beams:  beams to be fdrilled
+        :param target_plane:  the plane where a drill locates
+        :param safe_buffer:  the buffer distance from the very edges of the beam
+        :return: tuple of (a data tree of safes, a data tree of top planes, a data tree of bottom planes, a data tree of beam breps)
+        """
+
+        if not target_plane:
+            target_plane = rg.Plane.WorldXY
+
         safe_plane_tree   = datatree[System.Object]()
         top_plane_tree    = datatree[System.Object]()
         bottom_plane_tree = datatree[System.Object]()
@@ -125,9 +135,10 @@ class Hole:
         return safe_plane_tree, top_plane_tree, bottom_plane_tree, beam_brep_tree
                 
     def orient_to_drilling_station(self, target_frame):
-
         """
         orient a bottom plane to a given frame
+
+        :param target_frame:  the plane to be oriented
         """
 
         transform = rg.Transform.PlaneToPlane(self.middle_plane, target_frame)
@@ -140,11 +151,11 @@ class Hole:
             self.beam_brep.Transform(transform)
 
     def get_tool_planes(self, safe_plane_diff=100):
-
         """
         get planes to be sent to the robotic arm 
-        :param diff:  offset for the safe plane
-        :return (safe plane, top plane, bottom plane)
+
+        :param safe_plane_diff:  offset for the safe plane
+        :return: (safe plane, top plane, bottom plane)
         """
 
         top_diff = self.top_plane.Origin.Z - self.middle_plane.Origin.Z

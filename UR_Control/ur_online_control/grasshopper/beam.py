@@ -45,7 +45,7 @@ class Hole:
         instanciates the holes in the beam
         :param beam:  beam plane to be drilled
         :param safe_buffer:  buffer length to drill for each side of the beam
-        :return [Hole]
+        :return::: [Hole]
         """
 
         holes = []
@@ -144,7 +144,7 @@ class Hole:
         """
         get planes to be sent to the robotic arm 
         :param diff:  offset for the safe plane
-        :return (safe plane, top plane, bottom plane)
+        :return::: (safe plane, top plane, bottom plane)
         """
 
         top_diff = self.top_plane.Origin.Z - self.middle_plane.Origin.Z
@@ -206,7 +206,7 @@ class Beam:
 
         """
         make a brep of this beam with holes
-        :return brep object of this beam
+        :return::: brep object of this beam
         """
 
         # create a beam
@@ -236,7 +236,7 @@ class Beam:
 
         """
         get a line along with z-axis
-        :return line object of this beam
+        :return::: line object of this beam
         """
 
         diff = self.base_plane.XAxis * self.dx * 0.5
@@ -294,7 +294,7 @@ class Beam:
         """
         get a data tree of lines with the actual length of each dowel
         :param beams:  beams to be structured
-        :return DataTree
+        :return::: DataTree
         """
 
         tree = datatree[System.Object]()
@@ -351,7 +351,7 @@ class Dowel:
 
         """
         get the plane on this dowel
-        :return rg.Vector3d
+        :return::: rg.Vector3d
         """
 
         if self.base_plane:
@@ -371,7 +371,7 @@ class Dowel:
 
         """
         get the line with the actual length
-        :return rg.Line
+        :return::: rg.Line
         """
 
         if self.line:
@@ -424,7 +424,7 @@ class Dowel:
 
         """
         make a brep of this dowel (for now with pseudo end points)
-        :return cylinder object of this dowel
+        :return::: cylinder object of this dowel
         """
 
         return self.get_inner_pipe()
@@ -433,7 +433,7 @@ class Dowel:
 
         """
         get a line object of this dowel
-        :return line object
+        :return::: line object
         """
 
         if self.line:
@@ -450,7 +450,7 @@ class Dowel:
 
         """
         get a cylinder drilled
-        :return cylinder object
+        :return::: cylinder object
         """
 
         return self.__get_pipe(self.outer_radius)
@@ -459,7 +459,7 @@ class Dowel:
 
         """
         get a cylinder of dowel
-        :return cylinder object
+        :return::: cylinder object
         """
 
         return self.__get_pipe(self.inner_radius)

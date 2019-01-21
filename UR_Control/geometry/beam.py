@@ -1,6 +1,6 @@
-"""
-Basic classes for MAS-DFAB 2018-19 T2 GKR Project
-"""
+#
+# Basic classes for MAS-DFAB 2018-19 T2 GKR Project
+#
 
 __author__ = "masdfab students"
 __status__ = "development"
@@ -14,19 +14,16 @@ import System
 import math
 
 class Beam:
-
-    """
-    Beam class containing its size and connecting dowels
+    """ Beam class containing its size and connecting dowels
     """
 
     def __init__(self, base_plane, dx, dy, dz):
+        """ initialization
 
-        """
-        initialization
-        :param base_plane: base plane which the beam is along with
-        :param dx:  the length along the local x-axis (= the length of this beam)
-        :param dy:  the length along the local y-axis
-        :param dz:  the length along the local z-axis
+            :param base_plane: base plane which the beam is along with
+            :param dx:  the length along the local x-axis (= the length of this beam)
+            :param dy:  the length along the local y-axis
+            :param dz:  the length along the local z-axis
         """
 
         self.base_plane = base_plane
@@ -36,28 +33,24 @@ class Beam:
         self.dowel_list = []
 
     def add_dowel(self, dowel):
-
-        """
-        add a dowel to this beam
-        :param dowel:  the new dowel to be added
+        """ add a dowel to this beam
+        
+            :param dowel:  the new dowel to be added
         """
 
         self.dowel_list.append(dowel)
         dowel.beam_list.append(self)
 
     def remove_duplicates_in_dowel_list(self):
-
-        """
-        resolve dowel duplication
+        """ resolve dowel duplication
         """
 
         self.dowel_list = list(set(self.dowel_list))
 
     def brep_representation(self):
+        """ make a brep of this beam with holes
 
-        """
-        make a brep of this beam with holes
-        :return brep object of this beam
+            :return: brep object of this beam
         """
 
         # create a beam
@@ -84,10 +77,9 @@ class Beam:
         return box
 
     def get_baseline(self):
+        """ get a line along with z-axis
 
-        """
-        get a line along with z-axis
-        :return line object of this beam
+            :return: line object of this beam
         """
 
         diff = self.base_plane.XAxis * self.dx * 0.5
@@ -97,28 +89,24 @@ class Beam:
         return rg.Line(p1, p2)
 
     def transform_instance_to_frame(self, target_frame=None):
+        """ in-place transform
 
-        """
-        in-place transform
-        :param target_frame:  target frame to transform according to this base_plane
+            :param target_frame:  target frame to transform according to this base_plane
         """
 
         Beam.__move_to_frame(self, self.base_plane, target_frame)
 
     def transform_instance_from_frame_to_frame(self, source_frame, target_frame=None):
+        """ in-place transform
 
-        """
-        in-place transform
-        :param source_frame:  source_frame frame to transform
-        :param target_frame:  target frame  to be transformed
+            :param source_frame:  source_frame frame to transform
+            :param target_frame:  target frame  to be transformed
         """
 
         Beam.__move_to_frame(self, source_frame, target_frame)
 
     def __move_to_frame(beam, source_frame, target_frame=None):
-
-        """
-        private method to transform
+        """ private method to transform
         """
 
         if not target_frame:
@@ -141,11 +129,10 @@ class Beam:
 
     @staticmethod
     def get_strucutured_data(beams):
+        """ get a data tree of lines with the actual length of each dowel
 
-        """
-        get a data tree of lines with the actual length of each dowel
-        :param beams:  beams to be structured
-        :return DataTree
+            :param beams:  beams to be structured
+            :return: DataTree
         """
 
         tree = datatree[System.Object]()
