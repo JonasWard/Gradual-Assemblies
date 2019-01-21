@@ -65,8 +65,8 @@ class Hole:
             top_frame    = rg.Plane(beam.base_plane)
             middle_frame = rg.Plane(beam.base_plane)
             bottom_frame = rg.Plane(beam.base_plane)
-
-            diff = beam.dy * 0.5 + abs(dowel.dowel_radius / math.tan(angle)) + safe_buffer
+           
+            diff = beam.dz * 0.5 + abs(dowel.dowel_radius / math.tan(angle)) + safe_buffer
 
             top_frame.Translate(beam.base_plane.ZAxis * diff)
             bottom_frame.Translate(-beam.base_plane.ZAxis * diff)
