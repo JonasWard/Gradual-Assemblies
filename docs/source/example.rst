@@ -56,7 +56,7 @@ How to Use
     # get planes and brep(s) 
     safe_planes, top_planes, bottom_planes, beam_breps = Hole.get_tool_planes_as_tree(beams, safe_plane_diff=100)
 
-.. image:: _static/example_grasshopper.png
+.. image:: /_static/example_grasshopper.png
 
 
 Beam Class

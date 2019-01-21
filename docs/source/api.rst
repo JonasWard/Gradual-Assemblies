@@ -1,9 +1,6 @@
 API Reference
 ================
 
-Geometry Modules
-----------
-
 geometry.beam module
 --------------------
 
