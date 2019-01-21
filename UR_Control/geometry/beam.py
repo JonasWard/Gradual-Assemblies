@@ -110,6 +110,59 @@ class Beam:
 
         return angles
 
+    def get_distance_from_edges(self):
+        """
+        get distance from the beam's edge
+
+        :return: list of distances
+        """
+
+        distances = []
+
+        top_frame    = rg.Plane(self.base_plane)
+        bottom_frame = rg.Plane(self.base_plane)
+
+        top_frame.Translate(self.base_plane.ZAxis * 0.5 * self.dz)
+        bottom_frame.Translate(-self.base_plane.ZAxis * 0.5 * self.dz)
+
+        interval_x = rg.Interval(-self.dx * 0.5, self.dx * 0.5)
+        interval_y = rg.Interval(-self.dy * 0.5, self.dy * 0.5)
+
+        top_rectangle    = rg.Rectangle3d(top_frame, interval_x, interval_y)
+        bottom_rectangle = rg.Rectangle3d(bottom_frame, interval_x, interval_y)
+        
+        pts = []
+
+        for dowel in self.dowel_list:
+
+            line = dowel.get_line()
+            
+            succeeded, v = rg.Intersect.Intersection.LinePlane(line, top_frame)
+            top_pt = line.PointAt(v)
+
+            succeeded, v = rg.Intersect.Intersection.LinePlane(line, bottom_frame)
+            bottom_pt = line.PointAt(v)
+
+            top_closest_pt    = top_rectangle.ClosestPoint(top_pt, False)
+            bottom_closest_pt = bottom_rectangle.ClosestPoint(bottom_pt, False)
+
+            top_distance    = top_pt.DistanceTo(top_closest_pt)
+            bottom_distance = bottom_pt.DistanceTo(bottom_closest_pt)
+
+            # see if the dowel is outside of the dowel
+            if top_rectangle.Contains(top_pt) == rg.PointContainment.Outside or \
+                bottom_rectangle.Contains(bottom_pt) == rg.PointContainment.Outside:
+                
+                # if outside, just add a pretty small value
+                distances.append(-9999)
+
+            else:
+
+                # is inside
+                distance = min(top_distance - dowel.dowel_radius, bottom_distance - dowel.dowel_radius)
+                distances.append(distance)
+            
+        return distances
 
     def transform_instance_to_frame(self, target_frame=None):
         """ in-place transform
