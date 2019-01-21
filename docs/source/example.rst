@@ -1,6 +1,20 @@
 Examples
 ================
 
+Plane Orientation
+--------------------
+
+**Beam**
+
+x-axis: length, y-axis: width, z-axis: height
+
+**Dowel**
+
+z-axis: length
+
+.. image:: https://raw.githubusercontent.com/ytakzk/Gradual_Assemblies/master/docs/source/_static/plane_orientation.png
+
+
 How to Use
 --------------------
 
