@@ -1,0 +1,341 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Examples &mdash; DFABMAS 2018-19 Gradual Assemblies alpha documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="API Reference" href="api.html" />
+    <link rel="prev" title="Introduction" href="introduction.html" /> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> DFABMAS 2018-19 Gradual Assemblies
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="introduction.html">Introduction</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Examples</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#how-to-use">How to Use</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#beam-class">Beam Class</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#dowel-class">Dowel Class</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#hole-class">Hole Class</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="api.html">API Reference</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">DFABMAS 2018-19 Gradual Assemblies</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>Examples</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/example.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="examples">
+<h1>Examples<a class="headerlink" href="#examples" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="how-to-use">
+<h2>How to Use<a class="headerlink" href="#how-to-use" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># import libraries</span>
+<span class="kn">import</span> <span class="nn">Rhino.Geometry</span> <span class="kn">as</span> <span class="nn">rg</span>
+<span class="kn">from</span> <span class="nn">geometry.beam</span> <span class="kn">import</span> <span class="n">Beam</span>
+<span class="kn">from</span> <span class="nn">geometry.dowel</span> <span class="kn">import</span> <span class="n">Dowel</span>
+<span class="kn">from</span> <span class="nn">geometry.hole</span> <span class="kn">import</span> <span class="n">Hole</span>
+
+<span class="c1"># dimensions</span>
+<span class="n">beam_dx</span> <span class="o">=</span> <span class="mi">145</span>
+<span class="n">beam_dy</span> <span class="o">=</span> <span class="mi">10</span>
+<span class="n">beam_dz</span> <span class="o">=</span> <span class="mi">4</span>
+<span class="n">dowel_radius</span> <span class="o">=</span> <span class="mf">1.0</span>
+
+<span class="c1"># create beams as planes</span>
+<span class="n">beam_plane_1</span> <span class="o">=</span> <span class="n">rg</span><span class="o">.</span><span class="n">Plane</span><span class="p">(</span><span class="n">rg</span><span class="o">.</span><span class="n">Plane</span><span class="o">.</span><span class="n">WorldXY</span><span class="p">)</span>
+<span class="n">beam_plane_1</span><span class="o">.</span><span class="n">Translate</span><span class="p">(</span><span class="n">rg</span><span class="o">.</span><span class="n">Vector3d</span><span class="p">(</span><span class="mi">400</span><span class="p">,</span> <span class="mi">30</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+
+<span class="n">beam_plane_2</span> <span class="o">=</span> <span class="n">rg</span><span class="o">.</span><span class="n">Plane</span><span class="p">(</span><span class="n">rg</span><span class="o">.</span><span class="n">Plane</span><span class="o">.</span><span class="n">WorldXY</span><span class="p">)</span>
+<span class="n">beam_plane_2</span><span class="o">.</span><span class="n">Translate</span><span class="p">(</span><span class="n">rg</span><span class="o">.</span><span class="n">Vector3d</span><span class="p">(</span><span class="mi">400</span><span class="p">,</span> <span class="mi">30</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+
+<span class="n">beam_planes</span> <span class="o">=</span> <span class="p">[</span><span class="n">beam_plane_1</span><span class="p">,</span> <span class="n">beam_plane_2</span><span class="p">]</span>
+
+<span class="c1"># create dowels as planes</span>
+<span class="n">dowel_plane_1</span> <span class="o">=</span> <span class="n">rg</span><span class="o">.</span><span class="n">Plane</span><span class="p">(</span><span class="n">rg</span><span class="o">.</span><span class="n">Plane</span><span class="o">.</span><span class="n">WorldXY</span><span class="p">)</span>
+<span class="n">dowel_plane_1</span><span class="o">.</span><span class="n">Translate</span><span class="p">(</span><span class="n">rg</span><span class="o">.</span><span class="n">Vector3d</span><span class="p">(</span><span class="mi">440</span><span class="p">,</span> <span class="mi">30</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+<span class="n">dowel_plane_2</span> <span class="o">=</span> <span class="n">rg</span><span class="o">.</span><span class="n">Plane</span><span class="p">(</span><span class="n">rg</span><span class="o">.</span><span class="n">Plane</span><span class="o">.</span><span class="n">WorldXY</span><span class="p">)</span>
+<span class="n">dowel_plane_2</span><span class="o">.</span><span class="n">Translate</span><span class="p">(</span><span class="n">rg</span><span class="o">.</span><span class="n">Vector3d</span><span class="p">(</span><span class="o">-</span><span class="mi">440</span><span class="p">,</span> <span class="mi">30</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+
+<span class="n">dowel_planes</span> <span class="o">=</span> <span class="p">[</span><span class="n">dowel_plane_1</span><span class="p">,</span> <span class="n">dowel_plane_2</span><span class="p">]</span>
+
+<span class="n">beams</span> <span class="o">=</span> <span class="p">[]</span>
+
+<span class="c1"># feed beam planes</span>
+<span class="k">for</span> <span class="n">beam_plane</span> <span class="ow">in</span> <span class="n">beam_planes</span><span class="p">:</span>
+
+    <span class="c1"># create an instance of beam class</span>
+    <span class="n">beam</span> <span class="o">=</span> <span class="n">Beam</span><span class="p">(</span><span class="n">base_plane</span><span class="o">=</span><span class="n">beam_plane</span><span class="p">,</span> <span class="n">dx</span><span class="o">=</span><span class="n">beam_dx</span><span class="p">,</span> <span class="n">dy</span><span class="o">=</span><span class="n">beam_dy</span><span class="p">,</span> <span class="n">dz</span><span class="o">=</span><span class="n">beam_dz</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">dowel_plane</span> <span class="ow">in</span> <span class="n">dowel_planes</span><span class="p">:</span>
+
+        <span class="c1"># create an instance of dowel class as the connected dowel connected</span>
+        <span class="n">dowel</span> <span class="o">=</span> <span class="n">Dowel</span><span class="p">(</span><span class="n">base_plane</span><span class="o">=</span><span class="n">dowel_plane</span><span class="p">,</span> <span class="n">dowel_radius</span><span class="o">=</span><span class="n">dowel_radius</span><span class="p">)</span>
+
+        <span class="c1"># add the dowel to the beam as its connection</span>
+        <span class="n">beam</span><span class="o">.</span><span class="n">add_dowel</span><span class="p">(</span><span class="n">dowel</span><span class="p">)</span>
+
+    <span class="n">beams</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">beam</span><span class="p">)</span>
+
+<span class="c1"># get planes and brep(s)</span>
+<span class="n">safe_planes</span><span class="p">,</span> <span class="n">top_planes</span><span class="p">,</span> <span class="n">bottom_planes</span><span class="p">,</span> <span class="n">beam_breps</span> <span class="o">=</span> <span class="n">Hole</span><span class="o">.</span><span class="n">get_tool_planes_as_tree</span><span class="p">(</span><span class="n">beams</span><span class="p">,</span> <span class="n">safe_plane_diff</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+</pre></div>
+</div>
+<img alt="_images/example_grasshopper.png" src="_images/example_grasshopper.png" />
+</div>
+<div class="section" id="beam-class">
+<h2>Beam Class<a class="headerlink" href="#beam-class" title="Permalink to this headline">¶</a></h2>
+<p>A class for beams</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">beam_plane</span> <span class="o">=</span> <span class="n">rg</span><span class="o">.</span><span class="n">Plane</span><span class="o">.</span><span class="n">WorldXY</span> <span class="c1"># the plane to define a beam&#39;s position and orientation</span>
+<span class="n">beam_dx</span>    <span class="o">=</span> <span class="mi">145</span> <span class="c1"># the length of a beam</span>
+<span class="n">beam_dy</span>    <span class="o">=</span> <span class="mi">10</span> <span class="c1"># the width of a beam</span>
+<span class="n">beam_dz</span>    <span class="o">=</span> <span class="mi">4</span> <span class="c1"># the depth of a beam</span>
+
+<span class="c1"># instanciate</span>
+<span class="n">beam</span> <span class="o">=</span> <span class="n">Beam</span><span class="p">(</span><span class="n">base_plane</span><span class="o">=</span><span class="n">beam_plane</span><span class="p">,</span>
+            <span class="n">dx</span><span class="o">=</span><span class="n">beam_dx</span><span class="p">,</span>
+            <span class="n">dy</span><span class="o">=</span><span class="n">beam_dy</span><span class="p">,</span>
+            <span class="n">dz</span><span class="o">=</span><span class="n">beam_dz</span><span class="p">)</span>
+
+<span class="c1"># get a brep of the beam (used for visualization or debug)</span>
+<span class="n">brep</span> <span class="o">=</span> <span class="n">beam</span><span class="o">.</span><span class="n">brep_representation</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="dowel-class">
+<h2>Dowel Class<a class="headerlink" href="#dowel-class" title="Permalink to this headline">¶</a></h2>
+<p>A class for dowels</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">dowel_plane</span>  <span class="o">=</span> <span class="n">rg</span><span class="o">.</span><span class="n">Plane</span><span class="o">.</span><span class="n">WorldXY</span> <span class="c1"># the plane to define a dowel&#39;s position and orientation</span>
+<span class="n">dowel_radius</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="c1"># the radius of a dowel</span>
+
+<span class="c1"># instanciate from plane</span>
+<span class="n">dowel_plane</span> <span class="o">=</span> <span class="n">rg</span><span class="o">.</span><span class="n">Plane</span><span class="o">.</span><span class="n">WorldXY</span>
+<span class="n">dowel</span> <span class="o">=</span> <span class="n">Dowel</span><span class="p">(</span><span class="n">base_plane</span><span class="o">=</span><span class="n">dowel_plane</span><span class="p">,</span> <span class="n">dowel_radius</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span>
+
+<span class="c1"># OR</span>
+
+<span class="c1"># instanciate from line</span>
+<span class="n">dowel_line</span> <span class="o">=</span> <span class="n">rg</span><span class="o">.</span><span class="n">Line</span><span class="p">(</span><span class="n">rg</span><span class="o">.</span><span class="n">Point3d</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">30</span><span class="p">),</span> <span class="n">rg</span><span class="o">.</span><span class="n">Point3d</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">30</span><span class="p">))</span>
+<span class="n">dowel</span> <span class="o">=</span> <span class="n">Dowel</span><span class="p">(</span><span class="n">line</span><span class="o">=</span><span class="n">dowel_line</span><span class="p">,</span> <span class="n">dowel_radius</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span>
+
+<span class="c1"># add a dowel to the beam (possible if the beam has been declared before)</span>
+<span class="n">beam</span><span class="o">.</span><span class="n">add_dowel</span><span class="p">(</span><span class="n">dowel</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="hole-class">
+<h2>Hole Class<a class="headerlink" href="#hole-class" title="Permalink to this headline">¶</a></h2>
+<p>A class for making planes to open holes in beams</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># contain beams as array</span>
+<span class="n">beams</span> <span class="o">=</span> <span class="p">[</span><span class="n">beam_1</span><span class="p">,</span> <span class="n">beam_2</span><span class="p">]</span>
+
+<span class="c1"># returns four kinds of data trees</span>
+<span class="c1">#</span>
+<span class="c1"># 1st: safe planes to drill</span>
+<span class="c1"># 2nd: planes to start drilling</span>
+<span class="c1"># 3rd: planes to end drilling</span>
+<span class="c1"># 4th: breps of beams in each state of drilling</span>
+
+<span class="n">safe_planes</span><span class="p">,</span> <span class="n">top_planes</span><span class="p">,</span> <span class="n">bottom_planes</span><span class="p">,</span> <span class="n">beam_breps</span> <span class="o">=</span> <span class="n">Hole</span><span class="o">.</span><span class="n">get_tool_planes_as_tree</span><span class="p">(</span><span class="n">beams</span><span class="p">,</span>
+    <span class="n">safe_plane_diff</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="api.html" class="btn btn-neutral float-right" title="API Reference" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="introduction.html" class="btn btn-neutral" title="Introduction" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, ytakzk
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    
+    
+      <script type="text/javascript">
+          var DOCUMENTATION_OPTIONS = {
+              URL_ROOT:'./',
+              VERSION:'alpha',
+              LANGUAGE:'en',
+              COLLAPSE_INDEX:false,
+              FILE_SUFFIX:'.html',
+              HAS_SOURCE:  true,
+              SOURCELINK_SUFFIX: '.txt'
+          };
+      </script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+    
+
+  
+
+  <script type="text/javascript" src="_static/js/theme.js"></script>
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

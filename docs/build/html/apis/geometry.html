@@ -1,0 +1,499 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>geometry package &mdash; DFABMAS 2018-19 Gradual Assemblies alpha documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+
+  
+  <script src="../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> DFABMAS 2018-19 Gradual Assemblies
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../example.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api.html">API Reference</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">DFABMAS 2018-19 Gradual Assemblies</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+      <li>geometry package</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../_sources/apis/geometry.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="geometry-package">
+<h1>geometry package<a class="headerlink" href="#geometry-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-geometry.beam">
+<span id="geometry-beam-module"></span><h2>geometry.beam module<a class="headerlink" href="#module-geometry.beam" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="geometry.beam.Beam">
+<em class="property">class </em><code class="descclassname">geometry.beam.</code><code class="descname">Beam</code><span class="sig-paren">(</span><em>base_plane</em>, <em>dx</em>, <em>dy</em>, <em>dz</em><span class="sig-paren">)</span><a class="headerlink" href="#geometry.beam.Beam" title="Permalink to this definition">¶</a></dt>
+<dd><p>Beam class containing its size and connecting dowels</p>
+<dl class="method">
+<dt id="geometry.beam.Beam.add_dowel">
+<code class="descname">add_dowel</code><span class="sig-paren">(</span><em>dowel</em><span class="sig-paren">)</span><a class="headerlink" href="#geometry.beam.Beam.add_dowel" title="Permalink to this definition">¶</a></dt>
+<dd><p>add a dowel to this beam</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>dowel</strong> – the new dowel to be added</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="geometry.beam.Beam.remove_duplicates_in_dowel_list">
+<code class="descname">remove_duplicates_in_dowel_list</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#geometry.beam.Beam.remove_duplicates_in_dowel_list" title="Permalink to this definition">¶</a></dt>
+<dd><p>resolve dowel duplication</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="geometry.beam.Beam.brep_representation">
+<code class="descname">brep_representation</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#geometry.beam.Beam.brep_representation" title="Permalink to this definition">¶</a></dt>
+<dd><p>make a brep of this beam with holes</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">brep object of this beam</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="geometry.beam.Beam.get_baseline">
+<code class="descname">get_baseline</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#geometry.beam.Beam.get_baseline" title="Permalink to this definition">¶</a></dt>
+<dd><p>get a line along with z-axis</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">line object of this beam</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="geometry.beam.Beam.transform_instance_to_frame">
+<code class="descname">transform_instance_to_frame</code><span class="sig-paren">(</span><em>target_frame=None</em><span class="sig-paren">)</span><a class="headerlink" href="#geometry.beam.Beam.transform_instance_to_frame" title="Permalink to this definition">¶</a></dt>
+<dd><p>in-place transform</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>target_frame</strong> – target frame to transform according to this base_plane</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="geometry.beam.Beam.transform_instance_from_frame_to_frame">
+<code class="descname">transform_instance_from_frame_to_frame</code><span class="sig-paren">(</span><em>source_frame</em>, <em>target_frame=None</em><span class="sig-paren">)</span><a class="headerlink" href="#geometry.beam.Beam.transform_instance_from_frame_to_frame" title="Permalink to this definition">¶</a></dt>
+<dd><p>in-place transform</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>source_frame</strong> – source_frame frame to transform</li>
+<li><strong>target_frame</strong> – target frame  to be transformed</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="geometry.beam.Beam.get_strucutured_data">
+<em class="property">static </em><code class="descname">get_strucutured_data</code><span class="sig-paren">(</span><em>beams</em><span class="sig-paren">)</span><a class="headerlink" href="#geometry.beam.Beam.get_strucutured_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>get a data tree of lines with the actual length of each dowel</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>beams</strong> – beams to be structured</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">DataTree</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-geometry.dowel">
+<span id="geometry-dowel-module"></span><h2>geometry.dowel module<a class="headerlink" href="#module-geometry.dowel" title="Permalink to this headline">¶</a></h2>
+<p>Basic classes for MAS-DFAB 2018-19 T2 GKR Project</p>
+<dl class="class">
+<dt id="geometry.dowel.Dowel">
+<em class="property">class </em><code class="descclassname">geometry.dowel.</code><code class="descname">Dowel</code><span class="sig-paren">(</span><em>base_plane=None</em>, <em>line=None</em>, <em>dowel_radius=1.0</em>, <em>hole_radius=1.2</em><span class="sig-paren">)</span><a class="headerlink" href="#geometry.dowel.Dowel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Dowel class with connected beams</p>
+<dl class="method">
+<dt id="geometry.dowel.Dowel.remove_duplicates_in_beam_list">
+<code class="descname">remove_duplicates_in_beam_list</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#geometry.dowel.Dowel.remove_duplicates_in_beam_list" title="Permalink to this definition">¶</a></dt>
+<dd><p>resolve beam duplication</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="geometry.dowel.Dowel.get_plane">
+<code class="descname">get_plane</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#geometry.dowel.Dowel.get_plane" title="Permalink to this definition">¶</a></dt>
+<dd><p>get the plane on this dowel</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">rg.Vector3d</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="geometry.dowel.Dowel.get_calculated_line">
+<code class="descname">get_calculated_line</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#geometry.dowel.Dowel.get_calculated_line" title="Permalink to this definition">¶</a></dt>
+<dd><p>get the line with the actual length</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">rg.Line</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="geometry.dowel.Dowel.brep_representation">
+<code class="descname">brep_representation</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#geometry.dowel.Dowel.brep_representation" title="Permalink to this definition">¶</a></dt>
+<dd><p>make a brep of this dowel (for now with pseudo end points)</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">cylinder object of this dowel</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="geometry.dowel.Dowel.get_line">
+<code class="descname">get_line</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#geometry.dowel.Dowel.get_line" title="Permalink to this definition">¶</a></dt>
+<dd><p>get a line object of this dowel</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">line object</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="geometry.dowel.Dowel.get_outer_pipe">
+<code class="descname">get_outer_pipe</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#geometry.dowel.Dowel.get_outer_pipe" title="Permalink to this definition">¶</a></dt>
+<dd><p>get a cylinder drilled</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">cylinder object</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="geometry.dowel.Dowel.get_inner_pipe">
+<code class="descname">get_inner_pipe</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#geometry.dowel.Dowel.get_inner_pipe" title="Permalink to this definition">¶</a></dt>
+<dd><p>get a cylinder of dowel</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">cylinder object</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-geometry.hole">
+<span id="geometry-hole-module"></span><h2>geometry.hole module<a class="headerlink" href="#module-geometry.hole" title="Permalink to this headline">¶</a></h2>
+<p>Basic classes for MAS-DFAB 2018-19 T2 GKR Project</p>
+<dl class="class">
+<dt id="geometry.hole.Hole">
+<em class="property">class </em><code class="descclassname">geometry.hole.</code><code class="descname">Hole</code><span class="sig-paren">(</span><em>gripping_plane=None</em>, <em>top_plane=None</em>, <em>bottom_plane=None</em>, <em>middle_plane=None</em>, <em>beam_brep=None</em><span class="sig-paren">)</span><a class="headerlink" href="#geometry.hole.Hole" title="Permalink to this definition">¶</a></dt>
+<dd><p>Stores the planes for the drilling process.</p>
+<dl class="staticmethod">
+<dt id="geometry.hole.Hole.create_holes">
+<em class="property">static </em><code class="descname">create_holes</code><span class="sig-paren">(</span><em>beam</em>, <em>safe_buffer=2.0</em><span class="sig-paren">)</span><a class="headerlink" href="#geometry.hole.Hole.create_holes" title="Permalink to this definition">¶</a></dt>
+<dd><p>instanciates the holes in the beam</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>beam</strong> – beam plane to be drilled</li>
+<li><strong>safe_buffer</strong> – buffer length to drill for each side of the beam</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">[Hole]</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="geometry.hole.Hole.get_tool_planes_as_tree">
+<em class="property">static </em><code class="descname">get_tool_planes_as_tree</code><span class="sig-paren">(</span><em>beams</em>, <em>target_plane</em>, <em>safe_buffer=5.0</em>, <em>safe_plane_diff=100</em><span class="sig-paren">)</span><a class="headerlink" href="#geometry.hole.Hole.get_tool_planes_as_tree" title="Permalink to this definition">¶</a></dt>
+<dd><p>get planes for its fabrication as a data tree</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>beams</strong> – beams to be fdrilled</li>
+<li><strong>target_plane</strong> – the plane where a drill locates</li>
+<li><strong>safe_buffer</strong> – the buffer distance from the very edges of the beam</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">tuple of (a data tree of safes, a data tree of top planes, a data tree of bottom planes, a data tree of beam breps)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="geometry.hole.Hole.orient_to_drilling_station">
+<code class="descname">orient_to_drilling_station</code><span class="sig-paren">(</span><em>target_frame</em><span class="sig-paren">)</span><a class="headerlink" href="#geometry.hole.Hole.orient_to_drilling_station" title="Permalink to this definition">¶</a></dt>
+<dd><p>orient a bottom plane to a given frame</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>target_frame</strong> – the plane to be oriented</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="geometry.hole.Hole.get_tool_planes">
+<code class="descname">get_tool_planes</code><span class="sig-paren">(</span><em>safe_plane_diff=100</em><span class="sig-paren">)</span><a class="headerlink" href="#geometry.hole.Hole.get_tool_planes" title="Permalink to this definition">¶</a></dt>
+<dd><p>get planes to be sent to the robotic arm</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>safe_plane_diff</strong> – offset for the safe plane</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">(safe plane, top plane, bottom plane)</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, ytakzk
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    
+    
+      <script type="text/javascript">
+          var DOCUMENTATION_OPTIONS = {
+              URL_ROOT:'../',
+              VERSION:'alpha',
+              LANGUAGE:'en',
+              COLLAPSE_INDEX:false,
+              FILE_SUFFIX:'.html',
+              HAS_SOURCE:  true,
+              SOURCELINK_SUFFIX: '.txt'
+          };
+      </script>
+        <script type="text/javascript" src="../_static/jquery.js"></script>
+        <script type="text/javascript" src="../_static/underscore.js"></script>
+        <script type="text/javascript" src="../_static/doctools.js"></script>
+    
+
+  
+
+  <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
