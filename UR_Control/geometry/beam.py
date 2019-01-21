@@ -69,7 +69,7 @@ class Beam:
         # create a dowels
         for dowel in self.dowel_list:
 
-            pipe = dowel.get_outer_pipe()
+            pipe = dowel.get_hole_pipe()
 
             pipe = pipe.ToBrep(True, True)
 

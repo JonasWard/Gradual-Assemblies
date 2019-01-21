@@ -37,6 +37,7 @@ class Hole:
         self.middle_plane = middle_plane
         self.beam_brep = beam_brep
 
+
     @staticmethod
     def create_holes(beam, safe_buffer=2.0):
         """
@@ -48,13 +49,13 @@ class Hole:
         """
 
         holes = []
-
-        # can be optimized (for now it holds the very middle part of the beam)
-        gripping_plane = beam.base_plane
-
+        
         beam_normal = beam.base_plane.XAxis
 
         for dowel in beam.dowel_list:
+
+            # can be optimized (for now it holds the very middle part of the beam)
+            gripping_plane = rg.Plane(beam.base_plane)
 
             line = dowel.get_line()
 
@@ -65,7 +66,7 @@ class Hole:
             top_frame    = rg.Plane(beam.base_plane)
             middle_frame = rg.Plane(beam.base_plane)
             bottom_frame = rg.Plane(beam.base_plane)
-           
+            
             diff = beam.dz * 0.5 + abs(dowel.dowel_radius / math.tan(angle)) + safe_buffer
 
             top_frame.Translate(beam.base_plane.ZAxis * diff)
@@ -87,7 +88,7 @@ class Hole:
                 if math.pi * 0.5 < angle and angle < math.pi * 1.5:
                     plane.Flip()
 
-            hole = Hole(gripping_plane=rg.Plane(gripping_plane),
+            hole = Hole(gripping_plane=gripping_plane,
                 top_plane=hole_plane_list[0],
                 middle_plane=hole_plane_list[1],
                 bottom_plane=hole_plane_list[2],
@@ -102,7 +103,7 @@ class Hole:
         """
         get planes for its fabrication as a data tree
 
-        :param beams:  beams to be fdrilled
+        :param beams:  beams to be drilled
         :param target_plane:  the plane where a drill locates
         :param safe_buffer:  the buffer distance from the very edges of the beam
         :return: tuple of (a data tree of safes, a data tree of top planes, a data tree of bottom planes, a data tree of beam breps)
@@ -140,7 +141,7 @@ class Hole:
 
         :param target_frame:  the plane to be oriented
         """
-
+        
         transform = rg.Transform.PlaneToPlane(self.middle_plane, target_frame)
         self.gripping_plane.Transform(transform)
         self.top_plane.Transform(transform)
@@ -157,7 +158,7 @@ class Hole:
         :param safe_plane_diff:  offset for the safe plane
         :return: (safe plane, top plane, bottom plane)
         """
-
+        
         top_diff = self.top_plane.Origin.Z - self.middle_plane.Origin.Z
         bottom_diff = self.bottom_plane.Origin.Z - self.middle_plane.Origin.Z
         

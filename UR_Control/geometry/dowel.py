@@ -20,7 +20,7 @@ class Dowel:
     Dowel class with connected beams
     """
 
-    def __init__(self, base_plane=None, line=None, dowel_radius=1.0, hole_radius=1.2):
+    def __init__(self, base_plane=None, line=None, dowel_radius=1.0, hole_radius=None):
         """
         initialization
         base_plane and line are exclusive!
@@ -28,7 +28,7 @@ class Dowel:
         :param base_plane: base plane which the dowel is along with
         :param line: line object that corresponds to the dowel itself
         :param dowel_radius: dowel radius
-        :param hole_radius: hole radius
+        :param hole_radius: hole radius (if not specified, equal to dowel radius)
         """
 
         if base_plane and line:
@@ -38,7 +38,7 @@ class Dowel:
         self.base_plane = base_plane
         self.line = line
         self.dowel_radius = dowel_radius
-        self.hole_radius  = hole_radius
+        self.hole_radius  = hole_radius if hole_radius else dowel_radius
         self.beam_list  = []
 
     def remove_duplicates_in_beam_list(self):
@@ -131,7 +131,7 @@ class Dowel:
         :return: cylinder object of this dowel
         """
 
-        return self.get_inner_pipe()
+        return self.get_hole_pipe()
 
     def get_line(self):
         """
@@ -149,15 +149,6 @@ class Dowel:
         p2 = rg.Point3d.Subtract(self.base_plane.Origin, -diff)
 
         return rg.Line(p1, p2)
-
-    def get_outer_pipe(self):
-        """
-        get a cylinder drilled
-
-        :return: cylinder object
-        """
-
-        return self.__get_pipe(self.hole_radius)
 
     def get_angle_between_beam_and_dowel(self):
         """
@@ -230,7 +221,16 @@ class Dowel:
             
         return min(distances)
 
-    def get_inner_pipe(self):
+    def get_hole_pipe(self):
+        """
+        get a cylinder drilled
+
+        :return: cylinder object
+        """
+
+        return self.__get_pipe(self.hole_radius)
+
+    def get_dowel_pipe(self):
         """
         get a cylinder of dowel
 
