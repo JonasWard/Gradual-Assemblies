@@ -14,7 +14,7 @@
 #
 import os
 import sys
-sys.path.insert(0, os.path.abspath('..\..\UR_Control')) 
+sys.path.insert(0, os.path.abspath('../../UR_Control')) 
 
 autodoc_mock_imports = ['Rhino', 'Grasshopper', 'System']
 
