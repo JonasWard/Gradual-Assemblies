@@ -131,8 +131,6 @@ class Beam:
         top_rectangle    = rg.Rectangle3d(top_frame, interval_x, interval_y)
         bottom_rectangle = rg.Rectangle3d(bottom_frame, interval_x, interval_y)
         
-        pts = []
-
         for dowel in self.dowel_list:
 
             line = dowel.get_line()

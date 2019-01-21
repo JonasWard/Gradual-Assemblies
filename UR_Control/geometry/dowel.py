@@ -159,6 +159,77 @@ class Dowel:
 
         return self.__get_pipe(self.hole_radius)
 
+    def get_angle_between_beam_and_dowel(self):
+        """
+        get maximum angle between the dowel and connected beams
+
+        :return: angle in radian
+        """
+        angles = []
+
+        dowel_vector = self.get_plane().Normal
+
+        for beam in self.beam_list:
+
+            beam_vector = beam.base_plane.Normal
+
+            angle = rg.Vector3d.VectorAngle(beam_vector, dowel_vector)
+            angles.append(angle)
+
+        return max(angles)
+
+    def get_distance_from_edges(self):
+        """
+        get minimum distance from the connected beams' edge
+
+        :return: distance
+        """
+
+        line = self.get_line()
+
+        distances = []
+
+        for beam in self.beam_list:
+
+            top_frame    = rg.Plane(beam.base_plane)
+            bottom_frame = rg.Plane(beam.base_plane)
+
+            top_frame.Translate(beam.base_plane.ZAxis * 0.5 * beam.dz)
+            bottom_frame.Translate(-beam.base_plane.ZAxis * 0.5 * beam.dz)
+
+            interval_x = rg.Interval(-beam.dx * 0.5, beam.dx * 0.5)
+            interval_y = rg.Interval(-beam.dy * 0.5, beam.dy * 0.5)
+
+            top_rectangle    = rg.Rectangle3d(top_frame, interval_x, interval_y)
+            bottom_rectangle = rg.Rectangle3d(bottom_frame, interval_x, interval_y)
+                        
+            succeeded, v = rg.Intersect.Intersection.LinePlane(line, top_frame)
+            top_pt = line.PointAt(v)
+
+            succeeded, v = rg.Intersect.Intersection.LinePlane(line, bottom_frame)
+            bottom_pt = line.PointAt(v)
+
+            top_closest_pt    = top_rectangle.ClosestPoint(top_pt, False)
+            bottom_closest_pt = bottom_rectangle.ClosestPoint(bottom_pt, False)
+
+            top_distance    = top_pt.DistanceTo(top_closest_pt)
+            bottom_distance = bottom_pt.DistanceTo(bottom_closest_pt)
+
+            # see if the dowel is outside of the dowel
+            if top_rectangle.Contains(top_pt) == rg.PointContainment.Outside or \
+                bottom_rectangle.Contains(bottom_pt) == rg.PointContainment.Outside:
+                
+                # if outside, just add a pretty small value
+                distances.append(-9999)
+
+            else:
+
+                # is inside
+                distance = min(top_distance - self.dowel_radius, bottom_distance - self.dowel_radius)
+                distances.append(distance)
+            
+        return min(distances)
+
     def get_inner_pipe(self):
         """
         get a cylinder of dowel
