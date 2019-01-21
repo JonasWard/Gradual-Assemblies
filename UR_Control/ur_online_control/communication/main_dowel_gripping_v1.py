@@ -81,8 +81,8 @@ def main():
         # placing variables
         speed_set = 2000.0
         safety_z_height = 80.0
-        drill_speed_in = 1.5
-        drill_speed_out = 10
+        drill_speed_in = 5.0
+        drill_speed_out = 80.0
         picking_cnt = 0
         angle = 5.0
         radAngle = 3.14 * angle / 180.0
@@ -114,7 +114,7 @@ def main():
 
             """
             moving to picking plane"""
-            ur.send_command_movel([x1, y1, z1, ax1, ay1, az1], v=speed_set, r=radius)
+            ur.send_command_movel([x1, y1, z1, ax1, ay1, az1], v=drill_speed_out, r=radius)
 
             ur.send_command_wait(0.5)
 
