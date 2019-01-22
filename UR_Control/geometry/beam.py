@@ -161,6 +161,16 @@ class Beam:
                 distances.append(distance)
             
         return distances
+    
+    def move_to_origin(self):
+        """ in-place transform to move it to the origin of world coordinate system
+        """
+
+        source_plane = rg.Plane(self.base_plane)
+        source_plane.Translate(rg.Vector3d(0, 0, -self.dz * 0.5))
+
+        Beam.__move_to_frame(self, source_plane, rg.Plane.WorldXY)
+
 
     def transform_instance_to_frame(self, target_frame=None):
         """ in-place transform
