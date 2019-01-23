@@ -228,7 +228,7 @@ test_dowels = []
 
 test_box_ref_1 = []
 for i in range (len(origin_plane)):
-    ref = SimpleBeam(origin_plane[i], size_x, size_y, size_z)
+    ref = SimpleBeam(origin_plane[i], size_x[i], size_y, size_z)
     test_box_ref_1.append(ref)
     box_rep = ref.generate_box()
 

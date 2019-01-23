@@ -13,10 +13,12 @@ def calculate_midpoint(point_a, point_b):
 surface
 divisions_u
 divisions_v
+transpose_qm
 
 # global variables
 
 xy_plane = rg.Plane.WorldXY
+surface.Transpose(transpose_qm)
 
 # resetting the domain of the brep
 
@@ -49,6 +51,6 @@ for i in range(divisions_u + 1):
             vector_y = rg.Vector3d(mid_point - pt0)
             line = rg.Line(pt1, pt2)
             frame = rg.Plane(mid_point, vector_x, vector_y)
-            
+
             line_list.append(line)
             frame_list.append(frame)

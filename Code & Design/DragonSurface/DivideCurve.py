@@ -53,6 +53,6 @@ global_points = []
 
 for k in range (curve_count):
     local_pts, curve = divider(curve)
-    print local_pts
-    print curve
     global_points.append(local_pts)
+
+print len(global_points)
