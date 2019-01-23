@@ -41,6 +41,16 @@ class Dowel:
         self.hole_radius  = hole_radius if hole_radius else dowel_radius
         self.beam_list  = []
 
+    def __eq__(self, other):
+
+        if not isinstance(other, Dowel):
+            return False
+        return self.base_plane == other.base_plane
+
+    def __hash__(self):
+        
+        return hash(self.base_plane.ToString())
+
     def remove_duplicates_in_beam_list(self):
         """
         resolve beam duplication

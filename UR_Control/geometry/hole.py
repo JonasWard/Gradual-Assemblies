@@ -92,7 +92,7 @@ class Hole:
                 top_plane=hole_plane_list[0],
                 middle_plane=hole_plane_list[1],
                 bottom_plane=hole_plane_list[2],
-                beam_brep=beam.brep_representation())
+                beam_brep=beam.brep_representation(make_holes=False))
 
             holes.append(hole)
 
