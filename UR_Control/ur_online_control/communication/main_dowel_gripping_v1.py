@@ -87,13 +87,6 @@ def main():
         angle = 5.0
         radAngle = 3.14 * angle / 180.0
 
-        # # first move command
-        # print ("start with the first, safety, plane")
-        # x0, y0, z0, ax0, ay0, az0, speed, radius = commands_drilling[0]
-        # print (commands_drilling[0])
-        # ur.send_command_movel([x0, y0, safety_z_height, ax0, ay0, az0], v=speed_set, r=radius)
-        # print ("done with the first, safety, plane")
-
         # drilling movements
         used_plane_count = 0
         print ("\nstarting with the main loop")
@@ -102,14 +95,13 @@ def main():
 
         for number_of_holes in number_of_holes_list:
 
+            ur.wait_for_ready()
+
+            print('Beam count: %d' % beam_count)
+
             number_of_holes = int(number_of_holes)
 
             x1, y1, z1, ax1, ay1, az1, speed, radius = commands_drilling[used_plane_count] #picking plane
-
-            """
-            rotate the wrist 3 angle to zero, these values are calculated manually
-            should be chancged according to its placing plane"""
-            ur.send_command_movej([3.155555287605748, -1.6884315183793144, 2.0092230348958724, -1.8900170469846596, -1.5625932793105233, 0.0], v=speed_set, r=radius)
 
             """
             gripper off"""
@@ -119,12 +111,18 @@ def main():
             moving to picking safety plane"""
             ur.send_command_movel([x1, y1, z1 + safety_z_height, ax1, ay1, az1], v=speed_set, r=radius)
 
-            ur.send_command_wait(1.0)
+            """"
+            rotate wrist 3"""
+            ur.wait_for_ready()
+            joint_angles = ur.get_current_pose_joint()
+            joint_angles[-1] = 0.0
+            ur.send_command_movej(joint_angles, v=speed_set, r=radius)
 
+            ur.send_command_wait(1.0)
 
             """
             moving to picking plane"""
-            ur.send_command_movel([x1, y1, z1, ax1, ay1, az1], v=drill_speed_out, r=radius)
+            ur.send_command_movel([x1, y1, z1, ax1, ay1, az1], v=speed_set, r=radius)
 
             ur.send_command_wait(0.5)
 
@@ -145,13 +143,20 @@ def main():
                 x4, y4, z4, ax4, ay4, az4, speed, radius = commands_drilling[used_plane_count + j * 3 + 3] #end drilling plane
 
                 """
-                rotate the wrist 3 angle to zero, these values are calculated manually
-                should be chancged according to its drilling plane"""
-                ur.send_command_movej([2.4769712744303525, -1.5388568014834003, 1.8669787008583343, -1.8973474298430355, -1.5625932793105233, 0.0], v=speed_set, r=radius)
+                moving to drilling safety plane"""
+                ur.send_command_movel([x2, y2, z2, ax2, ay2, az2], v=speed_set, r=radius)
+
+                """"
+                rotate wrist 3"""
+                ur.wait_for_ready()
+                joint_angles = ur.get_current_pose_joint()
+                joint_angles[-1] = 0.0
+                ur.send_command_movej(joint_angles, v=speed_set, r=radius)
 
                 """
                 moving to drilling safety plane"""
                 ur.send_command_movel([x2, y2, z2, ax2, ay2, az2], v=speed_set, r=radius)
+
                 """
                 start drilling plane"""
                 ur.send_command_movel([x3, y3, z3, ax3, ay3, az3], v=speed_set, r=radius)
@@ -163,15 +168,6 @@ def main():
                 ur.send_command_movel([x2, y2, z2, ax2, ay2, az2], v=drill_speed_out, r=radius)
 
 
-            """
-            rotate the wrist 3 angle to zero, these values are calculated manually
-            should be chancged according to its placing plane"""
-            ur.send_command_movej([3.155555287605748, -1.6884315183793144, 2.0092230348958724, -1.8900170469846596, -1.5625932793105233, 0.0], v=speed_set, r=radius)
-
-            """
-            moving to safe placing plane"""
-            ur.send_command_movel([x1, y1, z1 + safety_z_height, ax1, ay1, az1], v=speed_set, r=radius)
-
             x5, y5, z5, ax5, ay5, az5, speed, radius = commands_drilling[used_plane_count + number_of_holes * 3 + 1] #placing plane
 
             """
@@ -179,10 +175,19 @@ def main():
 
             ur.send_command_movel([x5, y5, z5 + safety_z_height, ax5, ay5, az5], v=speed_set, r=radius)
 
+            """"
+            rotate wrist 3"""
+            ur.wait_for_ready()
+            joint_angles = ur.get_current_pose_joint()
+            joint_angles[-1] = 0.0
+            ur.send_command_movej(joint_angles, v=speed_set, r=radius)
+
             """
             moving to placing plane"""
 
             ur.send_command_movel([x5, y5, z5, ax5, ay5, az5], v=speed_set, r=radius)
+
+            ur.wait_for_ready()
 
             ur.send_command_wait(90)
 
@@ -205,7 +210,7 @@ def main():
         #moving back to the start
         print ("moving back to the start safety position")
         x0, y0, z0, ax0, ay0, az0, speed, radius = commands_drilling[0]
-        print (commands_drilling[0])
+
         ur.send_command_movel([x0, y0, safety_z_height, ax0, ay0, az0], v=speed_set, r=radius)
         print ("done with the last move")
 
