@@ -47,15 +47,11 @@ class Dowel:
             return False
 
         # whether the planes are colinear or not
-        vec = rg.Vector3d.Subtract(rg.Vector3d(self.base_plane.Origin) - rg.Vector3d(other.Origin))        
+        vec = rg.Vector3d.Subtract(rg.Vector3d(self.base_plane.Origin), rg.Vector3d(other.base_plane.Origin))        
         normal = self.base_plane.Normal
         angle = rg.Vector3d.VectorAngle(vec, normal)
-        print angle
         return angle == 0 or angle == math.pi
 
-    def __hash__(self):
-        
-        return hash(self.base_plane.ToString())
 
     def remove_duplicates_in_beam_list(self):
         """

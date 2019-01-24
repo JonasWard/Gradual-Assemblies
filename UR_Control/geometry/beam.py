@@ -45,7 +45,22 @@ class Beam:
         """ resolve dowel duplication
         """
 
-        self.dowel_list = list(set(self.dowel_list))
+        removed_dowel_list = []
+        for i, d1 in enumerate(self.dowel_list):
+
+            if i < len(self.dowel_list) - 1:
+            
+                duplicated = False
+                for j, d2 in enumerate(self.dowel_list[i+1:]):
+
+                    if d1 == d2:
+                        duplicated = True
+                        break
+
+            if not duplicated:
+                removed_dowel_list.append(d1)
+
+        self.dowel_list = removed_dowel_list
 
     def brep_representation(self, make_holes=True):
         """ make a brep of this beam with holes
