@@ -45,7 +45,13 @@ class Dowel:
 
         if not isinstance(other, Dowel):
             return False
-        return self.base_plane == other.base_plane
+
+        # whether the planes are colinear or not
+        vec = rg.Vector3d.Subtract(rg.Vector3d(self.base_plane.Origin) - rg.Vector3d(other.Origin))        
+        normal = self.base_plane.Normal
+        angle = rg.Vector3d.VectorAngle(vec, normal)
+        print angle
+        return angle == 0 or angle == math.pi
 
     def __hash__(self):
         

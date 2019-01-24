@@ -97,6 +97,10 @@ class ClientWrapper(object):
         print(msg)
         return msg[number] # TODO:CHECK!!
 
+    def get_current_pose_joint(self):
+        msg = self.wait_for_message(MSG_CURRENT_POSE_JOINT)
+        return msg
+
     def send(self, msg_id, msg=None):
         container.CONNECTED_CLIENTS.put(self.identifier, [EXECUTING, 0])
         self.snd_queue.put((msg_id, msg))
