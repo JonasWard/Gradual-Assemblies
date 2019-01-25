@@ -34,17 +34,13 @@ new_curve = rg.Curve.CreateInterpolatedCurve(points, 3)
 
 new_curve.Domain = new_domain
 
-points_raw = []
 global_points = []
 for j in range(items):
-    plane = new_curve.PerpendicularFrameAt(j)[1]
+    point = new_curve.PointAt(j)
     point_list = []
     for i in range(count):
-        local_point = rg.Intersect.Intersection.CurvePlane(curves[i], plane, 0.01)[0].PointB
-        print local_point
-        point_list.append(local_point)
-        points_raw.append(local_point)
-
+        ignore, t_value = curves[i].ClosestPoint(point, 30000)
+        point_list.append(curves[i].PointAt(t_value))
     global_points.append(point_list)
-#
-# print global_points
+
+print global_points
