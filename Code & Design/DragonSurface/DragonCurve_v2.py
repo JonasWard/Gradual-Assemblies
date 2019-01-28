@@ -23,7 +23,16 @@ v_scale = 5000.0
 
 # function to regrade curves based on curvature
 
+def distance_2pt(pt_0, pt_1):
+    x0, y0, z0 = pt_0.X, pt_0.Y, pt_0.Z
+    x1, y1, z1 = pt_1.X, pt_1.Y, pt_1.Z
+    xD, yD, zD = (x1 - x0)**2, (y1 - y0)**2, (z1 - z0)**2
+    distance = (xD + yD + zD) ** .5
+    return distance
+
 def curve_contain(curve, points):
+
+    # constructing a boundary curve
     t_start, t_end = curve.Domain[0], curve.Domain[1]
     t_mid = (t_start + t_end) / 2.0
     start_pt, end_pt, mid_pt = curve.PointAt(t_start), curve.PointAt(t_end), curve.PointAt(t_mid)
@@ -32,22 +41,39 @@ def curve_contain(curve, points):
     arc_max = rg.Point3d(end_pt)
     arc_max.Transform(rotation_matrix)
     arc = rg.Arc(start_pt, arc_max, end_pt).ToNurbsCurve()
-    bound_curve = rg.Curve.ProjectToPlane(rg.Curve.JoinCurves([curve, arc])[0], base_plane)
+    bound_curve = rg.Curve.JoinCurves([curve, arc])[0]
     print bound_curve
 
-    containment_values = []
-    for pt in points:
-        point = base_plane.ClosestPoint(pt)
-        state = bound_curve.Contains(point)
-        print state
+    # offseting that boundary curve
+    offset_curve = bound_curve.DuplicateCurve()
+    offset_style = rg.CurveOffsetCornerStyle.Smooth
+    offset_curve.Offset(base_plane, 25.0, .01, offset_style)
+    print len(bound_curve), len(offset_curve)
+    if (offset_curve.GetLength(0.01) < bound_curve.GetLength(0.01)):
+        for pt in points:
+            pt_0 = bound_curve.ClosestPoint(pt)
+            pt_1 = offset_curve.ClosestPoint(pt)
+            dis_0 = distance_2pt(pt_0, pt)
+            dis_1 = distance_2pt(pt_1, pt)
+            if (dis_0 < dis_1):
+                state = True
+            else:
+                state = False
 
-        if (state == 1 or state == 3):
-            state = True
+            containment_values.append(state)
 
-        if (state == 2):
-            state = False
+    else:
+        for pt in points:
+            pt_0 = bound_curve.ClosestPoint(pt)
+            pt_1 = offset_curve.ClosestPoint(pt)
+            dis_0 = distance_2pt(pt_0, pt)
+            dis_1 = distance_2pt(pt_1, pt)
+            if (dis_0 < dis_1):
+                state = False
+            else:
+                state = True
 
-        containment_values.append(state)
+            containment_values.append(state)
 
     return containment_values, bound_curve
 

@@ -49,7 +49,7 @@ class Hole(object):
         """
 
         holes = []
-        
+
         beam_normal = beam.base_plane.XAxis
 
         for dowel in beam.dowel_list:
@@ -66,8 +66,8 @@ class Hole(object):
             top_frame    = rg.Plane(beam.base_plane)
             middle_frame = rg.Plane(beam.base_plane)
             bottom_frame = rg.Plane(beam.base_plane)
-            
-            diff = beam.dz * 0.5 + abs(dowel.dowel_radius / math.tan(angle)) + safe_buffer
+
+            diff = beam.dz * 0.5 / math.sin(angle) + abs(dowel.dowel_radius / math.tan(angle)) + safe_buffer
 
             top_frame.Translate(beam.base_plane.ZAxis * diff)
             bottom_frame.Translate(-beam.base_plane.ZAxis * diff)
@@ -116,32 +116,32 @@ class Hole(object):
         top_plane_tree    = datatree[System.Object]()
         bottom_plane_tree = datatree[System.Object]()
         beam_brep_tree    = datatree[System.Object]()
-        
+
         for i, beam in enumerate(beams):
-            
+
             holes = Hole.create_holes(beam, safe_buffer=safe_buffer)
-            
+
             path = ghpath(i)
-            
+
             for hole in holes:
-                
+
                 hole.orient_to_drilling_station(target_plane)
                 safe_plane, top_plane, bottom_plane = hole.get_tool_planes(safe_plane_diff=safe_plane_diff)
-                
+
                 safe_plane_tree.Add(safe_plane, path)
                 top_plane_tree.Add(top_plane, path)
                 bottom_plane_tree.Add(bottom_plane, path)
                 beam_brep_tree.Add(hole.beam_brep, path)
-         
+
         return safe_plane_tree, top_plane_tree, bottom_plane_tree, beam_brep_tree
-                
+
     def orient_to_drilling_station(self, target_frame):
         """
         orient a bottom plane to a given frame
 
         :param target_frame:  the plane to be oriented
         """
-        
+
         transform = rg.Transform.PlaneToPlane(self.middle_plane, target_frame)
         self.gripping_plane.Transform(transform)
         self.top_plane.Transform(transform)
@@ -153,15 +153,15 @@ class Hole(object):
 
     def get_tool_planes(self, safe_plane_diff=100):
         """
-        get planes to be sent to the robotic arm 
+        get planes to be sent to the robotic arm
 
         :param safe_plane_diff:  offset for the safe plane
         :return: (safe plane, top plane, bottom plane)
         """
-        
+
         top_diff = self.top_plane.Origin.Z - self.middle_plane.Origin.Z
         bottom_diff = self.bottom_plane.Origin.Z - self.middle_plane.Origin.Z
-        
+
         top_gripping_plane = rg.Plane(self.gripping_plane)
         top_gripping_plane.Translate(rg.Vector3d(0, 0, top_diff))
 
@@ -170,5 +170,5 @@ class Hole(object):
 
         safe_gripping_plane = rg.Plane(top_gripping_plane)
         safe_gripping_plane.Translate(rg.Vector3d(0, 0, safe_plane_diff))
-        
+
         return safe_gripping_plane, top_gripping_plane, bottom_gripping_plane
