@@ -80,7 +80,7 @@ def main():
 
         # placing variables
         speed_set = 2000.0
-        safety_z_height = 80.0
+        safety_z_height = 100.0
         drill_speed_in = 2.0
         drill_speed_out = 80.0
         picking_cnt = 0
@@ -118,7 +118,7 @@ def main():
             joint_angles[-1] = 0.0
             ur.send_command_movej(joint_angles, v=speed_set, r=radius)
 
-            ur.send_command_wait(1.0)
+            ur.send_command_wait(0.5)
 
             """
             moving to picking plane"""
@@ -126,6 +126,10 @@ def main():
 
             ur.send_command_wait(0.5)
 
+            ur.wait_for_ready()
+            ur.send_command_popup(title='title', message='this is message', blocking=True)
+            ur.wait_for_ready()
+            
             """
             gripper on"""
             ur.send_command_digital_out(0, True)

@@ -13,7 +13,7 @@ import Grasshopper.DataTree as datatree
 import System
 import math
 
-class Beam:
+class Beam(object):
     """ Beam class containing its size and connecting dowels
     """
 

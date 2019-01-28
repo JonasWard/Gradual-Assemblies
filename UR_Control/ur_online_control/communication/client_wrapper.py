@@ -132,8 +132,8 @@ class ClientWrapper(object):
     def send_command_tcp(self, tcp):
         self.send_command(COMMAND_ID_TCP, tcp)
 
-    def send_command_popup(self):
-        self.send_command(COMMAND_ID_POPUP, None)
+    def send_command_popup(self, title='', message='', blocking=False):
+        self.send_command(COMMAND_ID_POPUP, [title, message, blocking])
 
     def quit(self):
         self.send(MSG_QUIT)
