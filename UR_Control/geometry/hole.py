@@ -15,7 +15,7 @@ import math
 import dowel
 import beam
 
-class Hole:
+class Hole(object):
     """
     Stores the planes for the drilling process.
     """

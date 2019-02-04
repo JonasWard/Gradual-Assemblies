@@ -15,7 +15,7 @@ import math
 import beam
 import hole
 
-class Dowel:
+class Dowel(object):
     """
     Dowel class with connected beams
     """
@@ -45,10 +45,13 @@ class Dowel:
 
         if not isinstance(other, Dowel):
             return False
+        
+        base_plane = self.get_plane()
+        other_base_plane = self.get_plane()
 
         # whether the planes are colinear or not
-        vec = rg.Vector3d.Subtract(rg.Vector3d(self.base_plane.Origin), rg.Vector3d(other.base_plane.Origin))        
-        normal = self.base_plane.Normal
+        vec = rg.Vector3d.Subtract(rg.Vector3d(base_plane.Origin), rg.Vector3d(other_base_plane.Origin))        
+        normal = base_plane.Normal
         angle = rg.Vector3d.VectorAngle(vec, normal)
         return angle == 0 or angle == math.pi
 
