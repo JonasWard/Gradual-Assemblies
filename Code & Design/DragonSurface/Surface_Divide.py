@@ -14,4 +14,3 @@ div_aim
 domain_goal = rg.Interval(0.0, 1.0)
 surface.SetDomain(0, domain_goal)
 surface.SetDomain(1, domain_goal)
-print surface.Domain[0], surface.Domain[1]

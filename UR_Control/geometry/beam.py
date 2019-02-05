@@ -49,7 +49,7 @@ class Beam(object):
         for i, d1 in enumerate(self.dowel_list):
 
             if i < len(self.dowel_list) - 1:
-            
+
                 duplicated = False
                 for j, d2 in enumerate(self.dowel_list[i+1:]):
 
@@ -62,19 +62,21 @@ class Beam(object):
 
         self.dowel_list = removed_dowel_list
 
-    def brep_representation(self, make_holes=True):
+    def brep_representation(self, make_holes=True, box = None):
         """ make a brep of this beam with holes
 
             :param make_holes:  boolean value to make holes in the beam (making holes requires some computation time)
+            :paran box:  box object in the case one has been created through another function
             :return: brep object of this beam
         """
 
-        # create a beam
-        box = rg.Box(self.base_plane,
-            rg.Interval(-self.dx*0.5, self.dx*0.5),
-            rg.Interval(-self.dy*0.5, self.dy*0.5),
-            rg.Interval(-self.dz*0.5, self.dz*0.5)
-            )
+        if (box == None):
+            # create a box in case one hasn't been fed in
+            box = rg.Box(self.base_plane,
+                rg.Interval(-self.dx*0.5, self.dx*0.5),
+                rg.Interval(-self.dy*0.5, self.dy*0.5),
+                rg.Interval(-self.dz*0.5, self.dz*0.5)
+                )
 
         box = box.ToBrep()
 
@@ -84,7 +86,9 @@ class Beam(object):
         # create a dowels
         for dowel in self.dowel_list:
 
-            pipe = dowel.get_hole_pipe()
+            scale_value = 2.0
+            line = rg.Line(dowel.get_line(scale_value).PointAt(0.0), dowel.get_line(scale_value).PointAt(1.0))
+            pipe = dowel.get_hole_pipe(line)
 
             pipe = pipe.ToBrep(True, True)
 
@@ -111,72 +115,220 @@ class Beam(object):
         """
         get angles between the beam and connected dowels
 
-        :return: list of angles in radian
+            :return: list of angles in radian
         """
         angles = []
 
         beam_vector = self.base_plane.Normal
 
         for dowel in self.dowel_list:
-            
+
             dowel_vector = dowel.get_plane().Normal
             angle = rg.Vector3d.VectorAngle(beam_vector, dowel_vector)
+            if math.pi * 0.5 < angle and angle < math.pi * 1.5:
+                angle = math.pi - angle
             angles.append(angle)
 
         return angles
 
-    def get_distance_from_edges(self):
+    def extend(self, x_change_start = 0, x_change_end = None):
         """
-        get distance from the beam's edge
+        extends the brep representation of your beam b a certain value
 
-        :return: list of distances
+            :param x_change_start: amount the brep is extended at the start (default = 0)
+            :param x_change_end: amount the brep is extended at the start (default = None => the same change as at the start)
+            :return: returns brep representation
+        """
+        if x_change_end == None:
+            x_change_end = x_change_start
+        box = rg.Box(self.base_plane,
+            rg.Interval(-self.dx*0.5 - x_change_start, self.dx*0.5 + x_change_end),
+            rg.Interval(-self.dy*0.5, self.dy*0.5),
+            rg.Interval(-self.dz*0.5, self.dz*0.5)
+            )
+
+        return self.brep_representation(True, box)
+
+    def check_angle_constraints(self, angle = 60):
+        """
+        checks where the beam | dowel intersection events are problematic based on the angle between beam and dowel
+
+            :param angle: cut off angle after which the intersection becomes problematic - ! in radians ! (default = 60)
+            :return: list of holes that are problematic
+
+        """
+        angle = math.pi / 2 - math.radians(angle)
+
+        angle_constraints = []
+
+        angles = self.get_angle_between_beam_and_dowel()
+        angle_count = int(len(angles))
+        if not(angle_count == 0):
+            for i in range (angle_count):
+                if (angles[i] > angle):
+                    line = self.dowel_list[i].get_line()
+                    s, v = rg.Intersect.Intersection.LinePlane(line, self.base_plane)
+                    error_sphere = rg.Sphere(line.PointAt(v), self.dz)
+                    angle_constraints.append(error_sphere)
+
+        return angle_constraints
+
+    def check_boundary_constraints(self, side_buf = 10, end_buf = 70, mid_buf = 250, angle_correction = 1.1):
+        """
+        checks where the beam | dowel intersection events are problematic based on where (or where not), the beams can go based on the dowel radius
+
+            :param side_buf: how much wood covering you need on the side of the beams (default = 10)
+            :param end_buf: how much wood covering you want at the ends of the beams (default = 70)
+            :param mid_buf: how much clearance there has to be for the picking plane (default = 250)
+            :param angle_correction: correction for dowel comming at an angle (default = 1.1 ~ angle of 60 deg)
+            :return: list of holes that are problematic
+
         """
 
-        distances = []
 
+        # getting a radius of a dowel
+        if not(len(self.dowel_list) == 0):
+            dowel_rad = self.dowel_list[0].dowel_radius * angle_correction
+
+        # setting up the rectangle intervals
+        # checking whether there have to be two rec's or just one
+        if (mid_buf > .001):
+            two_rectangles = True
+            # this means you need to create two different rectangles
+            # width of the rectangle
+            x_value_1 = self.dx * .5 - dowel_rad - end_buf
+            x_value_2 = .5 * mid_buf + dowel_rad
+            int_x_1 = rg.Interval( - x_value_1, - x_value_2)
+            int_x_2 = rg.Interval(x_value_2, x_value_1)
+            # height of the rectangle
+            y_value = .5 * self.dy - (dowel_rad + side_buf)
+            int_y = rg.Interval( - y_value, y_value)
+
+        else:
+            two_rectangles = False
+            # there's only need for one rectangle
+            # width of the rectangle
+            x_value = self.dx - dowel_rad - end_buf
+            # height of the rectangle
+            y_value = .5 * self.dy - (dowel_rad + side_buf)
+            int_x = rg.Interval( - x_value, x_value)
+            int_y = rg.Interval( - y_value, y_value)
+
+        # initialization
         top_frame    = rg.Plane(self.base_plane)
         bottom_frame = rg.Plane(self.base_plane)
 
+        # translation
         top_frame.Translate(self.base_plane.ZAxis * 0.5 * self.dz)
         bottom_frame.Translate(-self.base_plane.ZAxis * 0.5 * self.dz)
 
-        interval_x = rg.Interval(-self.dx * 0.5, self.dx * 0.5)
-        interval_y = rg.Interval(-self.dy * 0.5, self.dy * 0.5)
+        # calculating point intersections
+        temp_top_pts = []
+        temp_bottom_pts = []
 
-        top_rectangle    = rg.Rectangle3d(top_frame, interval_x, interval_y)
-        bottom_rectangle = rg.Rectangle3d(bottom_frame, interval_x, interval_y)
-        
+        count = len(self.dowel_list)
+
         for dowel in self.dowel_list:
 
             line = dowel.get_line()
-            
+
             succeeded, v = rg.Intersect.Intersection.LinePlane(line, top_frame)
             top_pt = line.PointAt(v)
 
             succeeded, v = rg.Intersect.Intersection.LinePlane(line, bottom_frame)
             bottom_pt = line.PointAt(v)
 
-            top_closest_pt    = top_rectangle.ClosestPoint(top_pt, False)
-            bottom_closest_pt = bottom_rectangle.ClosestPoint(bottom_pt, False)
+            temp_top_pts.append(top_pt)
+            temp_bottom_pts.append(bottom_pt)
 
-            top_distance    = top_pt.DistanceTo(top_closest_pt)
-            bottom_distance = bottom_pt.DistanceTo(bottom_closest_pt)
+        # generating the rectangles and doing the containment checks, represented by spheres
+        boundary_constraints = []
 
-            # see if the dowel is outside of the dowel
-            if top_rectangle.Contains(top_pt) == rg.PointContainment.Outside or \
-                bottom_rectangle.Contains(bottom_pt) == rg.PointContainment.Outside:
-                
-                # if outside, just add a pretty small value
-                distances.append(-9999)
+        # setting coincident parameters
+        inside = rg.PointContainment.Inside
+        coincident = rg.PointContainment.Coincident
+        outside = rg.PointContainment.Outside
 
-            else:
+        if (two_rectangles):
 
-                # is inside
-                distance = min(top_distance - dowel.dowel_radius, bottom_distance - dowel.dowel_radius)
-                distances.append(distance)
-            
-        return distances
-    
+            top_rectangle_1     = rg.Rectangle3d(top_frame, int_x_1, int_y)
+            top_rectangle_2     = rg.Rectangle3d(top_frame, int_x_2, int_y)
+            bottom_rectangle_1  = rg.Rectangle3d(bottom_frame, int_x_1, int_y)
+            bottom_rectangle_2  = rg.Rectangle3d(bottom_frame, int_x_2, int_y)
+
+            # checking for all holes whether there's an issue or not
+
+            for i in range(count):
+                local_top_pt = temp_top_pts[i]
+                local_bottom_pt = temp_bottom_pts[i]
+                mid_point = (local_top_pt + local_bottom_pt) / 2
+
+                containment_value = top_rectangle_1.Contains(local_top_pt)
+                if (containment_value == inside or containment_value == coincident):
+                    containment_value = bottom_rectangle_1.Contains(local_bottom_pt)
+                    if (containment_value == inside or containment_value == coincident):
+                        pass
+                    elif (containment_value == outside):
+                        # print "level_1"
+                        error_sphere = rg.Sphere(mid_point, self.dz)
+                        boundary_constraints.append(error_sphere)
+                    else:
+                        print "error"
+                elif (containment_value == outside):
+                    containment_value = top_rectangle_2.Contains(local_top_pt)
+                    if (containment_value == inside or containment_value == coincident):
+                        containment_value = bottom_rectangle_2.Contains(local_bottom_pt)
+                        if (containment_value == inside or containment_value == coincident):
+                            pass
+                        elif (containment_value == outside):
+                            # print "level_4"
+                            error_sphere = rg.Sphere(mid_point, self.dz)
+                            boundary_constraints.append(error_sphere)
+                        else:
+                            print "error"
+                    elif (containment_value == outside):
+                        # print "level_3"
+                        error_sphere = rg.Sphere(mid_point, self.dz)
+                        boundary_constraints.append(error_sphere)
+                    else:
+                        print "error"
+                else:
+                    print "error"
+
+        else:
+            top_rectangle    = rg.Rectangle3d(top_frame, int_x, int_y)
+            bottom_rectangle = rg.Rectangle3d(top_frame, int_x, int_y)
+
+            for i in range(count):
+                local_top_pt = temp_top_pts[i]
+                local_bottom_pt = temp_bottom_pts[i]
+                mid_point = (local_top_pt + local_bottom_pt) / 2
+
+                containment_value = top_rectangle.Contains(local_top_pt)
+                if (containment_value == inside or containment_value == coincident):
+                    containment_value = bottom_rectangle.Contains(local_bottom_pt)
+                    if (containment_value == inside or containment_value == coincident):
+                        pass
+                    elif (containment_value == outside):
+                        error_sphere = rg.Sphere(mid_point, self.dz)
+                        boundary_constraints.append(error_sphere)
+                    else:
+                        print "error"
+                elif (containment_value == outside):
+                    error_sphere = rg.Sphere(mid_point, self.dz)
+                    boundary_constraints.append(error_sphere)
+                else:
+                    print "error"
+
+        if (two_rectangles):
+            self.top_recs = [top_rectangle_1, top_rectangle_2]
+            self.bottom_recs = [bottom_rectangle_1, bottom_rectangle_2]
+        else:
+            self.top_recs = [top_rectangle]
+            self.bottom_recs = [bottom_rectangle]
+
+        return boundary_constraints
+
     def move_to_origin(self):
         """ in-place transform to move it to the origin of world coordinate system
         """
@@ -225,7 +377,6 @@ class Beam(object):
 
         return beam
 
-
     @staticmethod
     def get_strucutured_data(beams):
         """ get a data tree of lines with the actual length of each dowel
@@ -237,11 +388,11 @@ class Beam(object):
         tree = datatree[System.Object]()
 
         for i, beam in enumerate(beams):
-            
+
             path = ghpath(i)
-            
+
             for dowel in beam.dowel_list:
-                
+
                 tree.Add(dowel.get_calculated_line(), path)
 
         return tree
