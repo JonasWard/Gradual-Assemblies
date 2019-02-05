@@ -153,7 +153,7 @@ class Beam(object):
         """
         checks where the beam | dowel intersection events are problematic based on the angle between beam and dowel
 
-            :param angle: cut off angle after which the intersection becomes problematic
+            :param angle: cut off angle after which the intersection becomes problematic - ! in radians ! (default = 60)
             :return: list of holes that are problematic
 
         """
@@ -163,10 +163,8 @@ class Beam(object):
 
         angles = self.get_angle_between_beam_and_dowel()
         angle_count = int(len(angles))
-        print angle_count
         if not(angle_count == 0):
             for i in range (angle_count):
-                print math.degrees(angles[i])
                 if (angles[i] > angle):
                     line = self.dowel_list[i].get_line()
                     s, v = rg.Intersect.Intersection.LinePlane(line, self.base_plane)
@@ -266,11 +264,10 @@ class Beam(object):
                 mid_point = (local_top_pt + local_bottom_pt) / 2
 
                 containment_value = top_rectangle_1.Contains(local_top_pt)
-                print containment_value
                 if (containment_value == inside or containment_value == coincident):
                     containment_value = bottom_rectangle_1.Contains(local_bottom_pt)
                     if (containment_value == inside or containment_value == coincident):
-                        boundary_constraints.append(containment_value)
+                        pass
                     elif (containment_value == outside):
                         # print "level_1"
                         error_sphere = rg.Sphere(mid_point, self.dz)
@@ -332,58 +329,6 @@ class Beam(object):
 
         return boundary_constraints
 
-    # def get_distance_from_edges(self):
-    #     """
-    #     get distance from the beam's edge
-    #
-    #     :return: list of distances
-    #     """
-    #
-    #     distances = []
-    #
-    #     top_frame    = rg.Plane(self.base_plane)
-    #     bottom_frame = rg.Plane(self.base_plane)
-    #
-    #     top_frame.Translate(self.base_plane.ZAxis * 0.5 * self.dz)
-    #     bottom_frame.Translate(-self.base_plane.ZAxis * 0.5 * self.dz)
-    #
-    #     interval_x = rg.Interval(-self.dx * 0.5, self.dx * 0.5)
-    #     interval_y = rg.Interval(-self.dy * 0.5, self.dy * 0.5)
-    #
-    #     top_rectangle    = rg.Rectangle3d(top_frame, interval_x, interval_y)
-    #     bottom_rectangle = rg.Rectangle3d(bottom_frame, interval_x, interval_y)
-    #
-    #     for dowel in self.dowel_list:
-    #
-    #         line = dowel.get_line()
-    #
-    #         succeeded, v = rg.Intersect.Intersection.LinePlane(line, top_frame)
-    #         top_pt = line.PointAt(v)
-    #
-    #         succeeded, v = rg.Intersect.Intersection.LinePlane(line, bottom_frame)
-    #         bottom_pt = line.PointAt(v)
-    #
-    #         top_closest_pt    = top_rectangle.ClosestPoint(top_pt, False)
-    #         bottom_closest_pt = bottom_rectangle.ClosestPoint(bottom_pt, False)
-    #
-    #         top_distance    = top_pt.DistanceTo(top_closest_pt)
-    #         bottom_distance = bottom_pt.DistanceTo(bottom_closest_pt)
-    #
-    #         # see if the dowel is outside of the dowel
-    #         if top_rectangle.Contains(top_pt) == rg.PointContainment.Outside or \
-    #             bottom_rectangle.Contains(bottom_pt) == rg.PointContainment.Outside:
-    #
-    #             # if outside, just add a pretty small value
-    #             distances.append(-9999)
-    #
-    #         else:
-    #
-    #             # is inside
-    #             distance = min(top_distance - dowel.dowel_radius, bottom_distance - dowel.dowel_radius)
-    #             distances.append(distance)
-    #
-    #     return distances
-
     def move_to_origin(self):
         """ in-place transform to move it to the origin of world coordinate system
         """
@@ -431,7 +376,6 @@ class Beam(object):
                 dowel.line.Transform(transform)
 
         return beam
-
 
     @staticmethod
     def get_strucutured_data(beams):

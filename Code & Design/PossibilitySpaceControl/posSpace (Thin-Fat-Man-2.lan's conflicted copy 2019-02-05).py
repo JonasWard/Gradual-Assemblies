@@ -117,8 +117,14 @@ for beam_obj in beams:
     pyramid = rg.Brep.JoinBreps(faces, .01)[0]
     pyramid_list.append(pyramid)
 
-# count = len (pyramid_list)
-# intersection = pyramid_list[0]
-# for index in range (1, count, 1):
-#     print intersection
-#     intersection = rg.Brep.CreateBooleanIntersection([intersection], [pyramid_list[index]], 0.01)[0]
+count = len (pyramid_list)
+print pyramid_list
+
+for i in count:
+    print "item ", i, " is of type : " , type(pyramid_list[i]) , " and has a volume of: ", pyramid_list[i].GetVolume()
+
+intersection = pyramid_list[0]
+print "initial value: ", intersection
+for index in range (1, count, 1):
+    intersection = rg.Brep.CreateBooleanIntersection([intersection], [pyramid_list[index]], 0.01)[0]
+    print "new value intersection: ", intersection

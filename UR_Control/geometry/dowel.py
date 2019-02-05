@@ -152,6 +152,7 @@ class Dowel(object):
         """
         get a line object of this dowel
 
+        :param scale_value: scales the line according to a certain value (default = 1.0)
         :return: line object
         """
 
@@ -252,6 +253,7 @@ class Dowel(object):
         """
         get a cylinder drilled
 
+        :param line: which line to pipe (default None line, which while result in the default line representation of the dowel)
         :return: cylinder object
         """
 
