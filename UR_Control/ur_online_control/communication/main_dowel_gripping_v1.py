@@ -188,6 +188,12 @@ def main():
             ur.send_command_movej(joint_angles, v=speed_set, r=radius)
 
             """
+            moving to safe placing plane"""
+
+            ur.send_command_movel([x5, y5, z5 + safety_z_height, ax5, ay5, az5], v=speed_set, r=radius)
+
+
+            """
             moving to placing plane"""
 
             ur.send_command_movel([x5, y5, z5, ax5, ay5, az5], v=speed_set, r=radius)
