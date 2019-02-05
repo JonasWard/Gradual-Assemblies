@@ -79,7 +79,7 @@ def main():
         print(number_of_holes_list)
 
         # placing variables
-        speed_set = 2000.0
+        speed_set = 1500.0
         safety_z_height = 100.0
         drill_speed_in = 2.0
         drill_speed_out = 80.0
@@ -122,13 +122,14 @@ def main():
 
             """
             moving to picking plane"""
+            ur.send_command_movel([x1, y1, z1 + safety_z_height * 0.5, ax1, ay1, az1], v=speed_set, r=radius)
+
+            """
+            moving to picking plane"""
             ur.send_command_movel([x1, y1, z1, ax1, ay1, az1], v=speed_set, r=radius)
 
             ur.send_command_wait(0.5)
 
-            ur.wait_for_ready()
-            ur.send_command_popup(title='title', message='this is message', blocking=True)
-            ur.wait_for_ready()
             
             """
             gripper on"""
@@ -192,8 +193,8 @@ def main():
             ur.send_command_movel([x5, y5, z5, ax5, ay5, az5], v=speed_set, r=radius)
 
             ur.wait_for_ready()
-
-            ur.send_command_wait(90)
+            ur.send_command_popup(title='hello!', message='Press ok when you are ready!', blocking=True)
+            ur.wait_for_ready()
 
             """
             gripper off"""

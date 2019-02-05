@@ -249,12 +249,8 @@ def execute_from_buffer():
 		message  = params[1]
 		blocking = params[2]
 
-		textmsg("blocking")
-		textmsg(blocking)
-		if 1 > 0:
-		    popup(title=title, s=message, blocking=True)
-		else:
-		    popup(title=title, s=message, blocking=False)
+		popup(title=title, s=message, blocking=True)
+
 
 	end
 
