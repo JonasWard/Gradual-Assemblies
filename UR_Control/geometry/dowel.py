@@ -20,7 +20,7 @@ class Dowel(object):
     Dowel class with connected beams
     """
 
-    def __init__(self, base_plane=None, line=None, dowel_radius=1.0, hole_radius=None):
+    def __init__(self, base_plane=None, line=None, dowel_radius=12.0, hole_radius=None):
         """
         initialization
         base_plane and line are exclusive!
@@ -45,12 +45,12 @@ class Dowel(object):
 
         if not isinstance(other, Dowel):
             return False
-        
+
         base_plane = self.get_plane()
         other_base_plane = self.get_plane()
 
         # whether the planes are colinear or not
-        vec = rg.Vector3d.Subtract(rg.Vector3d(base_plane.Origin), rg.Vector3d(other_base_plane.Origin))        
+        vec = rg.Vector3d.Subtract(rg.Vector3d(base_plane.Origin), rg.Vector3d(other_base_plane.Origin))
         normal = base_plane.Normal
         angle = rg.Vector3d.VectorAngle(vec, normal)
         return angle == 0 or angle == math.pi
@@ -62,7 +62,7 @@ class Dowel(object):
         """
 
         return list(set(self.beam_list))
-    
+
     def get_plane(self):
         """
         get the plane on this dowel
@@ -71,18 +71,18 @@ class Dowel(object):
         """
 
         if self.base_plane:
-        
+
             return self.base_plane
-        
+
         else:
-            
+
             p1 = self.line.PointAt(0)
             pc = self.line.PointAt(0.5)
             p2 = self.line.PointAt(1)
             return rg.Plane(pc, rg.Vector3d.Subtract(rg.Vector3d(p1),
                 rg.Vector3d(p2)))
-        
-        
+
+
     def get_calculated_line(self):
         """
         get the line with the actual length
@@ -99,46 +99,46 @@ class Dowel(object):
         p2 = rg.Point3d.Subtract(self.base_plane.Origin, -diff)
 
         dowel_line = rg.Line(p1, p2)
-        
+
         smallest_val  = 9999
         biggest_val   = -9999
         smallest_beam = None
         biggest_beam  = None
-        
+
         dowel_plane  = self.get_plane()
-        dowel_normal = dowel_plane.Normal 
+        dowel_normal = dowel_plane.Normal
 
         if len(self.beam_list) < 2:
             return self.get_line()
-            
+
         # get both ends of this dowel
         for beam in self.beam_list:
 
             beam_line = beam.get_baseline()
 
             _, dowel_v, beam_v = rg.Intersect.Intersection.LineLine(dowel_line, beam_line)
-            
+
             if dowel_v < smallest_val:
                 smallest_val = dowel_v
                 smallest_beam = beam
-                
+
             if biggest_val < dowel_v:
                 biggest_val = dowel_v
                 biggest_beam = beam
-        
+
         actual_dowel_line = rg.Line(dowel_line.PointAt(smallest_val), dowel_line.PointAt(biggest_val))
 
-        # entend the dowel        
+        # entend the dowel
         angle = rg.Vector3d.VectorAngle(dowel_normal, smallest_beam.base_plane.XAxis)
         exntension_1 = smallest_beam.dz * 0.5 / math.sin(angle)
 
         angle = rg.Vector3d.VectorAngle(dowel_normal, biggest_beam.base_plane.XAxis)
         exntension_2 = biggest_beam.dz * 0.5 / math.sin(angle)
-        
+
         actual_dowel_line.Extend(exntension_1, exntension_2)
-        
+
         return actual_dowel_line
-        
+
     def brep_representation(self):
         """
         make a brep of this dowel (for now with pseudo end points)
@@ -148,22 +148,32 @@ class Dowel(object):
 
         return self.get_hole_pipe()
 
-    def get_line(self):
+    def get_line(self, scale_value = 1.0):
         """
         get a line object of this dowel
 
         :return: line object
         """
 
-        if self.line:
+        if (self.line and scale_value == 1.0):
+            # print "jack shit"
             return self.line
+        elif (self.line and not(scale_value == 1.0)):
+            # print "scaled"
+            pt_0, pt_1 = self.line.PointAt(0.0), self.line.PointAt(1.0)
+            mid_pt = (pt_0 + pt_1) / 2.0
+            scale = rg.Transform.Scale(mid_pt, scale_value)
+            scaled_line = rg.Line(pt_0, pt_1)
+            scaled_line.Transform(scale)
+            return scaled_line
+        else:
+            # get an infinite line
+            # print "da fuck"
+            diff = self.base_plane.Normal * 999
+            p1 = self.base_plane.Origin + diff
+            p2 = self.base_plane.Origin - diff
 
-        # get an infinite line
-        diff = self.base_plane.Normal * 999
-        p1 = rg.Point3d.Subtract(self.base_plane.Origin, diff)
-        p2 = rg.Point3d.Subtract(self.base_plane.Origin, -diff)
-
-        return rg.Line(p1, p2)
+            return rg.Line(p1, p2)
 
     def get_angle_between_beam_and_dowel(self):
         """
@@ -180,6 +190,8 @@ class Dowel(object):
             beam_vector = beam.base_plane.Normal
 
             angle = rg.Vector3d.VectorAngle(beam_vector, dowel_vector)
+            if math.pi * 0.5 < angle and angle < math.pi * 1.5:
+                angle = math.pi - angle
             angles.append(angle)
 
         return max(angles)
@@ -208,7 +220,7 @@ class Dowel(object):
 
             top_rectangle    = rg.Rectangle3d(top_frame, interval_x, interval_y)
             bottom_rectangle = rg.Rectangle3d(bottom_frame, interval_x, interval_y)
-                        
+
             succeeded, v = rg.Intersect.Intersection.LinePlane(line, top_frame)
             top_pt = line.PointAt(v)
 
@@ -224,7 +236,7 @@ class Dowel(object):
             # see if the dowel is outside of the dowel
             if top_rectangle.Contains(top_pt) == rg.PointContainment.Outside or \
                 bottom_rectangle.Contains(bottom_pt) == rg.PointContainment.Outside:
-                
+
                 # if outside, just add a pretty small value
                 distances.append(-9999)
 
@@ -233,17 +245,17 @@ class Dowel(object):
                 # is inside
                 distance = min(top_distance - self.dowel_radius, bottom_distance - self.dowel_radius)
                 distances.append(distance)
-            
+
         return min(distances)
 
-    def get_hole_pipe(self):
+    def get_hole_pipe(self, line = None):
         """
         get a cylinder drilled
 
         :return: cylinder object
         """
 
-        return self.__get_pipe(self.hole_radius)
+        return self.__get_pipe(self.hole_radius, line)
 
     def get_dowel_pipe(self):
         """
@@ -254,12 +266,12 @@ class Dowel(object):
 
         return self.__get_pipe(self.dowel_radius)
 
-    def __get_pipe(self, radius):
+    def __get_pipe(self, radius, line = None):
         """
         private method to create a cylinder
         """
-
-        line = self.get_line()
+        if (line == None):
+            line = self.get_line()
 
         _, plane = line.ToNurbsCurve().PerpendicularFrameAt(0)
         circle = rg.Circle(plane, radius)
