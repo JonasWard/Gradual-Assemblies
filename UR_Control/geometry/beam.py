@@ -94,7 +94,7 @@ class Beam(object):
 
             tmp_box = rg.Brep.CreateBooleanDifference(box, pipe, 0.1)
 
-            if len(tmp_box) > 0:
+            if tmp_box and len(tmp_box) > 0:
                 box = tmp_box[0]
 
         return box
