@@ -7,17 +7,13 @@ import math as m
 
 surfaces
 
-print type(surfaces)
-print surfaces
-
 if isinstance(surfaces, rg.Surface):
     print "I tried!"
 
+# uv organisation
 
 u_divisions
 v_divisions
-
-warp_type
 
 swap_uv
 change_direction
@@ -25,57 +21,122 @@ change_direction
 edge_flattening
 
 
+# initialization of the warp types
+warp_type
+
+warp_0 = [0]
+# sin waves
+amplitude, period, iterations, u_shift = sin_parameters
+warp_1 = [1, amplitude, period, iterations, u_shift]
+# reference  surface
+warp_2 = [2, reference_surface]
+warp_types = [warp_0, warp_1, warp_2]
+
 class Surface(object):
 
-    def __init__(self, srf, u_div, v_div, warp_type = 0, swap_uv = False, chng_dir = 0):
+    def __init__(self, srf, u_div, v_div, swap_uv = False, chng_dir = 0):
         self.srf = srf
         self.swap_uv = swap_uv
 
         self.v_div = int(v_div)
         self.u_div = int(u_div)
 
-        self.warp_type = self.warp_types(warp_type)
+        self.chng_dir = chng_dir
 
-        self.dir_management(chng_dir)
-        print "ok"
-        self.uv_function_regrade()
-        print "ok"
-        self.uv_functions()
-        print "ok"
-        self.boundary_easing()
-        print "ok"
-        self.new_surface = self.new_surface()
-        print "ok"
+    def set_warp_type(self, warp_type):
+        value_count = len(warp_type)
+        self.warp_values_list = [warp_type[i] for i in range(1, value_count)]
+        self.warp_type_ok = True
+        self.warp_type = int(warp_type[0])
 
-    def warp_types(self, value):
-        if value == 0:
+        if self.warp_type == 0:
+            self.value_type_names = ["No Modifications"]
             # same as the regrading function
-            return [[0]]
-        elif value == 1:
+        elif self.warp_type == 1:
             # sin waves
-            amplitude = 7.0  # amplitude in reference to the amount unitized v
-            period = 50.0   # period in relationship to the unitized u
-            iterations = 10
-            u_shift = 4.0   # amount every row shifts compared to the other
-            return [[1], [amplitude, period, iterations, u_shift]]
+            # error_check
+            self.value_type_names = ["Sin-Wave", "Amplitude", "Period", "Iterations", "U Shift Value"]
+            self.value_types_required = [float, float, int, float]
+            # initialization of the values
+            self.amp = self.warp_values_list[0]             # amplitude in reference to the amount unitized v
+            self.per = self.warp_values_list[1]             # period in relationship to the unitized u
+            self.iter = int(self.warp_values_list[2])       # amount of iterations for the sin_wave sums
+            self.val_shift = self.warp_values_list[3]       # amount every row shifts compared to the other
+            self.warp_values_list = [self.amp, self.per, self.iter, self.val_shift]
+            self.warp_error_text_generator()
+        elif self.warp_type == 2:
+            # surfaces
+            self.value_type_names = ["Reference Surface", "Surface"]
+            self.value_types_required = [rg.NurbsSurface]
+            # initialization of the values
+            self.reference_surface = self.warp_values_list[0]
+            self.surface_to_nurbs_surface()
+            self.warp_error_text_generator()
 
-    def dir_management(self, change_direction = 0):
+        # initiazes most of the script
+
+        if (self.warp_type_ok):
+            self.dir_management()
+            self.uv_function_regrade()
+            self.uv_functions()
+            self.boundary_easing()
+            self.new_surface = self.new_surface()
+        else:
+            print self.warp_error_text
+
+    def if_vowel(self, char):
+        vowel_list = ["a", "e", "o", "u", "i"]
+
+        vowel_value = False
+        for vowel in vowel_list:
+            if (char == vowel):
+                vowel_value = True
+                break
+        if (vowel_value):
+            return "n "
+        else:
+            return " "
+
+    def surface_to_nurbs_surface(self):
+        if type(self.reference_surface) == rg.Surface:
+            self.reference_surface = self.reference_surface.ToNurbsSurface()
+
+    def warp_error_text_generator(self):
+        # error correction sentence
+        listed_numbers = ["first ", "second", "third", "fourth", "fifth", "sixth"]
+        warp_text_list = ["For the ", self.value_type_names[0], " function your "]
+        for i, type_variable in enumerate(self.value_types_required):
+            if not(type_variable == type(self.warp_values_list[i])):
+                warp_text_list.append(listed_numbers[i + 1])
+                warp_text_list.append(" value, the ")
+                warp_text_list.append(self.value_type_names[i + 1])
+                warp_text_list.append(" value, should be a")
+                warp_text_list.append(self.if_vowel((str(type_variable))[7]))
+                warp_text_list.append(str(type_variable)[7: -2])
+                warp_text_list.append(" and not a")
+                warp_text_list.append(self.if_vowel(str(type(self.warp_values_list[i]))[7]))
+                warp_text_list.append(str(type(self.warp_values_list[i]))[7: -2])
+                warp_text_list.append(", ")
+                self.warp_type_ok = False
+        self.warp_error_text = ''.join(warp_text_list)[0: -1]
+
+    def dir_management(self):
         # def that changes the apparant direction of the control points
 
         # change certain directions if need be
-        if (change_direction == 0):
+        if (self.chng_dir == 0):
             # no change
             self.swap_u = False
             self.swap_v = False
-        elif (change_direction == 1):
+        elif (self.chng_dir == 1):
             # invert u direction
             self.swap_u = True
             self.swap_v = False
-        elif (change_direction == 2):
+        elif (self.chng_dir == 2):
             # invert u direction
             self.swap_u = False
             self.swap_v = True
-        elif (change_direction == 3):
+        elif (self.chng_dir == 3):
             # invert u & v direction
             self.swap_u = True
             self.swap_v = True
@@ -92,11 +153,12 @@ class Surface(object):
             for j, uv_vals in enumerate(u_or_v_list):
                 u0, v0 = self.uv_list_base[i][j][0], self.uv_list_base[i][j][1]
                 u1, v1 = uv_vals[0], uv_vals[1]
-                # shifting value to match atan function normalised for max_value atan being 4
-                u_easing = m.atan(abs((u0 - self.u_div) * 2 / self.u_div) * 4) / 1.32581766
-                print u_easing
-                v_easing = m.atan(abs((v0 - self.v_div) * 2 / self.v_div) * 4) / 1.32581766
-                print v_easing
+                # correcting the edge issues
+                # weighing of differnt values defined by circle mapping
+                u0_new = (u0 / self.u_div * 2 - 1)
+                u_easing = m.sqrt(1 - (u0_new) ** 2)
+                v0_new = (v0 / self.v_div * 2 - 1)
+                v_easing = m.sqrt(1 - (v0_new) ** 2)
 
                 u_apparant = u0 * (1 - u_easing) + u1 * u_easing
                 v_apparant = v0 * (1 - v_easing) + v1 * v_easing
@@ -166,29 +228,28 @@ class Surface(object):
 
         return self.uv_list_base
 
-    def sin_functions(self, iterations, value):
+    def reference_surface(self):
+        pass
+
+
+    def sin_functions(self, value):
         # this function outputs a value that goes through the loop n amount of times
         local_value = 0
-        for i in range(iterations):
-            local_value += m.sin(value / iterations ** i)
+        for i in range(self.iter):
+            local_value += m.sin(value / self.iter ** i)
 
-        local_value /= iterations
+        local_value /= self.iter
         return local_value
 
     def uv_functions(self):
         # the actual uv_shifting
         tau = m.pi * 2
 
-        if (self.warp_type[0][0] == 0):
+        if (self.warp_type == 0):
             # nothing at all to see here !
             self.uv_list = self.uv_function_regrade()
-        elif (self.warp_type[0][0] == 1):
+        elif (self.warp_type == 1):
             # the sin-wave warp warp
-            amplitude = self.warp_type[1][0]
-            period = self.warp_type[1][1]
-            iteration_count = self.warp_type[1][2]
-            value_shifter = self.warp_type[1][3]
-
             self.uv_list = []
             if not(self.swap_uv):
                 value_shift = 0
@@ -204,10 +265,10 @@ class Surface(object):
                         else:
                             v_app = v
                         value = (v_app + value_shift + u_app) / period * tau
-                        v_app += self.sin_functions(iteration_count, value) * amplitude
+                        v_app += self.sin_functions(value) * self.amp
                         v_list.append([u_app, v_app])
                     self.uv_list.append(v_list)
-                    value_shift += value_shifter
+                    value_shift += self.val_shift
             else:
                 value_shift = 0
                 for v in range(self.v_div + 1):
@@ -222,22 +283,26 @@ class Surface(object):
                         else:
                             u_app = u
                         value = (u_app + value_shift + u_app) / period * tau
-                        u_app += self.sin_functions(iteration_count, value) * amplitude
+                        u_app += self.sin_functions(value) * self.amp
                         u_list.append([u_app, v_app])
                     self.uv_list.append(u_list)
-                    value_shift += value_shifter
+                    value_shift += self.val_shift
+        elif (self.warp_type == 2):
+            self.reference_surface
 
-classed_surface = Surface(surfaces, u_divisions, v_divisions, warp_type, swap_uv, change_direction)
-point_lists = classed_surface.show_points()
-isocurves_u, isocurves_v = classed_surface.show_isocurves()
+# executrion of the script
+warp_type_parameters = warp_types[warp_type]
+
+classed_surface = Surface(surfaces, u_divisions, v_divisions, swap_uv, change_direction)
+
+classed_surface.set_warp_type(warp_type_parameters)
+# point_lists = classed_surface.show_points()
+# isocurves_u, isocurves_v = classed_surface.show_isocurves()
 
 point_list = []
 for point_ls in point_lists:
     for point in point_ls:
         point_list.append(point)
-
-print classed_surface.uv_list
-print classed_surface.uv_list_base
 
 surface = classed_surface.new_surface
 # print surface
