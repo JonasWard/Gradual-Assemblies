@@ -228,9 +228,62 @@ class Surface(object):
 
         return self.uv_list_base
 
-    def reference_surface(self):
-        pass
+    def reference_surface_mapping(self):
+        u_len = self.reference_surface.IsoCurve(0, 0).GetLength()
+        v_len = self.reference_surface.IsoCurve(1, 0).GetLength()
 
+        b_pt = self.reference_surface.IsoCurve(0, 0).PointAt(0)
+        # u_base, v_base = b_pt.X, b_pt.Y
+
+        translation = rg.Transform.Translation(rg.Vector3d(- b_pt))
+        self.reference_surface.Transform(translation)
+
+        print u_len, v_len
+
+        u_space = u_len / self.u_div
+        v_space = v_len / self.v_div
+
+        print u_space, v_space
+
+        self.uv_list = []
+        if not(self.swap_uv):
+            self.u_interval = rg.Interval(0, self.u_div)
+            self.v_interval = rg.Interval(0, self.v_div)
+
+            self.reference_surface.SetDomain(0, self.u_interval)
+            self.reference_surface.SetDomain(1, self.v_interval)
+
+            for u in range(self.u_div + 1):
+                u0 = u_space * u
+                v_list = []
+                for v in range(self.v_div + 1):
+                    v0 = v_space * v
+                    pt = self.reference_surface.PointAt(u, v)
+                    u1, v1 = abs(pt.X), abs(pt.Y)
+                    u_shift, v_shift = (u1 - u0) / u_space, (v1 - v0) / v_space
+                    u_app, v_app = u_shift + u, v_shift + v
+                    v_list.append([u_app, v_app])
+                self.uv_list.append(v_list)
+        else:
+
+            self.v_interval = rg.Interval(0, self.u_div)
+            self.u_interval = rg.Interval(0, self.v_div)
+
+            self.reference_surface.SetDomain(0, self.u_interval)
+            self.reference_surface.SetDomain(1, self.v_interval)
+
+            for v in range(self.v_div + 1):
+                v0 = u_space * v
+                u_list = []
+                for u in range(self.u_div + 1):
+                    u0 = v_space * u
+                    pt = self.reference_surface.PointAt(v, u)
+                    u1, v1 = abs(pt.X), abs(pt.Y)
+                    u_shift, v_shift = (u1 - u0) / v_space, (v1 - v0) / u_space
+                    u_app, v_app = u_shift + u, v_shift + v
+                    u_list.append([u_app, v_app])
+                self.uv_list.append(u_list)
+        print self.uv_list 
 
     def sin_functions(self, value):
         # this function outputs a value that goes through the loop n amount of times
@@ -288,7 +341,7 @@ class Surface(object):
                     self.uv_list.append(u_list)
                     value_shift += self.val_shift
         elif (self.warp_type == 2):
-            self.reference_surface
+            self.reference_surface_mapping()
 
 # executrion of the script
 warp_type_parameters = warp_types[warp_type]
@@ -296,8 +349,8 @@ warp_type_parameters = warp_types[warp_type]
 classed_surface = Surface(surfaces, u_divisions, v_divisions, swap_uv, change_direction)
 
 classed_surface.set_warp_type(warp_type_parameters)
-# point_lists = classed_surface.show_points()
-# isocurves_u, isocurves_v = classed_surface.show_isocurves()
+point_lists = classed_surface.show_points()
+isocurves_u, isocurves_v = classed_surface.show_isocurves()
 
 point_list = []
 for point_ls in point_lists:
