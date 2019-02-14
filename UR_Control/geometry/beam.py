@@ -106,10 +106,10 @@ class Beam(object):
         """
 
         diff = self.base_plane.XAxis * self.dx * 0.5
-        p1 = rg.Point3d.Subtract(self.base_plane.Origin, diff)
-        p2 = rg.Point3d.Subtract(self.base_plane.Origin, -diff)
+        self.beam_start_pt = rg.Point3d.Subtract(self.base_plane.Origin, diff)
+        self.beam_end_pt = rg.Point3d.Subtract(self.base_plane.Origin, -diff)
 
-        return rg.Line(p1, p2)
+        return rg.Line(self.beam_start_pt, self.beam_end_pt)
 
     def get_angle_between_beam_and_dowel(self):
         """
@@ -376,6 +376,16 @@ class Beam(object):
                 dowel.line.Transform(transform)
 
         return beam
+
+    def end_frames(self):
+        """ method that returns the start and end frame of the beam """
+
+        self.get_baseline()
+
+        pt_0 = self.base_plane.Origin
+        mVector_start = rg.Vector3d(self.beam_start_pt - pt_0)
+        mVector_end = rg.Vector3d(self.beam_end_pt - pt_0)
+
 
     @staticmethod
     def get_strucutured_data(beams):

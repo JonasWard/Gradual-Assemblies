@@ -1,0 +1,9 @@
+Structural Reciprocity - Critical Overview and Promising Research & DesignIssues
+
+hole class:
+* angle
+* distance from the edges
+
+beam class:
+* brep_representation to origin plane (3d print)
+* box_representation (lighter)
