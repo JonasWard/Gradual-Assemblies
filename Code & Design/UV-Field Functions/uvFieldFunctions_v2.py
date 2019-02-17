@@ -38,8 +38,7 @@ warp_2 = [2, reference_surface]
 warp_types = [warp_0, warp_1, warp_2]
 
 class Surface(object):
-    """ Surface with manipulated uv-field
-    """
+    """ Surface with manipulated uv-field """
 
     def __init__(self, srf, u_div, v_div, swap_uv = False, chng_dir = 0, warp_type = [0], warp_dir = 0, bound_eaz = True):
         """ Base initialization of raw uv related parameters

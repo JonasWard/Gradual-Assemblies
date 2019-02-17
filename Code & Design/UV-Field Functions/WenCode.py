@@ -1,11 +1,23 @@
 __author__ = "Wenqian"
 __version__ = "2019.02.03"
 
+# grasshopper variabels
+
+seam_crvs
+edge_crvs
+u_count
+v_count
+rebuild_srf
+beam_shift
+curvature_factor_u
+curvature_factor_v
+offset_x
+offset_y
 
 import Rhino.Geometry as rg
-import scriptcontext as sc
-import math as ma
-import rhinoscriptsyntax as rs
+# import scriptcontext as sc
+# import math as m
+# import rhinoscriptsyntax as rs
 import copy
 
 u_count

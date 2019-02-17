@@ -27,9 +27,13 @@ class Beam(object):
         """
 
         self.base_plane = base_plane
+
         self.dx = dx
         self.dy = dy
         self.dz = dz
+
+        self.dx_base_line = dx
+
         self.dowel_list = []
 
     def add_dowel(self, dowel):
@@ -105,7 +109,7 @@ class Beam(object):
             :return: line object of this beam
         """
 
-        diff = self.base_plane.XAxis * self.dx * 0.5
+        diff = self.base_plane.XAxis * self.dx_base_line * 0.5
         self.beam_start_pt = rg.Point3d.Subtract(self.base_plane.Origin, diff)
         self.beam_end_pt = rg.Point3d.Subtract(self.base_plane.Origin, -diff)
 
@@ -141,13 +145,7 @@ class Beam(object):
         """
         if x_change_end == None:
             x_change_end = x_change_start
-        box = rg.Box(self.base_plane,
-            rg.Interval(-self.dx*0.5 - x_change_start, self.dx*0.5 + x_change_end),
-            rg.Interval(-self.dy*0.5, self.dy*0.5),
-            rg.Interval(-self.dz*0.5, self.dz*0.5)
-            )
-
-        return self.brep_representation(True, box)
+            self.dx += x_change_end * 2
 
     def check_angle_constraints(self, angle = 60):
         """
@@ -383,9 +381,15 @@ class Beam(object):
         self.get_baseline()
 
         pt_0 = self.base_plane.Origin
+
         mVector_start = rg.Vector3d(self.beam_start_pt - pt_0)
         mVector_end = rg.Vector3d(self.beam_end_pt - pt_0)
 
+        translate_start = rg.Transform.Translation(mVector_start)
+        translate_end = rg.Transform.Translation(mVector_end)
+
+        self.start_plane = rg.Plane(base_plane).Transform(translate_start)
+        self.end_plane = rg.Plane(base_plane).Transform(translate_end)
 
     @staticmethod
     def get_strucutured_data(beams):
