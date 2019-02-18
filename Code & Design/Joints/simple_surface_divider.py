@@ -1,10 +1,30 @@
 # simple surface divisions
 
 import sys
-sys.path.append("/Users/jonas/Dropbox/0.dfab/Trimester 2/Project I - Gradual Assemblies/Gradual-Assemblies/UR_Control")
+
+# import the beam_class
+path_to_append = ''.join([double_parent, "/UR_Control"])
+sys.path.append(path_to_append)
+
+print path_to_append
+
 import geometry.beam as beam
 
+# new hole class
+path_to_append = single_parent
+
+print path_to_append
+sys.path.append(path_to_append)
+
+print path_to_append
+
+import Joints.hole_class as hc
+
 import Rhino.Geometry as rg
+
+# force reload when rerunning
+reload(beam)
+reload(hc)
 
 # grasshopper parameters
 
@@ -12,7 +32,7 @@ surface
 u_div
 v_div
 
-# check to make sure there are an even anount of beams
+# check to make sure there are an even amount of beams
 u_div += (u_div % 2)
 
 # surface remapping
@@ -29,7 +49,7 @@ for u_val in range(u_div):
     if u_val % 2 == 0:
         v_line_list = []
         v_beam_list = []
-        for v_val in range(0, v_div - 1, 2):
+        for v_val in range(1, v_div, 2):
             # line representation
             pt_0 = surface.PointAt(u_val, v_val)
             pt_1 = surface.PointAt(u_val, v_val + 1)
@@ -52,7 +72,7 @@ for u_val in range(u_div):
     else:
         v_line_list = []
         v_beam_list = []
-        for v_val in range(1, v_div - 1, 2):
+        for v_val in range(2, v_div, 2):
             # line representation
             pt_0 = surface.PointAt(u_val, v_val)
             pt_1 = surface.PointAt(u_val, v_val + 1)
@@ -83,10 +103,30 @@ for v_lines_lists in list_b:
         line_visualisation.append(line)
 
 beam_visualisation = []
+hole_visualisation = []
+hole_list_a = []
+hole_list_b = []
+pt_locations_bot = []
+pt_locations_top = []
 
 for v_beams_lists in beam_list_a:
+    hole_v_list = []
     for beam in v_beams_lists:
+        beam.extend(200)
+        holes = [hc.Hole((beam), 0).joint_pts, hc.Hole((beam), 1).joint_pts]
+        hole_visualisation.extend([holes[0][0][0], holes[0][1][0], holes[0][1][1], holes[0][1][2],  holes[0][2][0], holes[0][2][1], holes[0][2][2], holes[1][0][0], holes[1][1][0], holes[1][1][1], holes[1][1][2],  holes[1][2][0], holes[1][2][1], holes[1][2][2]])
+        hole_v_list.append(holes)
         beam_visualisation.append(beam.brep_representation())
+    hole_list_a.append(hole_v_list)
+
+hole_list_a
+
 for v_beams_lists in beam_list_b:
+    hole_v_list = []
     for beam in v_beams_lists:
+        beam.extend(200)
+        holes = [hc.Hole((beam), 0).joint_pts, hc.Hole((beam), 1).joint_pts]
+        hole_visualisation.extend([holes[0][0][0], holes[0][1][0], holes[0][1][1], holes[0][1][2],  holes[0][2][0], holes[0][2][1], holes[0][2][2], holes[1][0][0], holes[1][1][0], holes[1][1][1], holes[1][1][2],  holes[1][2][0], holes[1][2][1], holes[1][2][2]])
+        hole_v_list.append(holes)
         beam_visualisation.append(beam.brep_representation())
+    hole_list_b.append(hole_v_list)
