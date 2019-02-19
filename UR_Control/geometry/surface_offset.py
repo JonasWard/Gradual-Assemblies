@@ -33,7 +33,7 @@ def offset_sides_surface(srf, offset_dis = 20):
         new_isocurve = isocurve.Split([start_t_new, end_t_new])[1]
         temp_isocurves_shortened.append(new_isocurve)
 
-    # switchign the uv direction back to where it should be! -> rebuilding the surface
+    # switching the uv direction back to where it should be! -> rebuilding the surface
     point_list = [[] for i in range(sampling_count)]
     for temp_curve in temp_isocurves_shortened:
         length = temp_curve.GetLength()
@@ -54,7 +54,6 @@ def offset_sides_surface(srf, offset_dis = 20):
     loft_type = rg.LoftType.Tight
     new_surface = rg.Brep.CreateFromLoftRebuild(uv_switched_curves, rg.Point3d.Unset, rg.Point3d.Unset, loft_type, False, 50)[0]
     # getting the loft as a nurbssurface out of the resulting brep
-    print new_surface
     print new_surface.Faces.Item[0].ToNurbsSurface()
 
     return new_surface

@@ -81,7 +81,7 @@ class Joint(object):
         """ Joint generation for element that is in an u-direction start state """
         # uses self.B0 & self.B1
 
-    def __double_joint_start(self):
+    def __double_joint_end(self):
         """ Joint generation for element that is in an u-direction end state """
         # uses self.B1 & self.B2
 
