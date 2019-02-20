@@ -62,7 +62,7 @@ visualization_point_cloud = []
 blended_curve_divisions = []
 
 start_shift = 0 / (2 * (blend_div_count - 1))
-shift_start = 1 - .1 * surface_count
+shift_start = 1 - .2 * surface_count
 shift_max = .025 * surface_count
 start_split_index = int(shift_start * blend_curve_count)
 split_difference = blend_curve_count - start_split_index

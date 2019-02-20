@@ -3,22 +3,13 @@
 import sys
 
 # import the beam_class
-path_to_append = ''.join([double_parent, "/UR_Control"])
+path_to_append = single_parent
 sys.path.append(path_to_append)
 
 print path_to_append
 
 import geometry.beam as beam
-
-# new hole class
-path_to_append = single_parent
-
-print path_to_append
-sys.path.append(path_to_append)
-
-print path_to_append
-
-import Joints.hole_class as hc
+import geometry.hole_class as hc
 
 import Rhino.Geometry as rg
 
@@ -32,8 +23,10 @@ surface
 u_div
 v_div
 
-# check to make sure there are an even amount of beams
-u_div += (u_div % 2)
+start_position
+
+# # check to make sure there are an even amount of beams
+# u_div += (u_div % 2)
 
 # surface remapping
 surface.SetDomain(0, rg.Interval(0, u_div))
@@ -45,8 +38,8 @@ list_b = []
 beam_list_a = []
 beam_list_b = []
 
-for u_val in range(u_div):
-    if u_val % 2 == 0:
+for u_val in range(u_div + 1):
+    if u_val % 2 == start_position:
         v_line_list = []
         v_beam_list = []
         for v_val in range(1, v_div, 2):
@@ -112,7 +105,7 @@ pt_locations_top = []
 for v_beams_lists in beam_list_a:
     hole_v_list = []
     for beam in v_beams_lists:
-        beam.extend(200)
+        beam.extend(100)
         holes = [hc.Hole((beam), 0).joint_pts, hc.Hole((beam), 1).joint_pts]
         hole_visualisation.extend([holes[0][0][0], holes[0][1][0], holes[0][1][1], holes[0][1][2],  holes[0][2][0], holes[0][2][1], holes[0][2][2], holes[1][0][0], holes[1][1][0], holes[1][1][1], holes[1][1][2],  holes[1][2][0], holes[1][2][1], holes[1][2][2]])
         hole_v_list.append(holes)
@@ -124,7 +117,7 @@ hole_list_a
 for v_beams_lists in beam_list_b:
     hole_v_list = []
     for beam in v_beams_lists:
-        beam.extend(200)
+        beam.extend(100)
         holes = [hc.Hole((beam), 0).joint_pts, hc.Hole((beam), 1).joint_pts]
         hole_visualisation.extend([holes[0][0][0], holes[0][1][0], holes[0][1][1], holes[0][1][2],  holes[0][2][0], holes[0][2][1], holes[0][2][2], holes[1][0][0], holes[1][1][0], holes[1][1][1], holes[1][1][2],  holes[1][2][0], holes[1][2][1], holes[1][2][2]])
         hole_v_list.append(holes)
