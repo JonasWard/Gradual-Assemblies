@@ -74,11 +74,11 @@ class JointHoles(object):
                 fit_line_flag   - whether you consider the middle beam as well or not (default = False)
         """
         if (self.type == 0):
-            type_input_count = 6
+            type_input_count = 7
 
             type_args_count = len(self.type_args)
             if not(type_args_count == type_input_count):
-                self.error_message = ''.join(["You should've given ", type_input_count, " values, but you only gave ", type_args_count])
+                self.error_message = ''.join(["You should've given ", str(type_input_count), " values, but you only gave ", str(type_args_count)])
                 self.type_completed_flag = False
 
             else:
