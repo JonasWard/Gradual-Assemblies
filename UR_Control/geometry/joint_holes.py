@@ -16,7 +16,11 @@ import Rhino.Geometry as rg
 
 class JointHoles(object):
     """ Hole class that defines some hole positions baded on a beam """
+<<<<<<< HEAD
     def __init__(self, beam_set, location_index = None, type = 0, type_args=[120, 20, 30, False, False, False]):
+=======
+    def __init__(self, beam_set, location_index = None, type_args=[0, 60, 10, 15, False, False, False]):
+>>>>>>> 87392830b105a6786f47cc2ddec8621467007035
         """ initialization
 
             :param beam:            Beam that's being considered
@@ -40,11 +44,15 @@ class JointHoles(object):
 
     def __location_mapping(self):
         if self.type == 0:
+<<<<<<< HEAD
             # the triple joint
             if (self.loc_index == 0) :
+=======
+            if (self.loc_index == 1) :
+>>>>>>> 87392830b105a6786f47cc2ddec8621467007035
                 self.t_locs_beam = [1, 0, 1]
                 self.dow_pts_i = [[0], [0, 1, 2]]
-            elif (self.loc_index == 1):
+            elif (self.loc_index == ):
                 self.t_locs_beam = [0, 1, 0]
                 self.dow_pts_i = [[1], [0, 1, 2]]
             else:
@@ -216,5 +224,6 @@ class JointHoles(object):
         self.dowel_pts = []
         for i in range(self.beam_set_len):
             loc_hole_pts = self.type_hole_pt_transform(i)
-            loc_dowel_pt = loc_hole_pts[self.dow_pts_i[0]][self.dow_pts_i[i]]
+
+            loc_dowel_pt = loc_hole_pts[self.dow_pts_i[0][0]][self.dow_pts_i[1][i]]
             self.dowel_pts.append(loc_dowel_pt)
