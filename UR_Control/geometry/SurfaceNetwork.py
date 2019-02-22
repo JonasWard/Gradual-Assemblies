@@ -13,8 +13,9 @@ import random
 import rhinoscriptsyntax as rs
 import Rhino.Geometry as rg
 import copy
-
+import math
 import os
+
 if os.name == 'posix':
     print "you're a Mac!"
     path_to_append = single_parent
@@ -86,7 +87,25 @@ class SharedEdge(object):
         
         return self.__get_beams(self.surface_1, self.edge_1), \
                self.__get_beams(self.surface_2, self.edge_2)
+    
+    def is_same_direction(self):
+        
+        if self.edge_1.direction != self.edge_2.direction:
+            
+            return False
+        
+        curve_1 = self.surface_1.surface.IsoCurve(1 if self.edge_1.direction == U else 0, self.edge_1.value)
+        p1_1  = curve_1.PointAt(0.0)
+        p1_2  = curve_1.PointAt(1.0)
+        vec_1 = rg.Vector3d(p1_2) - rg.Vector3d(p1_1)
 
+        curve_2 = self.surface_2.surface.IsoCurve(1 if self.edge_2.direction == U else 0, self.edge_2.value)
+        p2_1 = curve_2.PointAt(0.0)
+        p2_2 = curve_2.PointAt(1.0)
+        vec_2 = rg.Vector3d(p2_2) - rg.Vector3d(p2_1)
+        
+        return rg.Vector3d.VectorAngle(vec_1, vec_2) < math.pi * 0.5
+            
     def __get_beams(self, surface, edge):
         
         if edge == V0:
@@ -246,17 +265,21 @@ class Network(object):
                     # flush condition
                     valueError('this connection won\'t happen')
                 
-                # for beams, edge in zip([beams_1, beams_2], [edge_1, edge_2]):
+                if not shared_edge.is_same_direction():
+                    
+                    beams_2 = list(reversed(beams_2))
+                
+                weaved_list = weave_lists(beams_1, beams_2)
+                
+                for i in range(len(weaved_list) - 2):
 
-                #     if edge.value != 0:
-
-                #         beams = list(reversed(beams))
-
-                # weaved_list = weave_lists(beams_1, beams_2)
-
-                # for i in range(len(weaved_list) - 2):
-
-                #     left
+                    left   = weaved_list[i]
+                    middle = weaved_list[i+1]
+                    right  = weaved_list[i+2]
+                    
+                    location_index = (i % 2) + 1 if edge_1.value == 0 else i % 2
+                    joint_holes = JointHoles([left, middle, right], 0)
+                    dowels.append(joint_holes.dowel)
                 
             elif edge_1.direction == U and edge_2.direction == U:
                 
@@ -331,7 +354,6 @@ class Surface(object):
         """
             * extend the edges of beams
             * add dowels that go through three beams in the same surface
-            * use Jonas's joint class?
         """
         
         for i in range(len(self.beams) - 2):
@@ -371,6 +393,7 @@ class Surface(object):
                         #   |
                         joint_holes = JointHoles([left, middle, right], 1)
                         dowels.append(joint_holes.dowel)
+                        
             else:
                 
                 for j in range(len(left_beams)):
@@ -378,7 +401,15 @@ class Surface(object):
                     left   = left_beams[j]
                     middle = middle_beams[j]
                     right  = right_beams[j]
-                    
+
+                    # apply a joint system
+                    #
+                    # |   |
+                    # | | |
+                    #   |
+                    joint_holes = JointHoles([left, middle, right], 1)
+                    dowels.append(joint_holes.dowel)
+
                     # apply a joint system
                     #
                     #   |
@@ -389,17 +420,10 @@ class Surface(object):
                     middle = middle_beams[j+1]
                     right  = right_beams[j]
                     
-                    joint_holes = JointHoles([left, middle, right], 1)
-                    dowels.append(joint_holes.dowel)
-                    
-                    # apply a joint system
-                    #
-                    # |   |
-                    # | | |
-                    #   |
                     joint_holes = JointHoles([left, middle, right], 0)
                     dowels.append(joint_holes.dowel)
-
+                    
+#
     def get_flatten_beams(self):
 
         return list(chain.from_iterable(self.beams))
