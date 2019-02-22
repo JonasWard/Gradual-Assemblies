@@ -16,7 +16,7 @@ import Rhino.Geometry as rg
 
 class JointHoles(object):
     """ Hole class that defines some hole positions baded on a beam """
-    def __init__(self, beam_set, location_index = None, type_args=[0, 120, 20, 30, False, False, False]):
+    def __init__(self, beam_set, location_index = None, type = 0, type_args=[120, 20, 30, False, False, False]):
         """ initialization
 
             :param beam:            Beam that's being considered
@@ -27,7 +27,7 @@ class JointHoles(object):
         self.beam_set = beam_set
         self.beam_set_len = len(beam_set)
         self.loc_index = location_index
-        self.type = type_args[0]
+        self.type = type
         self.type_args = type_args
 
         self.__type_definitions()
@@ -40,6 +40,7 @@ class JointHoles(object):
 
     def __location_mapping(self):
         if self.type == 0:
+            # the triple joint
             if (self.loc_index == 0) :
                 self.t_locs_beam = [1, 0, 1]
                 self.dow_pts_i = [[0], [0, 1, 2]]
@@ -50,13 +51,42 @@ class JointHoles(object):
                 print "wrong input, but here's a result anyway (:"
                 self.t_locs_beam = [1, 0, 1]
                 self.dow_pts_i = [[1], [0, 1, 2]]
+        if self.type == 1:
+            # the starting naked edge
+            if (self.loc_index == 0) :
+                self.t_locs_beam = [0, 1]
+                self.dow_pts_i = [[0], [1, 2]]
+            elif (self.loc_index == 1):
+                self.t_locs_beam = [1, 0]
+                self.dow_pts_i = [[1], [1, 2]]
+            else:
+                print "wrong input, but here's a result anyway (:"
+                self.t_locs_beam = [1, 0]
+                self.dow_pts_i = [[1], [1, 2]]
+        if self.type == 2:
+            # the end naked edge
+            if (self.loc_index == 0) :
+                self.t_locs_beam = [1, 0]
+                self.dow_pts_i = [[0], [0, 1]]
+            elif (self.loc_index == 1):
+                self.t_locs_beam = [0, 1]
+                self.dow_pts_i = [[1], [0, 1]]
+            else:
+                print "wrong input, but here's a result anyway (:"
+                self.t_locs_beam = [1, 0]
+                self.dow_pts_i = [[0], [0, 1]]
 
     def __beam_linking(self):
         if self.type == 0:
+            # the triple joint
             if self.fit_line_flag:
                 self.dowel_line = rg.Line.TryFitLineToPoints(self.dowel_pts)
             else:
                 self.dowel_line = rg.Line(self.dowel_pts[0], self.dowel_pts[2])
+        if (self.type == 1 or self.type == 2):
+            # the naked edges
+            self.dowel_line = rg.Line(self.dowel_pts[0], self.dowel_pts[1])
+
         for local_beam in self.beam_set:
             local_dowel = dowel.Dowel(None, self.dowel_line)
             local_beam.add_dowel(local_dowel)
@@ -74,7 +104,7 @@ class JointHoles(object):
                 fit_line_flag   - whether you consider the middle beam as well or not (default = False)
         """
         if (self.type == 0):
-            type_input_count = 7
+            type_input_count = 6
 
             type_args_count = len(self.type_args)
             if not(type_args_count == type_input_count):
@@ -83,7 +113,30 @@ class JointHoles(object):
 
             else:
                 self.type_completed_flag = True
-                type_value, x0_ext, cover_h, x1_ext, symmetry_flag, invert_flag, self.fit_line_flag = self.type_args
+                x0_ext, cover_h, x1_ext, symmetry_flag, invert_flag, self.fit_line_flag = self.type_args
+
+                if (symmetry_flag):
+                    self.v1_sw = -1
+                else:
+                    self.v1_sw = 1
+
+                if (invert_flag):
+                    self.v2_sw = -1
+                else:
+                    self.v2_sw = 1
+
+                self.translation_variables = [x0_ext, cover_h, x1_ext]
+        if (self.type == 1 or self.type == 2):
+            type_input_count = 6
+
+            type_args_count = len(self.type_args)
+            if not(type_args_count == type_input_count):
+                self.error_message = ''.join(["You should've given ", str(type_input_count), " values, but you only gave ", str(type_args_count)])
+                self.type_completed_flag = False
+
+            else:
+                self.type_completed_flag = True
+                x0_ext, cover_h, x1_ext, symmetry_flag, invert_flag, self.fit_line_flag = self.type_args
 
                 if (symmetry_flag):
                     self.v1_sw = -1
@@ -98,7 +151,7 @@ class JointHoles(object):
                 self.translation_variables = [x0_ext, cover_h, x1_ext]
 
     def __transformation_vecs(self, local_beam):
-        if (self.type == 0):
+        if (self.type < 3):
             unit_x = local_beam.base_plane.XAxis
             unit_y = local_beam.base_plane.YAxis
 
@@ -124,7 +177,7 @@ class JointHoles(object):
             :return:            The beam hole locations.
 
         """
-        if (self.type == 0):
+        if (self.type < 3):
             vec_0, vec_1, vec_2_a, vec_2_b = self.__transformation_vecs(self.beam_set[beam_index])
             t_val = self.t_locs_beam[beam_index]
             beam_line = self.beam_set[beam_index].get_baseline()
