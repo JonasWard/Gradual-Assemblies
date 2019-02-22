@@ -8,10 +8,20 @@
 __author__ = "ytakzk"
 __version__ = "2019.02.18"
 
+import sys
 import random
 import rhinoscriptsyntax as rs
 import Rhino.Geometry as rg
 import copy
+
+path_to_append = single_parent
+sys.path.append(path_to_append)
+
+print path_to_append
+
+# import geometry.beam as Beam
+import geometry.joint_holes as hc
+#
 from geometry.beam import Beam
 from itertools import chain
 
@@ -248,11 +258,11 @@ class Surface(object):
 
             self.beams.append(inner_arr)
 
-    def joint_generation(self, type = 0, beam_set, location_set):
+    def joint_generation(self, beam_set, location_set, type = 0):
         pass
 
     def joint_type(self, type = 0):
-        if type = 0:
+        if type == 0:
             pass
 
 
