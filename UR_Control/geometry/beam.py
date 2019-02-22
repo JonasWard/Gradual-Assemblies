@@ -17,13 +17,14 @@ class Beam(object):
     """ Beam class containing its size and connecting dowels
     """
 
-    def __init__(self, base_plane, dx, dy, dz):
+    def __init__(self, base_plane, dx, dy, dz, end_cover = 70):
         """ initialization
 
-            :param base_plane: base plane which the beam is along with
-            :param dx:  the length along the local x-axis (= the length of this beam)
-            :param dy:  the length along the local y-axis
-            :param dz:  the length along the local z-axis
+            :param base_plane:  base plane which the beam is along with
+            :param dx:          the length along the local x-axis (= the length of this beam)
+            :param dy:          the length along the local y-axis
+            :param dz:          the length along the local z-axis
+            :param end_cover:   the extra extenions at the end of the beams
         """
 
         self.base_plane = base_plane
@@ -36,6 +37,7 @@ class Beam(object):
 
         self.dowel_list = []
         self.extension = 0
+        self.end_cover = end_cover
 
     def add_dowel(self, dowel):
         """ add a dowel to this beam
@@ -74,11 +76,12 @@ class Beam(object):
             :paran box:  box object in the case one has been created through another function
             :return: brep object of this beam
         """
+        total_extension = self.end_cover + self.extension
 
         if (box == None):
             # create a box in case one hasn't been fed in
             box = rg.Box(self.base_plane,
-                rg.Interval(-self.dx*0.5 - self.extension, self.dx*0.5 + self.extension),
+                rg.Interval(-self.dx*0.5 - total_extension, self.dx*0.5 + total_extension),
                 rg.Interval(-self.dy*0.5, self.dy*0.5),
                 rg.Interval(-self.dz*0.5, self.dz*0.5)
                 )
