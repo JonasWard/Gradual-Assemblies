@@ -16,11 +16,7 @@ import Rhino.Geometry as rg
 
 class JointHoles(object):
     """ Hole class that defines some hole positions baded on a beam """
-<<<<<<< HEAD
-    def __init__(self, beam_set, location_index = None, type = 0, type_args=[120, 20, 30, False, False, False]):
-=======
-    def __init__(self, beam_set, location_index = None, type_args=[0, 60, 10, 15, False, False, False]):
->>>>>>> 87392830b105a6786f47cc2ddec8621467007035
+    def __init__(self, beam_set, location_index = None, type = 0, type_args=[120, 20, 30, True, False, False]):
         """ initialization
 
             :param beam:            Beam that's being considered
@@ -44,15 +40,10 @@ class JointHoles(object):
 
     def __location_mapping(self):
         if self.type == 0:
-<<<<<<< HEAD
-            # the triple joint
-            if (self.loc_index == 0) :
-=======
-            if (self.loc_index == 1) :
->>>>>>> 87392830b105a6786f47cc2ddec8621467007035
+            if (self.loc_index == 1):
                 self.t_locs_beam = [1, 0, 1]
                 self.dow_pts_i = [[0], [0, 1, 2]]
-            elif (self.loc_index == ):
+            elif (self.loc_index == 0):
                 self.t_locs_beam = [0, 1, 0]
                 self.dow_pts_i = [[1], [0, 1, 2]]
             else:
@@ -61,10 +52,10 @@ class JointHoles(object):
                 self.dow_pts_i = [[1], [0, 1, 2]]
         if self.type == 1:
             # the starting naked edge
-            if (self.loc_index == 0) :
+            if (self.loc_index == 1):
                 self.t_locs_beam = [0, 1]
                 self.dow_pts_i = [[0], [1, 2]]
-            elif (self.loc_index == 1):
+            elif (self.loc_index == 0):
                 self.t_locs_beam = [1, 0]
                 self.dow_pts_i = [[1], [1, 2]]
             else:
@@ -73,10 +64,10 @@ class JointHoles(object):
                 self.dow_pts_i = [[1], [1, 2]]
         if self.type == 2:
             # the end naked edge
-            if (self.loc_index == 0) :
+            if (self.loc_index == 1):
                 self.t_locs_beam = [1, 0]
                 self.dow_pts_i = [[0], [0, 1]]
-            elif (self.loc_index == 1):
+            elif (self.loc_index == 0):
                 self.t_locs_beam = [0, 1]
                 self.dow_pts_i = [[1], [0, 1]]
             else:
