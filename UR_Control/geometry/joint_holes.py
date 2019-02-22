@@ -41,14 +41,14 @@ class JointHoles(object):
     def __location_mapping(self):
         if self.type == 0:
             if (self.loc_index == 0) :
-                self.t_locs_beam == [1, 0, 1]
+                self.t_locs_beam = [1, 0, 1]
                 self.dow_pts_i = [[0][0, 1, 2]]
             elif (self.loc_index == 1):
-                self.t_locs_beam == [0, 1, 0]
+                self.t_locs_beam = [0, 1, 0]
                 self.dow_pts_i = [[1][0, 1, 2]]
             else:
                 print "wrong input, but here's a result anyway (:"
-                self.t_locs_beam == [1, 0, 1]
+                self.t_locs_beam = [1, 0, 1]
                 self.dow_pts_i = [[1][0, 1, 2]]
 
     def __beam_linking(self):
