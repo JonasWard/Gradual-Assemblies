@@ -83,37 +83,49 @@ class JointHoles(object):
 
             else:
                 self.type_completed_flag = True
-                type_value, x0_ext, cover_h, x1_ext, symmetry_flag, invert_flag, fit_line_flag = self.type_args
-                unit_x = self.beam.base_plane.XAxis
-                unit_y = self.beam.base_plane.YAxis
-                # setting directions according to flags
+                type_value, x0_ext, cover_h, x1_ext, symmetry_flag, invert_flag, self.fit_line_flag = self.type_args
+
                 if (symmetry_flag):
-                    v1_switch = -1
+                    self.v1_sw = -1
                 else:
-                    v1_switch = 1
+                    self.v1_sw = 1
 
                 if (invert_flag):
-                    v2_switch = -1
+                    self.v2_sw = -1
                 else:
-                    v2_switch = 1
+                    self.v2_sw = 1
 
-                self.vec_0 = rg.Vector3d(unit_x) * x0_ext
-                self.vec_1 = rg.Vector3d(unit_y) * (self.beam.dy / 2 - cover_h) * v1_switch
-                self.vec_2_a = rg.Vector3d(unit_x) * x1_ext
-                self.vec_2_b = v1_switch * self.vec_2_a
+                self.translation_variables = [x0_ext, cover_h, x1_ext]
 
-                self.beam_extension_l = x0_ext + x1_ext
+    def __transformation_vecs(self, local_beam):
+        if (self.type == 0):
+            unit_x = self.beam.base_plane.XAxis
+            unit_y = self.beam.base_plane.YAxis
 
-                self.fit_line_flag = fit_line_flag
+            x0_ext, cover_h, x1_ext = self.translation_variables
+            # setting directions according to flags
+
+            x1_ext *= self.v2_sw
+
+            vec_0_sc = rg.Vector3d(unit_x) * x0_ext
+            vec_1 = rg.Vector3d(unit_y) * (self.beam.dy / 2 - cover_h) * self.v1_sw
+            vec_2_a = rg.Vector3d(unit_x) * x1_ext
+            vec_2_b = self.v1_sw * vec_2_a
+
+            beam_extension_l = x0_ext + x1_ext
+            local_beam.extend(beam_extension_l)
+
+            return vec_0_sc, vec_1, vec_2_a, vec_2_b
 
     def type_hole_pt_transform(self, beam_index):
         """ method that returns the joint points at a certain point on the beam
 
-            :param point:   The t_val of the point on the beam to consider.
-            :return:        The beam hole locations & reference points.
+            :param beam_index:  The index of the beam to consider.
+            :return:            The beam hole locations.
 
         """
         if (self.type == 0):
+            vec_0_sc, vec_1, vec_2_a, vec_2_b = self.__transformation_vecs(self.beam_set[beam_index])
             t_val = self.t_locs_beam[beam_index]
             beam_line = self.beam_set[beam_index].get_baseline()
             local_point = beam_line.PointAt(t_val)
