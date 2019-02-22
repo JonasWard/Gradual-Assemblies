@@ -99,8 +99,8 @@ class JointHoles(object):
 
     def __transformation_vecs(self, local_beam):
         if (self.type == 0):
-            unit_x = self.beam.base_plane.XAxis
-            unit_y = self.beam.base_plane.YAxis
+            unit_x = local_beam.base_plane.XAxis
+            unit_y = local_beam.base_plane.YAxis
 
             x0_ext, cover_h, x1_ext = self.translation_variables
             # setting directions according to flags
