@@ -22,9 +22,30 @@ if os.name == 'posix':
 
     print path_to_append
 
+dowels = []
+
 # import geometry.beam as Beam
 from geometry.joint_holes import JointHoles
+#
 from geometry.beam import Beam
+from itertools import chain
+
+def weave_lists(lhs, rhs):
+    
+    if len(lhs) < len(rhs):
+        lhs, rhs = rhs, lhs
+        
+    weaved_list = []
+    i = 0
+    while i < len(lhs):
+        
+        if i < len(lhs):
+            weaved_list.append(lhs[i])
+        
+        if i < len(rhs):
+            weaved_list.append(rhs[i]) 
+        i += 1
+    return weaved_list
 
 tmp = []
 
@@ -62,22 +83,30 @@ class SharedEdge(object):
         self.edge_2 = edge_2
 
     def get_beams(self):
-
+        
         return self.__get_beams(self.surface_1, self.edge_1), \
                self.__get_beams(self.surface_2, self.edge_2)
 
     def __get_beams(self, surface, edge):
-
-
+        
         if edge == V0:
-            return surface.beams[0]
+            
+            return [b[0] for i, b in enumerate(surface.beams) if i % 2 == 0]
+            
         elif edge == V1:
-            return surface.beams[-1]
+            
+            return [b[-1] for i, b in enumerate(surface.beams) if i % 2 == 0]
+            
         elif edge == U0:
-            return [b[0] for b in surface.beams]
+            
+            return weave_lists(surface.beams[0], surface.beams[1])
+            
         elif edge == U1:
-            return [b[-1] for b in surface.beams]
+
+            return weave_lists(surface.beams[-1], surface.beams[-2])
+
         else:
+            
             ValueError('edge direction is not a correct value')
 
 # definition of division
@@ -201,16 +230,45 @@ class Network(object):
         for d in self.divisions:
             d.determine_num()
 
-    def sew(self):
+    def seam(self):
 
-        for edge in self.shared_edges:
+        for shared_edge in self.shared_edges:
+            
+            edge_1 = shared_edge.edge_1
+            edge_2 = shared_edge.edge_2
 
-            beams_1, beams_2 = edge.get_beams()
+            beams_1, beams_2 = shared_edge.get_beams()
+            
+            if edge_1.direction == V and edge_2.direction == V:
+                
+                if  (edge_1.value + edge_2.value) % 2 == 0:
+                    
+                    # flush condition
+                    valueError('this connection won\'t happen')
+                
+                # for beams, edge in zip([beams_1, beams_2], [edge_1, edge_2]):
 
-            # connect edges between surfaces by dowels
-            # Use Jonas's Joint class?
+                #     if edge.value != 0:
 
-            tmp.extend([b.brep_representation() for b in beams_1])
+                #         beams = list(reversed(beams))
+
+                # weaved_list = weave_lists(beams_1, beams_2)
+
+                # for i in range(len(weaved_list) - 2):
+
+                #     left
+                
+            elif edge_1.direction == U and edge_2.direction == U:
+                
+                if  (edge_1.value + edge_2.value) % 2 == 0:
+                    
+                    # flush condition
+                    continue
+
+                
+            else:
+                
+                ValueError('For now we don\'t expect any u-v connection')
 
 class Surface(object):
 
@@ -228,19 +286,20 @@ class Surface(object):
         self.beams = []
 
         surface = self.__offset_sides_surface(50)
-
-        for u in range(self.u_div.num):
+        
+        for u in range(self.u_div.num + 1):
 
             inner_arr = []
 
-            for v in range(self.v_div.num + 1):
+            for v in range(self.v_div.num):
 
                 if (u % 2 == 0 and v % 2 == 1) or (u % 2 == 1 and v % 2 == 0):
                     continue
-
+                
                 p1 = surface.PointAt(u/self.u_div.num, v/self.v_div.num)
                 p2 = surface.PointAt(u/self.u_div.num, (v+1)/self.v_div.num)
 
+                
                 length = p1.DistanceTo(p2)
 
                 center = rg.Point3d((p1 + p2) / 2)
@@ -249,14 +308,15 @@ class Surface(object):
 
                 normal = surface.NormalAt(uu, vv)
                 x_axis = rg.Vector3d(p1) - rg.Vector3d(p2)
+                x_axis.Unitize()
                 y_axis = rg.Vector3d.CrossProduct(normal, x_axis)
 
                 plane = rg.Plane(center, x_axis, normal)
-
+                
                 beam = Beam(plane, length, 25, 5)
 
                 inner_arr.append(beam)
-
+            
             self.beams.append(inner_arr)
 
     def joint_generation(self, beam_set, location_set, type = 0):
@@ -266,18 +326,79 @@ class Surface(object):
         if type == 0:
             pass
 
-
-    def add_dowels(self):
+    def add_inner_dowels(self):
 
         """
             * extend the edges of beams
             * add dowels that go through three beams in the same surface
             * use Jonas's joint class?
         """
-
-        self.beams
-
-        pass
+        
+        for i in range(len(self.beams) - 2):
+            
+            left_beams   = self.beams[i]
+            middle_beams = self.beams[i + 1]
+            right_beams  = self.beams[i + 2]
+            
+            if len(left_beams) > len(middle_beams):
+                
+                for j in range(len(left_beams)):
+                    
+                    if j < len(middle_beams):
+                        left   = left_beams[j]
+                        middle = middle_beams[j]
+                        right  = right_beams[j]
+                        
+                        # apply a joint system
+                        #
+                        #   |
+                        # | | |
+                        # |   |
+                        
+                        joint_holes = JointHoles([left, middle, right], 0)
+                        dowels.append(joint_holes.dowel)
+                    
+                    if j > 0:
+                    
+                        left   = left_beams[j]
+                        middle = middle_beams[j-1]
+                        right  = right_beams[j]
+                        
+                        # apply a joint system
+                        #
+                        # |   |
+                        # | | |
+                        #   |
+                        joint_holes = JointHoles([left, middle, right], 1)
+                        dowels.append(joint_holes.dowel)
+            else:
+                
+                for j in range(len(left_beams)):
+                    
+                    left   = left_beams[j]
+                    middle = middle_beams[j]
+                    right  = right_beams[j]
+                    
+                    # apply a joint system
+                    #
+                    #   |
+                    # | | |
+                    # |   |
+                    
+                    left   = left_beams[j]
+                    middle = middle_beams[j+1]
+                    right  = right_beams[j]
+                    
+                    joint_holes = JointHoles([left, middle, right], 1)
+                    dowels.append(joint_holes.dowel)
+                    
+                    # apply a joint system
+                    #
+                    # |   |
+                    # | | |
+                    #   |
+                    joint_holes = JointHoles([left, middle, right], 0)
+                    dowels.append(joint_holes.dowel)
 
     def get_flatten_beams(self):
 
@@ -363,13 +484,13 @@ for s in network.surfaces:
     # instantiate beams
     s.instantiate_beams()
 
-    # add dowels to the beams in the surface (not for sewing)
-    s.add_dowels() # joint class must be applied inside
+    # add dowels to the beams in the surface (not for seaming)
+    s.add_inner_dowels() # joint class must be applied inside
 
     # visualization
     beams.extend([b.brep_representation(make_holes=False) for b in s.get_flatten_beams()])
 
 # add dowels to connect contact surfaces
-network.sew() # joint class must be applied inside
+network.seam() # joint class must be applied inside
 
 # consider keystones
