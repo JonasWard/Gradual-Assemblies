@@ -14,10 +14,13 @@ import rhinoscriptsyntax as rs
 import Rhino.Geometry as rg
 import copy
 
-path_to_append = single_parent
-sys.path.append(path_to_append)
+import os
+if os.name == 'posix':
+    print "you're a Mac!"
+    path_to_append = single_parent
+    sys.path.append(path_to_append)
 
-print path_to_append
+    print path_to_append
 
 # import geometry.beam as Beam
 from geometry.joint_holes import JointHoles
