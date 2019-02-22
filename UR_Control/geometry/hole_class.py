@@ -12,7 +12,7 @@ reload(beam)
 
 import Rhino.Geometry as rg
 
-class Hole(object):
+class JointHoles(object):
     """ Hole class that defines some hole positions baded on a beam """
     def __init__(self, ref_beam, location=0, type=0, type_args=[120, 20, 30, False, False]):
         """ initialization

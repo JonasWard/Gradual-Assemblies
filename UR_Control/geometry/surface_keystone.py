@@ -6,25 +6,34 @@ import copy
 
 # grasshopper inputs
 
-srf_1
-srf_2
-srf_3
-srf_4
+srf_set
 
 # local inputs
 
 class Keystone(object):
-    def __init__(self, srf_set, div_u, div_v, dir = True):
+    def __init__(self, srf_set, v_div, blend_precision = None, dir = True, split_function = 0):
         self.srf_set = srf_set
         self.srf_count = len(srf_set)
 
-        self.div_u = div_u
-        self.div_v = div_v
+        self.blend_crv_count_f(blend_precision)
         self.dir = dir
+        self.v_div = v_div
 
-    def construct_srf(self):
+        self.blend_crv_split_f = split_function
+
+    def blend_crv_count_f(self, blend_precision):
+        if blend_precision == None:
+            self.blend_div = 10 * 2 + 1
+            self.blend_crv_count = 10
+            print "blend precision = None"
+        else:
+            self.blend_div = (blend_precision * 2 - 1)
+            self.blend_crv_count = blend_precision
+            print "blend precision = ", blend_precision
+
+    def construct_srf(self, avg_spacing = 200, rebuild = False):
         self.isocurves()
-        self.curve_blending()
+        self.curve_blending(200, rebuild)
         self.blend_curve_split_function()
         self.curve_blend_splicing(0)
         self.invert_uv_isocurves()
@@ -37,44 +46,45 @@ class Keystone(object):
         self.isocurve_set = []
 
         for surface in self.srf_set:
-            surface.SetDomain(0, rg.Interval(0, self.u_div))
-            surface.SetDomain(1, rg.Interval(0, self.v_div))
+            surface.SetDomain(0, rg.Interval(0, self.blend_div))
+            surface.SetDomain(1, rg.Interval(0, self.blend_div))
             local_isocurve_set = []
-            for v_val in range(self.v_div + 1):
+            for v_val in range(self.blend_div + 1):
                 local_isocurve = surface.IsoCurve(0, v_val)
                 self.isocurve_vis.append(local_isocurve)
                 local_isocurve_set.append(local_isocurve)
             self.isocurve_set.append(local_isocurve_set)
 
-    def curve_blending(self, avg_spacing = 200):
-        self.blend_crvs = [[] for i in range(self.srf_set)]
+    def curve_blending(self, avg_spacing = 200, rebuild = False):
+        self.blend_crvs = [[] for i in range(self.srf_count)]
         self.blend_crvs_vis = []
         self.avg_spacing = avg_spacing
-
-        self.blend_crv_count = int(m.ceil(self.v_div / 2.0))
-        blend_curve_average_length = 0
+        self.blend_crv_avg_len = 0
 
         for i in range (self.blend_crv_count):
             for j in range(self.srf_count):
                 curve_0 = self.isocurve_set[j][i]
-                curve_1 = self.isocurve_set[(j - 1) % self.srf_count][self.v_div - i]
+                curve_1 = self.isocurve_set[(j - 1) % self.srf_count][self.blend_div - i]
                 if self.dir:
                     t0, t1 = curve_0.Domain[0], curve_1.Domain[0]
                 else:
                     t1, t0 = curve_0.Domain[0], curve_1.Domain[0]
                 blend_con = rg.BlendContinuity.Tangency
                 local_blend_crv = rg.Curve.CreateBlendCurve(curve_0, t0, self.dir, blend_con, curve_1, t1, self.dir, blend_con)
-                local_blend_crv = local_blend_crv.Rebuild(30, 3, False)
+                if rebuild:
+                    local_blend_crv = local_blend_crv.Rebuild(30, 3, False)
                 self.blend_crvs[j].append(local_blend_crv)
-                blend_curve_average_length += local_blend_crv.GetLength()
+                self.blend_crv_avg_len += local_blend_crv.GetLength()
                 self.blend_crvs_vis.append(local_blend_crv)
 
-        self.blend_curve_average_length /= (self.blend_crv_count * self.srf_count)
-        self.blend_div_count = int(m.ceil(self.blend_curve_average_length / self.avg_spacing))
+        self.blend_crv_avg_len /= (self.blend_crv_count * self.srf_count)
+        self.blend_div_count = int(m.ceil(self.blend_crv_avg_len / self.avg_spacing))
         self.blend_div_count += (self.blend_div_count + 1)%2
 
     def blend_curve_split_function(self):
-        if (self.blend_curve_split_function == 0):
+
+        # TODO Implement v_div as a variable
+        if (self.blend_crv_split_f == 0):
             start_shift = 0 / (2 * (self.blend_div_count - 1))
             shift_start = 1 - .05 * self.srf_count
             shift_max = .025 * self.srf_count
@@ -98,15 +108,14 @@ class Keystone(object):
     def curve_blend_splicing(self, function_type = 0):
         self.struct_pt_cloud = []
         self.vis_pt_cloud = []
-        self.blend_crv_div = []
+        self.blend_crv_split_set = []
+        self.vis_blend_crv_split = []
         self.blend_crv_split_f = function_type
 
         print self.t_vals_srf
 
         temp_new_sets_pos = []
         temp_new_sets_neg = []
-
-        self.crv_vis = []
 
         for i in range(self.srf_count):
             local_pos_list = []
@@ -120,28 +129,28 @@ class Keystone(object):
                 tmp_crv_1.Reverse()
                 local_pos_list.append(tmp_crv_0)
                 local_neg_list.append(tmp_crv_1)
-                self.crv_vis.append(tmp_crv_0)
-                self.crv_vis.append(tmp_crv_1)
+                self.vis_blend_crv_split.append(tmp_crv_0)
+                self.vis_blend_crv_split.append(tmp_crv_1)
             local_neg_list.reverse()
             temp_new_sets_pos.append(local_pos_list)
             temp_new_sets_neg.append(local_neg_list)
 
-        self.new_crv_sets = []
         for j in range(self.srf_count):
             local_set = temp_new_sets_pos[j]
             local_set.extend(temp_new_sets_neg[(j + 1) % self.srf_count])
-            self.new_crv_sets.append(local_set)
+            self.blend_crv_split_set.append(local_set)
 
     def invert_uv_isocurves(self):
         self.vis_uv_switched_crvs = []
         self.uv_switched_crvs_set = []
+        self.vis_uv_switched_pt_set = []
         for j in range(self.srf_count):
             # inverting the surface directions
 
             sampling_count = 7
             # switching the uv direction back to where it should be! -> rebuilding the surface
             point_list = [[] for i in range(sampling_count)]
-            for temp_curve in self.new_crv_sets[j]:
+            for temp_curve in self.blend_crv_split_set[j]:
                 length = temp_curve.GetLength()
                 start_t, end_t = temp_curve.Domain[0], temp_curve.Domain[1]
                 t_delta = end_t - start_t
@@ -153,7 +162,8 @@ class Keystone(object):
 
             uv_switched_crvs = []
             for point_set in point_list:
-                local_curve = rg.NurbsCurve.Create(False, 3, point_set)
+                local_curve = rg.NurbsCurve.Create(False, 5, point_set)
+                self.vis_uv_switched_pt_set.extend(point_set)
                 uv_switched_crvs.append(local_curve)
                 self.vis_uv_switched_crvs.append(local_curve)
             self.uv_switched_crvs_set.append(uv_switched_crvs)
@@ -166,3 +176,9 @@ class Keystone(object):
             local_new_srf.Faces.Item[0].ToNurbsSurface()
             local_new_srf = copy.deepcopy(local_new_srf)
             self.keystone_srfs.append(local_new_srf)
+
+keystone = Keystone(srf_set, v_div, blend_precision, dir)
+keystone_srfs = keystone.construct_srf(200, True)
+split_crvs = keystone.vis_blend_crv_split
+uv_switched_crvs = keystone.vis_uv_switched_crvs
+uv_switched_pts = keystone.vis_uv_switched_pt_set
