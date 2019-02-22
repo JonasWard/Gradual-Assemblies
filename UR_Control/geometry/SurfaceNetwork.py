@@ -82,6 +82,7 @@ class SharedEdge(object):
         self.surface_2 = surface_2
         self.edge_1 = edge_1
         self.edge_2 = edge_2
+        self.dowels_placed = False
 
     def get_beams(self):
         
@@ -118,11 +119,11 @@ class SharedEdge(object):
             
         elif edge == U0:
             
-            return weave_lists(surface.beams[0], surface.beams[1])
+            return surface.beams[0], surface.beams[1]
             
         elif edge == U1:
 
-            return weave_lists(surface.beams[-1], surface.beams[-2])
+            return surface.beams[-2], surface.beams[-1]
 
         else:
             
@@ -202,7 +203,7 @@ class Network(object):
         shared_edges = []
         for i, s1 in enumerate(self.surfaces):
 
-            for j, s2 in enumerate(self.surfaces):
+            for j, s2 in enumerate(self.surfaces[i+1:]):
 
                 if s1 == s2:
                     continue
@@ -288,6 +289,78 @@ class Network(object):
                     # flush condition
                     continue
 
+                beams_1_left, beams_1_right = beams_1
+                beams_2_left, beams_2_right = beams_2
+                
+                beams = [beams_1_left, beams_1_right, beams_2_left, beams_2_right]
+
+                for i in range(len(beams) - 2):
+                    
+                    left_beams   = beams[i]
+                    middle_beams = beams[i + 1]
+                    right_beams  = beams[i + 2]
+                    
+                    if len(left_beams) > len(middle_beams):
+                        
+                        for j in range(len(left_beams)):
+                            
+                            if j < len(middle_beams):
+                                left   = left_beams[j]
+                                middle = middle_beams[j]
+                                right  = right_beams[j]
+                                
+                                # apply a joint system
+                                #
+                                #   |
+                                # | | |
+                                # |   |
+                                
+                                joint_holes = JointHoles([left, middle, right], 0)
+                                dowels.append(joint_holes.dowel)
+                            
+                            if j > 0:
+                            
+                                left   = left_beams[j]
+                                middle = middle_beams[j-1]
+                                right  = right_beams[j]
+                                
+                                # apply a joint system
+                                #
+                                # |   |
+                                # | | |
+                                #   |
+                                joint_holes = JointHoles([left, middle, right], 1)
+                                dowels.append(joint_holes.dowel)
+                                
+                    else:
+                        
+                        for j in range(len(left_beams)):
+                            
+                            left   = left_beams[j]
+                            middle = middle_beams[j]
+                            right  = right_beams[j]
+        
+                            # apply a joint system
+                            #
+                            # |   |
+                            # | | |
+                            #   |
+                            joint_holes = JointHoles([left, middle, right], 1)
+                            dowels.append(joint_holes.dowel)
+        
+                            # apply a joint system
+                            #
+                            #   |
+                            # | | |
+                            # |   |
+                            
+                            left   = left_beams[j]
+                            middle = middle_beams[j+1]
+                            right  = right_beams[j]
+                            
+                            joint_holes = JointHoles([left, middle, right], 0)
+                            dowels.append(joint_holes.dowel)
+                
                 
             else:
                 
