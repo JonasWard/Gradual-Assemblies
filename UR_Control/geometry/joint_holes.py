@@ -16,19 +16,17 @@ import Rhino.Geometry as rg
 
 class JointHoles(object):
     """ Hole class that defines some hole positions baded on a beam """
-    def __init__(self, beam_set, locations = None, type_args=[0, 120, 20, 30, False, False, False]):
+    def __init__(self, beam_set, location_index = None, type_args=[0, 120, 20, 30, False, False, False]):
         """ initialization
 
-            :param beam:        Beam that's being considered
-            :param locations:   Iterable list or float indicating the t_vals on the beam baseline where you need the holes (default = 0)
-            :param type:        Topological type of the joint (default = 0)
-            :param type_args:   Iterable list containing parametrs defining the position of the joint holes in relationship to the joint type
+            :param beam:            Beam that's being considered
+            :param location_index:  Index that indicating which t_vals on the beam baseline curve to consider, should take int (default = None)
+            :param type_args:       Iterable list containing parametrs defining the position of the joint holes in relationship to the joint type, first value is always the type!
         """
 
         self.beam_set = beam_set
         self.beam_set_len = len(beam_set)
-        self.type = type
-        self.t_locs_beam = locations
+        self.loc_index = location_index
         self.type = type_args[0]
         self.type_args = type_args
 
@@ -42,9 +40,11 @@ class JointHoles(object):
 
     def __location_mapping(self):
         if self.type == 0:
-            if (self.t_locs_beam == [1, 0, 1]):
+            if (self.loc_index == 0) :
+                self.t_locs_beam == [1, 0, 1]
                 self.dow_pts_i = [[0][0, 1, 2]]
-            elif (self.t_locs_beam == [0, 1, 0]):
+            elif (self.loc_index == 1):
+                self.t_locs_beam == [0, 1, 0]
                 self.dow_pts_i = [[1][0, 1, 2]]
             else:
                 print "wrong input, but here's a result anyway (:"

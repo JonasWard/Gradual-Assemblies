@@ -106,10 +106,7 @@ pt_locations_top = []
 for v_beams_lists in beam_list_a:
     hole_v_list = []
     for local_beam in v_beams_lists:
-        local_beam.extend(100)
-        holes = [hc.JointHoles((local_beam), 0).joint_pts, hc.JointHoles((local_beam), 1).joint_pts]
-        hole_visualisation.extend([holes[0][0][0], holes[0][1][0], holes[0][1][1], holes[0][1][2],  holes[0][2][0], holes[0][2][1], holes[0][2][2], holes[1][0][0], holes[1][1][0], holes[1][1][1], holes[1][1][2],  holes[1][2][0], holes[1][2][1], holes[1][2][2]])
-        hole_v_list.append(holes)
+        local_beam.extend(200)
         beam_visualisation.append(local_beam.brep_representation())
     hole_list_a.append(hole_v_list)
 
@@ -118,10 +115,7 @@ hole_list_a
 for v_beams_lists in beam_list_b:
     hole_v_list = []
     for local_beam in v_beams_lists:
-        local_beam.extend(100)
-        holes = [hc.JointHoles((local_beam), 0).joint_pts, hc.JointHoles((local_beam), 1).joint_pts]
-        hole_visualisation.extend([holes[0][0][0], holes[0][1][0], holes[0][1][1], holes[0][1][2],  holes[0][2][0], holes[0][2][1], holes[0][2][2], holes[1][0][0], holes[1][1][0], holes[1][1][1], holes[1][1][2],  holes[1][2][0], holes[1][2][1], holes[1][2][2]])
-        hole_v_list.append(holes)
+        local_beam.extend(200)
         beam_visualisation.append(local_beam.brep_representation())
     hole_list_b.append(hole_v_list)
 
