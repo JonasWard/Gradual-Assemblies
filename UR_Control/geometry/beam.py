@@ -35,6 +35,7 @@ class Beam(object):
         self.dx_base_line = dx
 
         self.dowel_list = []
+        self.extension = 0
 
     def add_dowel(self, dowel):
         """ add a dowel to this beam
@@ -77,7 +78,7 @@ class Beam(object):
         if (box == None):
             # create a box in case one hasn't been fed in
             box = rg.Box(self.base_plane,
-                rg.Interval(-self.dx*0.5, self.dx*0.5),
+                rg.Interval(-self.dx*0.5 - self.extension, self.dx*0.5 + self.extension),
                 rg.Interval(-self.dy*0.5, self.dy*0.5),
                 rg.Interval(-self.dz*0.5, self.dz*0.5)
                 )
@@ -135,19 +136,18 @@ class Beam(object):
 
         return angles
 
-    def extend(self, x_change_start = 0, x_change_end = None):
+    def extend(self, x_change):
         """
         extends the brep representation of your beam b a certain value
 
-            :param x_change_start: amount the brep is extended at the start (default = 0)
-            :param x_change_end: amount the brep is extended at the start (default = None => the same change as at the start)
+            :param x_change:    amount to be checked for whether it's smaller or larger than the current brep extension value at BOTH sides (default = 0)
             :return: returns brep representation
         """
-        if x_change_end == None:
-            x_change_end = x_change_start
-            self.dx += x_change_end * 2
+        # maybe to-do -> variying overlaps at varying sides
+        if x_change > self.extension:
+            self.extension = x_change
 
-    def check_angle_constraints(self, angle = 60):
+    def check_angle_constraints(self, angle = 55):
         """
         checks where the beam | dowel intersection events are problematic based on the angle between beam and dowel
 
