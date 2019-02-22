@@ -8,13 +8,15 @@ path_to_append = ''.join([double_parent, "/UR_Control"])
 sys.path.append(path_to_append)
 
 import geometry.beam as beam
+import geometry.dowel as dowel
 reload(beam)
+reload(dowel)
 
 import Rhino.Geometry as rg
 
 class JointHoles(object):
     """ Hole class that defines some hole positions baded on a beam """
-    def __init__(self, ref_beam, location=0, type=0, type_args=[120, 20, 30, False, False]):
+    def __init__(self, beam_set, locations = None, type_args=[0, 120, 20, 30, False, False, False]):
         """ initialization
 
             :param beam:        Beam that's being considered
@@ -23,17 +25,42 @@ class JointHoles(object):
             :param type_args:   Iterable list containing parametrs defining the position of the joint holes in relationship to the joint type
         """
 
-        self.beam = ref_beam
-        self.beam_line = self.beam.get_baseline()
+        self.beam_set = beam_set
+        self.beam_set_len = len(beam_set)
         self.type = type
-        self.locs = location
+        self.t_locs_beam = locations
+        self.type = type_args[0]
         self.type_args = type_args
 
         self.__type_definitions()
         if(self.type_completed_flag):
+            self.__location_mapping()
             self.__joint_point_calculation()
+            self.__beam_linking()
         else:
             print self.error_message
+
+    def __location_mapping(self):
+        if self.type == 0:
+            if (self.t_locs_beam == [1, 0, 1]):
+                self.dow_pts_i = [[0][0, 1, 2]]
+            elif (self.t_locs_beam == [0, 1, 0]):
+                self.dow_pts_i = [[1][0, 1, 2]]
+            else:
+                print "wrong input, but here's a result anyway (:"
+                self.t_locs_beam == [1, 0, 1]
+                self.dow_pts_i = [[1][0, 1, 2]]
+
+    def __beam_linking(self):
+        if self.type == 0:
+            if self.fit_line_flag:
+                self.dowel_line = rg.Line.TryFitLineToPoints(self.dowel_pts)
+            else:
+                self.dowel_line = rg.Line(self.dowel_pts[0], self.dowel_pts[2])
+        for local_beam in self.beam_set:
+            local_dowel = dowel.Dowel(None, self.dowel_line)
+            local_beam.add_dowel(local_dowel)
+            self.dowel = local_dowel.brep_representation()
 
     def __type_definitions(self):
         """ internal method that defines the different joint types
@@ -44,9 +71,10 @@ class JointHoles(object):
                 x1_ext          - second shfit along the beams axis, resulting into the new top (or bottom) point
                 symmetry_flag   - whether the dowel hole connections are axis symmetrical (True) or point symmetrical (False)
                 invert_flag     - whether the direction should be inverted or not
+                fit_line_flag   - whether you consider the middle beam as well or not (default = False)
         """
         if (self.type == 0):
-            type_input_count = 5
+            type_input_count = 6
 
             type_args_count = len(self.type_args)
             if not(type_args_count == type_input_count):
@@ -55,7 +83,7 @@ class JointHoles(object):
 
             else:
                 self.type_completed_flag = True
-                x0_ext, cover_h, x1_ext, symmetry_flag, invert_flag = self.type_args
+                type_value, x0_ext, cover_h, x1_ext, symmetry_flag, invert_flag, fit_line_flag = self.type_args
                 unit_x = self.beam.base_plane.XAxis
                 unit_y = self.beam.base_plane.YAxis
                 # setting directions according to flags
@@ -76,7 +104,9 @@ class JointHoles(object):
 
                 self.beam_extension_l = x0_ext + x1_ext
 
-    def type_transform(self, point_val):
+                self.fit_line_flag = fit_line_flag
+
+    def type_hole_pt_transform(self, beam_index):
         """ method that returns the joint points at a certain point on the beam
 
             :param point:   The t_val of the point on the beam to consider.
@@ -84,7 +114,9 @@ class JointHoles(object):
 
         """
         if (self.type == 0):
-            local_point = self.beam_line.PointAt(point_val)
+            t_val = self.t_locs_beam[beam_index]
+            beam_line = self.beam_set[beam_index].get_baseline()
+            local_point = beam_line.PointAt(t_val)
 
             # translating to the mid_points
             mv_0 = rg.Transform.Translation(self.vec_0)
@@ -111,20 +143,13 @@ class JointHoles(object):
             top_1.Transform(mv_0)
             bot_1.Transform(mv_1)
 
-            hole_list = [[local_point], [top_0, mid_0, bot_0], [top_1, mid_1, bot_1]]
+            hole_list = [[top_0, mid_0, bot_0], [top_1, mid_1, bot_1]]
             return hole_list
 
     def __joint_point_calculation(self):
         """ Internal method that executes the joint_point_calculations """
-        local_line = self.beam_line
-        b_pts = []
-        self.joint_pts = []
-        if (type(self.locs) == float or type(self.locs) == int):
-            b_pt = local_line.PointAt(self.locs)
-            b_pts.append(b_pt)
-            self.joint_pts = self.type_transform(self.locs)
-        elif (type(self.locs) == list):
-            for t_val in self.locs:
-                b_pt = local_line.PointAt(t_val)
-                b_pts.append(b_pt)
-                self.joint_pts.append(self.type_transform(self.locs))
+        self.dowel_pts = []
+        for i in range(self.beam_set_len):
+            loc_hole_pts = self.type_hole_pt_transform(i)
+            loc_dowel_pt = loc_hole_pts[self.dow_pts_i[0]][self.dow_pts_i[i]]
+            self.dowel_pts.append(loc_dowel_pt)

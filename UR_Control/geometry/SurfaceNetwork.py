@@ -20,10 +20,8 @@ sys.path.append(path_to_append)
 print path_to_append
 
 # import geometry.beam as Beam
-import geometry.joint_holes as hc
-#
+from geometry.joint_holes import JointHoles
 from geometry.beam import Beam
-from itertools import chain
 
 tmp = []
 
