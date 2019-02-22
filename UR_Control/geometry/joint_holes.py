@@ -107,7 +107,7 @@ class JointHoles(object):
 
             x1_ext *= self.v2_sw
 
-            vec_0 = rg.Vector3d(unit_x) * x0_ext
+            vec_0_sc = rg.Vector3d(unit_x) * x0_ext
             vec_1 = rg.Vector3d(unit_y) * (local_beam.dy / 2 - cover_h) * self.v1_sw
             vec_2_a = rg.Vector3d(unit_x) * x1_ext
             vec_2_b = self.v1_sw * vec_2_a
@@ -115,7 +115,7 @@ class JointHoles(object):
             beam_extension_l = x0_ext + x1_ext
             local_beam.extend(beam_extension_l)
 
-            return vec_0, vec_1, vec_2_a, vec_2_b
+            return vec_0_sc, vec_1, vec_2_a, vec_2_b
 
     def type_hole_pt_transform(self, beam_index):
         """ method that returns the joint points at a certain point on the beam
@@ -125,20 +125,20 @@ class JointHoles(object):
 
         """
         if (self.type == 0):
-            vec_0, vec_1, vec_2_a, vec_2_b = self.__transformation_vecs(self.beam_set[beam_index])
+            vec_0_sc, vec_1, vec_2_a, vec_2_b = self.__transformation_vecs(self.beam_set[beam_index])
             t_val = self.t_locs_beam[beam_index]
             beam_line = self.beam_set[beam_index].get_baseline()
             local_point = beam_line.PointAt(t_val)
 
             # translating to the mid_points
-            mv_0 = rg.Transform.Translation(vec_0)
-            mv_1 = rg.Transform.Translation(-vec_0)
+            mv_0 = rg.Transform.Translation(self.vec_0)
+            mv_1 = rg.Transform.Translation(-self.vec_0)
             mid_0, mid_1 = rg.Point3d(local_point), rg.Point3d(local_point)
             mid_0.Transform(mv_0)
             mid_1.Transform(mv_1)
 
             # translating to the end_points set_0
-            v_top = rg.Vector3d(vec_1 + vec_2_a)
+            v_top = rg.Vector3d(self.vec_1 + self.vec_2_a)
             v_bottom = rg.Vector3d(- v_top)
             mv_0 = rg.Transform.Translation(v_top)
             mv_1 = rg.Transform.Translation(v_bottom)
@@ -147,7 +147,7 @@ class JointHoles(object):
             bot_0.Transform(mv_1)
 
             # translating to the end_points set_1
-            v_top = vec_1 + vec_2_b
+            v_top = self.vec_1 + self.vec_2_b
             v_bottom = - v_top
             mv_0 = rg.Transform.Translation(v_top)
             mv_1 = rg.Transform.Translation(v_bottom)
