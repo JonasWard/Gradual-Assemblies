@@ -10,6 +10,7 @@ print path_to_append
 
 import geometry.beam as beam
 import geometry.hole_class as hc
+import math as m
 
 import Rhino.Geometry as rg
 
@@ -104,22 +105,41 @@ pt_locations_top = []
 
 for v_beams_lists in beam_list_a:
     hole_v_list = []
-    for beam in v_beams_lists:
-        beam.extend(100)
-        holes = [hc.Hole((beam), 0).joint_pts, hc.Hole((beam), 1).joint_pts]
+    for local_beam in v_beams_lists:
+        local_beam.extend(100)
+        holes = [hc.Hole((local_beam), 0).joint_pts, hc.Hole((local_beam), 1).joint_pts]
         hole_visualisation.extend([holes[0][0][0], holes[0][1][0], holes[0][1][1], holes[0][1][2],  holes[0][2][0], holes[0][2][1], holes[0][2][2], holes[1][0][0], holes[1][1][0], holes[1][1][1], holes[1][1][2],  holes[1][2][0], holes[1][2][1], holes[1][2][2]])
         hole_v_list.append(holes)
-        beam_visualisation.append(beam.brep_representation())
+        beam_visualisation.append(local_beam.brep_representation())
     hole_list_a.append(hole_v_list)
 
 hole_list_a
 
 for v_beams_lists in beam_list_b:
     hole_v_list = []
-    for beam in v_beams_lists:
-        beam.extend(100)
-        holes = [hc.Hole((beam), 0).joint_pts, hc.Hole((beam), 1).joint_pts]
+    for local_beam in v_beams_lists:
+        local_beam.extend(100)
+        holes = [hc.Hole((local_beam), 0).joint_pts, hc.Hole((local_beam), 1).joint_pts]
         hole_visualisation.extend([holes[0][0][0], holes[0][1][0], holes[0][1][1], holes[0][1][2],  holes[0][2][0], holes[0][2][1], holes[0][2][2], holes[1][0][0], holes[1][1][0], holes[1][1][1], holes[1][1][2],  holes[1][2][0], holes[1][2][1], holes[1][2][2]])
         hole_v_list.append(holes)
-        beam_visualisation.append(beam.brep_representation())
+        beam_visualisation.append(local_beam.brep_representation())
     hole_list_b.append(hole_v_list)
+
+if (add_extra_beam):
+    pt_0, pt_1 = surface.PointAt(u_div + 1, m.floor((v_div + 1) / 2)), surface.PointAt(u_div + 1, m.ceil((v_div + 1) / 2))
+    print pt_0, pt_1
+    local_line = rg.Line(pt_0, pt_1)
+
+    # beam representation
+    mid_point = (pt_0 + pt_1) / 2.0
+    pt_ignore, u_eval, v_eval = surface.ClosestPoint(mid_point)
+    y_vector = surface.NormalAt(u_eval, v_eval)
+    x_vector = rg.Vector3d(pt_1 - pt_0)
+    base_plane = rg.Plane(mid_point, x_vector, y_vector)
+    dx = local_line.Length
+    dy = 120
+    dz = 40
+    local_beam = beam.Beam(base_plane, dx, dy, dz)
+    local_beam.extend(100)
+
+    beam_visualisation.append(local_beam.brep_representation())
