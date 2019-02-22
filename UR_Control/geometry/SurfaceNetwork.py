@@ -218,11 +218,11 @@ class Surface(object):
 
         surface = self.__offset_sides_surface(50)
 
-        for v in range(self.v_div.num):
+        for u in range(self.u_div.num):
 
             inner_arr = []
 
-            for u in range(self.u_div.num + 1):
+            for v in range(self.v_div.num + 1):
 
                 if (u % 2 == 0 and v % 2 == 1) or (u % 2 == 1 and v % 2 == 0):
                     continue
@@ -232,9 +232,7 @@ class Surface(object):
 
                 length = p1.DistanceTo(p2)
 
-                center = rg.Point3d(
-                    rg.Vector3d(p1.X + p2.X, p1.Y + p2.Y, p1.Z + p2.Z) * 0.5
-                )
+                center = rg.Point3d((p1 + p2) / 2)
 
                 _, uu, vv = surface.ClosestPoint(center)
 
@@ -249,6 +247,14 @@ class Surface(object):
                 inner_arr.append(beam)
 
             self.beams.append(inner_arr)
+
+    def joint_generation(self, type = 0, beam_set, location_set):
+        pass
+
+    def joint_type(self, type = 0):
+        if type = 0:
+            pass
+
 
     def add_dowels(self):
 

@@ -9,7 +9,7 @@ sys.path.append(path_to_append)
 print path_to_append
 
 import geometry.beam as beam
-import geometry.hole_class as hc
+import geometry.joint_holes as hc
 import math as m
 
 import Rhino.Geometry as rg
