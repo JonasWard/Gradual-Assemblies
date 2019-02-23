@@ -16,7 +16,7 @@ import Rhino.Geometry as rg
 
 class JointHoles(object):
     """ Hole class that defines some hole positions baded on a beam """
-    def __init__(self, beam_set, location_index = None, type = 0, type_args=[120, 20, 30, True, False, False]):
+    def __init__(self, beam_set, location_index = None, type = 0, type_args=[120, 50, 30, True, False, True]):
         """ initialization
 
             :param beam:            Beam that's being considered
@@ -79,7 +79,7 @@ class JointHoles(object):
         if self.type == 0:
             # the triple joint
             if self.fit_line_flag:
-                self.dowel_line = rg.Line.TryFitLineToPoints(self.dowel_pts)
+                ignore, self.dowel_line = rg.Line.TryFitLineToPoints(self.dowel_pts)
             else:
                 self.dowel_line = rg.Line(self.dowel_pts[0], self.dowel_pts[2])
         if (self.type == 1 or self.type == 2):
