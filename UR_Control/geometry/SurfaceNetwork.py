@@ -137,6 +137,7 @@ class Division(object):
         self.id = id(self)
         self.num = 0
         self.shared_edges = []
+        self.network_surfaces = []
 
     def add_shared_edge(self, shared_edge):
 
@@ -145,6 +146,11 @@ class Division(object):
 
     def determine_num(self):
 
+        # must be an odd number?
+        self.num = 3 if self.get_direction() == V else 7
+    
+    def get_direction(self):
+        
         u_num, v_num = 0, 0
 
         for e in self.shared_edges:
@@ -157,9 +163,185 @@ class Division(object):
 
                 v_num += 1
 
-        # must be an odd number?
-        self.num = 3 if u_num < v_num else 7
+        return U if u_num > v_num else V
+    
+    def setup_network(self):
+        
+        direction = self.get_direction()
+        
+        if direction == U:
+            
+            return
+        
+        surface_pairs_dic = {}
+        
+        for shared_edge in self.shared_edges:
+            
+            if shared_edge.edge_1.value == 1 and shared_edge.edge_2.value == 0:
+                
+                surface_pairs_dic[shared_edge.surface_2] = [shared_edge.surface_1, shared_edge.surface_2]
+            
+            elif shared_edge.edge_1.value == 0 and shared_edge.edge_2.value == 1:
+                
+                surface_pairs_dic[shared_edge.surface_1] = [shared_edge.surface_2, shared_edge.surface_1]
+            
+            else:
+                
+                ValueError('Unexisting pair')
+        
+        keys = surface_pairs_dic.keys()
+        
+        network_surfaces = []
 
+        # find the first surface
+        for _, (bottom, top) in surface_pairs_dic.iteritems():
+            
+            if not bottom in keys:
+                
+                network_surfaces.extend([bottom, top])
+                del surface_pairs_dic[top]
+                break
+
+        while surface_pairs_dic:
+            
+            last_surface = network_surfaces[-1]
+            
+            for _, (bottom, top) in surface_pairs_dic.iteritems():
+                
+                if bottom == last_surface:
+                    
+                    network_surfaces.append(top)
+                    del surface_pairs_dic[top]
+                    break
+        
+        self.network_surfaces = network_surfaces
+    
+    def add_dowels(self):
+        
+        if len(self.network_surfaces) == 0:
+            return
+        
+        # organize beams
+        all_beams = None
+        
+        
+        for i, s in enumerate(self.network_surfaces):
+            
+            if i % 2 == 0:
+                
+                beams = list(s.beams)
+            
+            else:
+                
+                beams = list(reversed(s.beams))
+            
+            if not all_beams:
+                
+                all_beams = beams
+            
+            else:
+                
+                for all, new_beams in zip(all_beams, beams):
+                    
+                    all.extend(new_beams)
+
+        # add three beams connetion
+        
+        for i in range(len(all_beams) - 2):
+
+            left_beams   = all_beams[i]
+            middle_beams = all_beams[i + 1]
+            right_beams  = all_beams[i + 2]
+
+            if i % 2 == 0:
+
+                for j in range(len(left_beams)):
+
+                    if j < len(middle_beams):
+                        left   = left_beams[j]
+                        middle = middle_beams[j]
+                        right  = right_beams[j]
+                        
+                        # apply a joint system
+                        #
+                        #   |
+                        # | | |
+                        # |   |
+                        
+                        joint_holes = JointHoles([left, middle, right], 0)
+                        dowels.append(joint_holes.dowel)
+
+                    if j > 0:
+
+                        left   = left_beams[j]
+                        middle = middle_beams[j-1]
+                        right  = right_beams[j]
+
+                        # apply a joint system
+                        #
+                        # |   |
+                        # | | |
+                        #   |
+                        joint_holes = JointHoles([left, middle, right], 1)
+                        dowels.append(joint_holes.dowel)
+
+            else:
+
+                for j in range(len(left_beams)):
+
+                    left   = left_beams[j]
+                    middle = middle_beams[j]
+                    right  = right_beams[j]
+
+                    # apply a joint system
+                    #
+                    # |   |
+                    # | | |
+                    #   |
+                    joint_holes = JointHoles([left, middle, right], 1)
+                    dowels.append(joint_holes.dowel)
+                    
+                    if j < len(middle_beams) - 1:
+                        # apply a joint system
+                        #
+                        #   |
+                        # | | |
+                        # |   |
+
+                        left   = left_beams[j]
+                        middle = middle_beams[j+1]
+                        right  = right_beams[j]
+    
+                        joint_holes = JointHoles([left, middle, right], 0)
+                        dowels.append(joint_holes.dowel)
+        
+        # add two beams connection
+        
+        first_rows = [b[0] for i, b in enumerate(all_beams) if i % 2 == 0]
+        
+        if len(all_beams[0]) == len(all_beams[1]):
+            last_rows = [b[-1] for i, b in enumerate(all_beams) if i % 2 == 1]
+        else:
+            last_rows = [b[-1] for i, b in enumerate(all_beams) if i % 2 == 0]
+        
+        for i in range(len(first_rows) - 1):
+            
+            left, right = first_rows[i], first_rows[i + 1]
+            
+            # TODO type specification
+            joint_holes = JointHoles([left, right], 0, 1)
+            dowels.append(joint_holes.dowel)
+
+        for i in range(len(last_rows) - 1):
+            
+            left, right = last_rows[i], last_rows[i + 1]
+            
+            # TODO type specification
+            joint_holes = JointHoles([left, right], 0, 2)
+            dowels.append(joint_holes.dowel)
+
+        
+        
 class Network(object):
 
     @staticmethod
@@ -251,7 +433,7 @@ class Network(object):
             d.determine_num()
 
     def seam(self):
-
+        
         for shared_edge in self.shared_edges:
 
             edge_1 = shared_edge.edge_1
@@ -260,35 +442,19 @@ class Network(object):
             beams_1, beams_2 = shared_edge.get_beams()
 
             if edge_1.direction == V and edge_2.direction == V:
-
-                if  (edge_1.value + edge_2.value) % 2 == 0:
-
-                    # flush condition
-                    ValueError('this connection won\'t happen')
-
-                if not shared_edge.is_same_direction():
-
-                    beams_2 = list(reversed(beams_2))
-
-                weaved_list = weave_lists(beams_1, beams_2)
-
-                for i in range(len(weaved_list) - 2):
-
-                    left   = weaved_list[i]
-                    middle = weaved_list[i+1]
-                    right  = weaved_list[i+2]
-
-                    location_index = (i % 2) + 1 if edge_1.value == 0 else i % 2
-                    joint_holes = JointHoles([left, middle, right], 0)
-                    dowels.append(joint_holes.dowel)
+                
+                # skip it because this is implemented in beam network (Division class)
+                pass
 
             elif edge_1.direction == U and edge_2.direction == U:
-
+                
+                # seaming
+                
                 if  (edge_1.value + edge_2.value) % 2 == 0:
 
                     # flush condition
                     continue
-
+                return
                 beams_1_left, beams_1_right = beams_1
                 beams_2_left, beams_2_right = beams_2
 
@@ -428,6 +594,8 @@ class Surface(object):
             * extend the edges of beams
             * add dowels that go through three beams in the same surface
         """
+        
+        return
 
         for i in range(len(self.beams) - 2):
 
@@ -671,13 +839,19 @@ for s in network.surfaces:
     # instantiate beams
     s.instantiate_beams()
 
-    # add dowels to the beams in the surface (not for seaming)
-    s.add_inner_dowels() # joint class must be applied inside
-
     # visualization
     beams.extend([b.brep_representation(make_holes=True) for b in s.get_flatten_beams()])
 
+# surface network
+
+for d in network.divisions:
+    
+    d.setup_network()
+    
+    # add dowels in beam networks
+    d.add_dowels()
+
 # add dowels to connect contact surfaces
-network.seam() # joint class must be applied inside
+network.seam()
 
 # consider keystones
