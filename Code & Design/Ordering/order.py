@@ -15,27 +15,18 @@ class point(object):
         dis = m.sqrt((self.x - pt.x) ** 2 + (self.y - pt.y) ** 2)
         return dis
 
-    def set_solved(self):
-        self.solved = True
-
-    def set_unsolved(self):
-        self.solved = False
-
 class rectangle(object):
     def __init__(self, base_pt, index_value = [0, 0], treshold = .1):
         self.treshhold = treshold
-        x0 = base_pt.x
-        y0 = base_pt.y
-
         self.solved = False
         self.index_value = index_value
 
         x_list = [0, 1, 1]
         y_list = [1, 1, 0]
-        self.pt_list = [point(x0, y0)]
+        self.pt_list = [point(base_pt.x, base_pt.y)]
         for i in range(3):
-            x_val = x0 + x_list[i]
-            y_val = y0 + y_list[i]
+            x_val = base_pt.x + x_list[i]
+            y_val = base_pt.y + y_list[i]
             self.pt_list.append(point(x_val, y_val))
 
     def get_pts_with_indexes(self, indexes):
@@ -43,18 +34,27 @@ class rectangle(object):
         return output_points
 
     def random_pt_shuffle(self):
-        r.shuffle(self.pt_list)
+        reverse_or_not = bool(r.getrandbits(1))
+        if reverse_or_not:
+            self.pt_list.reverse()
 
     def set_solved(self):
         self.solved = True
 
     def set_solved_for_pts_indexes(self, indexes):
+        self.solved = True
         for index in indexes:
-            self.pt_list[index].set_solved()
+            self.pt_list[index].solved = True
+
+    def set_all_solved(self):
+        self.solved = True
+        for pt in self.pt_list:
+            pt.solved = True
 
     def set_unsolved(self):
         self.solved = False
-        [pt.set_unsolved() for pt in self.pt_list]
+        for pt in self.pt_list:
+            pt.solved = False
 
     def get_distances_to_pt(self, pt):
         output = False
@@ -68,9 +68,6 @@ class rectangle(object):
         return output, contact_index
 
     def get_overlap_count_with_pts(self, pts):
-        for pt in pts:
-            print pt.x,
-            print pt.y
         overlaps = 0
         contact_list = []
         for pt in pts:
@@ -113,23 +110,23 @@ class surface_ordering(object):
         pass
 
     def side_loop(self, work_surface_index, dir = 0):
+        self.reached_side = True
         for srf_index, srf in enumerate(self.srfs):
             print "statement 1 - srf_index:", srf_index, " srf_solve : ", srf.solved
             if not(srf.solved):
                 overlap_count, contact_index_list = srf.get_overlap_count_with_unsolved_pts_rec(self.srfs[work_surface_index])
-                print "statement 2 - overlap count:", overlap_count, " contact_i's : ", contact_index_list
                 # print overlap_count
                 if (overlap_count == 2):
-                    self.srfs[srf_index].set_solved()
-                    self.srfs[work_surface_index].set_solved_for_pts_indexes([i for i in range(4)])
+                    print "statement 2 - overlap count:", overlap_count, " contact_i's : ", contact_index_list
+                    self.srfs[work_surface_index].set_all_solved()
                     self.srfs[srf_index].set_solved_for_pts_indexes(contact_index_list)
-                    not_reached_side = True
+                    self.reached_side = False
                     break
-            else:
-                not_reached_side = True
-                if (self.srfs[0].get_overlap_count_with_unsolved_pts_rec(self.srfs[work_surface_index]) == 2):
-                    self.dir_loop[dir] = True
-        return not_reached_side, srf_index
+        if self.reached_side:
+            print "this is a thing"
+            if (self.srfs[0].get_overlap_count_with_unsolved_pts_rec(self.srfs[work_surface_index]) == 2):
+                self.dir_loop[dir] = True
+        return srf_index
 
     def get_to_side(self):
         # direction 1
@@ -137,11 +134,11 @@ class surface_ordering(object):
         self.srfs[work_surface_index].set_solved()
         self.srfs[work_surface_index].set_solved_for_pts_indexes([2, 3])
 
-        not_reached_side = True
-        while not_reached_side:
+        self.reached_side = False
+        while not(self.reached_side):
             old_work_surface_index = work_surface_index
             print "main loop: ", self.srfs[work_surface_index].index_value
-            not_reached_side, work_surface_index = self.side_loop(work_surface_index, dir = 0)
+            work_surface_index = self.side_loop(work_surface_index, dir = 0)
             if old_work_surface_index == work_surface_index:
                 print "panic"
                 break
@@ -161,8 +158,8 @@ class surface_ordering(object):
 
 
 
-x_count = 3
-y_count = 3
+x_count = 5
+y_count = 5
 
 rec_list = []
 
@@ -192,7 +189,7 @@ print "rectangles shuffled:"
 r.shuffle(rec_list)
 
 for i in range(x_count * y_count):
-    print "rec", rec_list[i].index_value, ": ",
+    print "rec", i, " - ", rec_list[i].index_value, ": ",
     for j in range(4):
         print rec_list[i].pt_list[j].x, rec_list[i].pt_list[j].y, ", ",
     print "\n"
