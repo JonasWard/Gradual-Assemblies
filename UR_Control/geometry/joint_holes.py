@@ -94,7 +94,7 @@ class JointHoles(object):
     def __type_definitions(self):
         """ internal method that defines the different joint types
 
-            type = 0 -> default type, takes the args:
+            type = 0, 1, 2 -> default type, takes the args:
                 x0_ext          - first shift along the beams axis, resulting into a new middle point
                 cover_h         - how much the second point should lay underneath the edge of the beam
                 x1_ext          - second shfit along the beams axis, resulting into the new top (or bottom) point

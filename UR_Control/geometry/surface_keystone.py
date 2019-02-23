@@ -3,6 +3,7 @@
 import Rhino.Geometry as rg
 import math as m
 import copy
+import types
 
 # grasshopper inputs
 
@@ -13,6 +14,7 @@ srf_set
 class Keystone(object):
     def __init__(self, srf_set, v_div, blend_precision = None, dir = True, split_function = 0):
         self.srf_set = srf_set
+        self.__nested_list_qm()
         self.srf_count = len(srf_set)
 
         self.blend_crv_count_f(blend_precision)
@@ -20,6 +22,12 @@ class Keystone(object):
         self.v_div = v_div
 
         self.blend_crv_split_f = split_function
+
+    def __nested_list_qm(self):
+        if isinstance(self.srf_set[0], types.ListType):
+            self.nested_list = True
+        else:
+            self.nested_list = False
 
     def blend_crv_count_f(self, blend_precision):
         if blend_precision == None:

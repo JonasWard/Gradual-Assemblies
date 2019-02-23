@@ -501,7 +501,7 @@ class Surface(object):
 
         return list(chain.from_iterable(self.beams))
 
-    def seam_regrades(self, grading_percentage = .5, grading_side = 2):
+    def seam_regrades(self, grading_percentage = .5, grading_side = 2, precision = 25):
         """ method that makes the beams move closer to each other at the seams
 
             :param grading_percentage:  Percent of the surface that is being regraded (default .5)
@@ -510,7 +510,6 @@ class Surface(object):
         """
 
         local_srf = copy.deepcopy(self.surface)
-        precision = 25
         u_extra_precision = int(math.ceil(25 / grading_percentage)) - precision
         half_pi = math.pi / 2.0
         half_pi_over_precision = half_pi / (precision - 1)
@@ -529,11 +528,13 @@ class Surface(object):
         # setting up the grading list for the amount of sides
         local_t_val = 0
         if (grading_side == 0):
+            # only on the left side
             t_vals = []
             for t_val in ini_t_vals:
                 local_t_val += t_val
                 t_vals.append(local_t_val)
         elif (grading_side == 1):
+            # only on the right side
             t_vals = []
             ini_t_vals.reverse()
             local_ini_t_vals = [0]
@@ -542,6 +543,7 @@ class Surface(object):
                 local_t_val += t_val
                 t_vals.append(local_t_val)
         elif (grading_side == 2):
+            # on both sides
             t_vals = []
             local_ini_t_vals = ini_t_vals[:]
             ini_t_vals.reverse()
@@ -648,7 +650,7 @@ class Surface(object):
         return srf
 
 # debug
-random.shuffle(surfaces)
+# random.shuffle(surfaces)
 
 # create a network from surfaces
 network = Network(surfaces)
