@@ -245,7 +245,7 @@ class Division(object):
                     
                     all.extend(new_beams)
 
-        # add dowels
+        # add three beams connetion
         
         for i in range(len(all_beams) - 2):
 
@@ -261,13 +261,13 @@ class Division(object):
                         left   = left_beams[j]
                         middle = middle_beams[j]
                         right  = right_beams[j]
-
+                        
                         # apply a joint system
                         #
                         #   |
                         # | | |
                         # |   |
-
+                        
                         joint_holes = JointHoles([left, middle, right], 0)
                         dowels.append(joint_holes.dowel)
 
@@ -314,6 +314,33 @@ class Division(object):
     
                         joint_holes = JointHoles([left, middle, right], 0)
                         dowels.append(joint_holes.dowel)
+        
+        # add two beams connection
+        
+        first_rows = [b[0] for i, b in enumerate(all_beams) if i % 2 == 0]
+        
+        if len(all_beams[0]) == len(all_beams[1]):
+            last_rows = [b[-1] for i, b in enumerate(all_beams) if i % 2 == 1]
+        else:
+            last_rows = [b[-1] for i, b in enumerate(all_beams) if i % 2 == 0]
+        
+        for i in range(len(first_rows) - 1):
+            
+            left, right = first_rows[i], first_rows[i + 1]
+            
+            # TODO type specification
+            joint_holes = JointHoles([left, right], 0, 1)
+            dowels.append(joint_holes.dowel)
+
+        for i in range(len(last_rows) - 1):
+            
+            left, right = last_rows[i], last_rows[i + 1]
+            
+            # TODO type specification
+            joint_holes = JointHoles([left, right], 0, 2)
+            dowels.append(joint_holes.dowel)
+
+        
         
 class Network(object):
 
@@ -407,7 +434,6 @@ class Network(object):
 
     def seam(self):
         
-        return
         for shared_edge in self.shared_edges:
 
             edge_1 = shared_edge.edge_1
@@ -416,35 +442,19 @@ class Network(object):
             beams_1, beams_2 = shared_edge.get_beams()
 
             if edge_1.direction == V and edge_2.direction == V:
-
-                if  (edge_1.value + edge_2.value) % 2 == 0:
-
-                    # flush condition
-                    ValueError('this connection won\'t happen')
-
-                if not shared_edge.is_same_direction():
-
-                    beams_2 = list(reversed(beams_2))
-
-                weaved_list = weave_lists(beams_1, beams_2)
-
-                for i in range(len(weaved_list) - 2):
-
-                    left   = weaved_list[i]
-                    middle = weaved_list[i+1]
-                    right  = weaved_list[i+2]
-
-                    location_index = (i % 2) + 1 if edge_1.value == 0 else i % 2
-                    joint_holes = JointHoles([left, middle, right], 0)
-                    dowels.append(joint_holes.dowel)
+                
+                # skip it because this is implemented in beam network (Division class)
+                pass
 
             elif edge_1.direction == U and edge_2.direction == U:
-
+                
+                # seaming
+                
                 if  (edge_1.value + edge_2.value) % 2 == 0:
 
                     # flush condition
                     continue
-
+                return
                 beams_1_left, beams_1_right = beams_1
                 beams_2_left, beams_2_right = beams_2
 
