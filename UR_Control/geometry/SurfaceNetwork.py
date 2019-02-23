@@ -88,6 +88,8 @@ class LocalNetwork(object):
         
         self.beams = []
         self.has_loop = has_loop
+        self.u_div = surface_network[0][0].u_div
+        self.v_div = surface_network[0][0].v_div
         
         for v_index, v_sequence in enumerate(surface_network):
             
@@ -204,9 +206,64 @@ class LocalNetwork(object):
                         joint_holes = JointHoles([left, middle, right], 0)
                         dowels.append(joint_holes.dowel)
         
-        
         return dowels
+        
+    def add_two_beams_connection(self):
+        
+        dowels = []
+        
+        beams = self.beams
+        
+        # looping
+        if self.has_loop:
+            
+            return dowels
+        
+        # starting side
+        
+        left_beams  = beams[0]
+        right_beams = beams[1]
+        
+        for i in range(len(right_beams)):
+            
+            left  = left_beams[i]
+            right = right_beams[i]
+        
+            joint_holes = JointHoles([left, right], 1, 1)
+            dowels.append(joint_holes.dowel)
+            
+            if len(left_beams) > i + 1:
+                left  = left_beams[i+1]
+                right = right_beams[i]
+    
+                joint_holes = JointHoles([left, right], 0, 1)
+                dowels.append(joint_holes.dowel)
 
+        # ending side
+        
+        right_beams = beams[-1]
+        left_beams  = beams[-2]
+        
+        is_odd_division = bool(self.u_div % 2)
+        
+        for i in range(len(right_beams)):
+            
+            left  = left_beams[i]
+            right = right_beams[i]
+            
+            joint_holes = JointHoles([left, right], 0 if is_odd_division else 1, 2)
+            dowels.append(joint_holes.dowel)
+            
+            if len(left_beams) > i + 1:
+                left  = left_beams[i+1]
+                right = right_beams[i]
+    
+                joint_holes = JointHoles([left, right], 1 if is_odd_division else 0, 2)
+                dowels.append(joint_holes.dowel)
+
+        return dowels
+        
+        
 class GlobalNetwork(object):
 
     def __init__(self, surfaces):
@@ -534,7 +591,10 @@ local_networks = global_network.local_networks
 for local_network in local_networks:
     
     local_dowels = local_network.add_three_beams_connection()
-    local_beams = [b.brep_representation(make_holes=False) for b in local_network.get_flatten_beams()]
-    
     dowels.extend(local_dowels)
+
+    local_dowels = local_network.add_two_beams_connection()
+    dowels.extend(local_dowels)
+
+    local_beams = [b.brep_representation(make_holes=False) for b in local_network.get_flatten_beams()]
     beams.extend(local_beams)
