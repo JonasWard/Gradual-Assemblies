@@ -4,14 +4,14 @@ import Rhino.Geometry as rg
 import copy
 
 ### change srf to self, ^^^ NEED THE python.copy LIBRARY!!! ^^^
-def __offset_sides_surface(self, offset_dis=20, sides = 2, sampling_count = 25):
+def __offset_sides_surface(srf, offset_dis=20, sides = 2, sampling_count = 25):
     """ method that returns a slightly shrunk version of the surface along the v direction
         :param offset_dis:      Offset Distance (default 20)
         :param sides:           Which sides should be offseted (0 = left, 1 = right, 2 = both, default)
         :param sampling_count:  Precision at which the surface should be rebuild
         :return temp_srf:       The trimmed surface
     """
-    temp_surface = copy.deepcopy(self.surface)
+    temp_surface = copy.deepcopy(srf)
 
     temp_surface.SetDomain(1, rg.Interval(0, sampling_count - 1))
     temp_isocurves = [temp_surface.IsoCurve(0, v_val) for v_val in range(sampling_count)]
@@ -81,4 +81,4 @@ srf
 value
 
 # return values
-temp_surface = offset_sides_surface(srf, value)
+temp_surface = __offset_sides_surface(srf, value)

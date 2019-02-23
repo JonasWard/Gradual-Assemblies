@@ -35,14 +35,22 @@ class rectangle(object):
 
     def random_pt_shuffle(self):
         reverse_or_not = bool(r.getrandbits(1))
+        shift_list = r.randint(0, 3)
         if reverse_or_not:
             self.pt_list.reverse()
+        temp_pts = self.pt_list[:]
+        self.pt_list = []
+        [self.pt_list.append(temp_pts[(i + shift_list) % 4]) for i in range(4)]
 
     def set_solved(self):
         self.solved = True
 
     def set_solved_for_pts_indexes(self, indexes):
         self.solved = True
+        for index in indexes:
+            self.pt_list[index].solved = True
+
+    def set_unsolved_for_pts_indexes(self, indexes):
         for index in indexes:
             self.pt_list[index].solved = True
 
@@ -90,12 +98,35 @@ class rectangle(object):
 
         return self.get_overlap_count_with_pts(working_pt_set)
 
+    def get_solved_indexes(self):
+        solved_index = []
+        for i, pt in enumerate(self.pt_list):
+            if (pt.solved):
+                solved_index.append(i)
+
+        return solved_index
+
+    def get_unsolved_indexes(self):
+        unsolved_index = []
+        for i, pt in enumerate(self.pt_list):
+            if not(pt.solved):
+                unsolved_index.append(i)
+
+        return unsolved_index
+
+    def get_unsolved_points(self):
+        unsolved_pts = [self.pt_list[i] for i in self.get_unsolved_indexes()]
+        return unsolved_pts
+
 class surface_ordering(object):
     def __init__(self, srfs, treshhold = .1):
         self.srfs = srfs
         self.srf_count = len(srfs)
         self.treshhold = treshhold
         self.dir_loop = [False, False]
+
+        self.get_to_sides()
+        self.organise()
 
     def check_amount_of_contact_pts(self, rec0, rec1):
         contact_values = 0
@@ -106,70 +137,96 @@ class surface_ordering(object):
                 contact_list.append(i)
         return contact_values, contact_list
 
-    def get_distance_between_points_of_srf(self):
-        pass
-
-    def side_loop(self, work_surface_index, dir = 0):
+    def side_loop(self, work_surface_index, dir = 0, start_srf_index = 0, start_srf_i_values = [0, 1]):
         self.reached_side = True
         for srf_index, srf in enumerate(self.srfs):
-            print "statement 1 - srf_index:", srf_index, " srf_solve : ", srf.solved
+            # print "statement 1 - srf_index:", srf_index, " srf_solve : ", srf.solved
             if not(srf.solved):
                 overlap_count, contact_index_list = srf.get_overlap_count_with_unsolved_pts_rec(self.srfs[work_surface_index])
                 # print overlap_count
                 if (overlap_count == 2):
-                    print "statement 2 - overlap count:", overlap_count, " contact_i's : ", contact_index_list
+                    print "statement 2 - overlap count:", overlap_count, " rec_index : ", self.srfs[work_surface_index].index_value
                     self.srfs[work_surface_index].set_all_solved()
                     self.srfs[srf_index].set_solved_for_pts_indexes(contact_index_list)
                     self.reached_side = False
                     break
         if self.reached_side:
-            print "this is a thing"
-            if (self.srfs[0].get_overlap_count_with_unsolved_pts_rec(self.srfs[work_surface_index]) == 2):
+            print "you've reached an end!", " rec_index : ", self.srfs[work_surface_index].index_value
+            print "this was the start index: ", start_srf_index, " - this was the end index: ", work_surface_index
+            # checking for overlap with the first one
+            overlap_count, contact_index_list = self.srfs[start_srf_index].get_overlap_count_with_pts(self.srfs[0].get_pts_with_indexes(start_srf_i_values))
+            if (overlap_count == 2):
+                print "this one loops"
                 self.dir_loop[dir] = True
+            srf_index = work_surface_index
         return srf_index
 
-    def get_to_side(self):
+    def get_to_sides(self):
         # direction 1
         work_surface_index = 0
-        self.srfs[work_surface_index].set_solved()
-        self.srfs[work_surface_index].set_solved_for_pts_indexes([2, 3])
+        start_surface_location = work_surface_index
+        new_srf_i_values = [2, 3]
+        self.srfs[work_surface_index].set_solved_for_pts_indexes(new_srf_i_values)
 
         self.reached_side = False
         while not(self.reached_side):
             old_work_surface_index = work_surface_index
-            print "main loop: ", self.srfs[work_surface_index].index_value
-            work_surface_index = self.side_loop(work_surface_index, dir = 0)
-            if old_work_surface_index == work_surface_index:
-                print "panic"
-                break
+            work_surface_index = self.side_loop(work_surface_index, 0, start_surface_location, new_srf_i_values)
 
-        print self.srfs[work_surface_index].index_value
+        last_srf_i_values = self.srfs[work_surface_index].get_solved_indexes()
+        start_surface_location = work_surface_index
 
+        # direction 2
+        new_srf_i_values = [(index - 1) % 4 for index in last_srf_i_values]
+        print last_srf_i_values, new_srf_i_values
+        self.set_unsolved()
+        self.srfs[work_surface_index].set_solved_for_pts_indexes(new_srf_i_values)
+
+        self.reached_side = False
+        while not(self.reached_side):
+            old_work_surface_index = work_surface_index
+            work_surface_index = self.side_loop(work_surface_index, 1, start_surface_location, new_srf_i_values)
+
+        last_srf_i_values = self.srfs[work_surface_index].get_solved_indexes()
+        self.dir_0_index = [(index - 1) % 4 for index in last_srf_i_values]
+        self.corner_srf_index = work_surface_index
+        self.set_unsolved()
+
+    def organise(self):
+        # start value
+        print self.srfs[self.corner_srf_index].index_value
+
+    def set_unsolved(self):
         for srf in self.srfs:
-            if not(srf.solved):
-                pass
-
-    def overlap_of_two_pts_check(self, srf_to_check, indexes):
-        pass
-
-    def set_unsolved(self, srf_set):
-        for srf in srf_set:
             srf.set_unsolved()
 
 
 
-x_count = 5
+x_count = 6
 y_count = 5
 
 rec_list = []
 
 for i in range(x_count):
+    # regular rectangles
+    print "i : ", i
     for j in range(y_count):
         rec_list.append(rectangle(point(i*1.0, j*1.0), [i, j]))
+        print "   j : ", j
+    # loop back rectangles
+    print "extra_rec"
+    local_loop_rec = rectangle(point(0, 0), [i, y_count])
+    pt_0 = point(i * 1.0, y_count * 1.0)
+    pt_1 = point(i * 1.0 + 1.0, y_count * 1.0)
+    pt_2 = point(i * 1.0 + 1.0, 0.0)
+    pt_3 = point(i * 1.0, 0.0)
+    local_loop_rec.pt_list = [pt_0, pt_1, pt_2, pt_3]
+    rec_list.append(local_loop_rec)
 
+print len(rec_list)
 print "source:"
 
-for i in range(x_count * y_count):
+for i in range(len(rec_list)):
     print "rec", rec_list[i].index_value, ": ",
     for j in range(4):
         print rec_list[i].pt_list[j].x, rec_list[i].pt_list[j].y, ", ",
@@ -177,7 +234,7 @@ for i in range(x_count * y_count):
 
 # print "points shuffled:"
 
-for i in range(x_count * y_count):
+for i in range(len(rec_list)):
     # print "rec", rec_list[i].index_value, ": ",
     rec_list[i].random_pt_shuffle()
     # for j in range(4):
@@ -195,4 +252,3 @@ for i in range(x_count * y_count):
     print "\n"
 
 surface_group = surface_ordering(rec_list)
-surface_group.get_to_side()
