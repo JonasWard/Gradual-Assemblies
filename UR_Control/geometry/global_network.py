@@ -1,6 +1,4 @@
-from geometry.surface import Surface
-from geometry.local_network import LocalNetwork
-from geometry.shared_edge import SharedEdge
+from geometry import Surface, LocalNetwork, SharedEdge 
 
 class GlobalNetwork(object):
 

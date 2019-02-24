@@ -1,4 +1,4 @@
-from geometry.joint_holes import JointHoles
+from geometry import JointHoles
 import itertools
 
 class LocalNetwork(object):

@@ -1,5 +1,5 @@
 import Rhino.Geometry as rg
-from geometry.beam import Beam
+from geometry import Beam
 import copy
 import math
 

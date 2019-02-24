@@ -12,8 +12,6 @@ import Grasshopper.Kernel.Data.GH_Path as ghpath
 import Grasshopper.DataTree as datatree
 import System
 import math
-import beam
-import hole
 
 class Dowel(object):
     """

@@ -6,4 +6,5 @@ from geometry.local_network import LocalNetwork
 from geometry.global_network import GlobalNetwork
 from geometry.surface import Surface
 from geometry.shared_edge import SharedEdge
+from geometry.surface_keystone import Keystone
 from geometry.edge import *
