@@ -174,7 +174,7 @@ class Beam(object):
 
         return angle_constraints
 
-    def check_boundary_constraints(self, side_buf = 10, end_buf = 70, mid_buf = 250, angle_correction = 1.1):
+    def check_boundary_constraints(self, side_buf = 10, end_buf = 70, mid_buf = 500, angle_correction = 1.1):
         """
         checks where the beam | dowel intersection events are problematic based on where (or where not), the beams can go based on the dowel radius
 
@@ -183,10 +183,8 @@ class Beam(object):
             :param mid_buf: how much clearance there has to be for the picking plane (default = 250)
             :param angle_correction: correction for dowel comming at an angle (default = 1.1 ~ angle of 60 deg)
             :return: list of holes that are problematic
-
         """
-
-
+        
         # getting a radius of a dowel
         if not(len(self.dowel_list) == 0):
             dowel_rad = self.dowel_list[0].dowel_radius * angle_correction

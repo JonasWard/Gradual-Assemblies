@@ -34,6 +34,7 @@ class Keystone(object):
         if (self.nested_list):
             self.__surface_set_execution()
         else:
+            self.loc = self.loc_pat[0]
             self.construct_srfs()
 
     def __nested_list_qm(self):
