@@ -6,7 +6,7 @@ import copy as c
 import types
 
 class Keystone(object):
-    def __init__(self, srf_set, loc_pat = [0, 1], v_div = 3, blend_precision = None, blend_overlap = 5, dir = True, split_function = 0, f_args = [[0, 0, .15, .05], [0, 0, .15, .05], []]):
+    def __init__(self, srf_set, v_div = 3, blend_precision = None, loc_pat = [0, 1], blend_overlap = 5, dir = True, split_function = 0, f_args = [[0, 0, .15, .05], [0, 0, .15, .05], []]):
         """ initialization of a surface class based on either a list of input srfs or a nested list of input srfs
 
             :param srf_set:         List or rg.NurbsSurface 's or nested list of srfs on which the keystone surface set will be based
@@ -34,7 +34,7 @@ class Keystone(object):
         if (self.nested_list):
             self.__surface_set_execution()
         else:
-            self.construct_srfs
+            self.construct_srfs()
 
     def __nested_list_qm(self):
         """ Internal method that checks whether the function is fed a list of srf or a nested list """
@@ -66,7 +66,7 @@ class Keystone(object):
         """ Internal method that generates the different objects """
         # doing the calculations
         if (self.nested_list):
-            self.nested_keystone_srf_list = [[] for i in range(self.srf_nest_count)]
+            self.nested_keystone_srf_list = []
             for i in range(self.srf_nest_count):
                 self.srf_set = c.deepcopy(self.nested_srf_set[i])
                 self.srf_count = len(self.srf_set)
@@ -77,7 +77,7 @@ class Keystone(object):
                 if (self.reverse_list):
                     temp_srfs.reverse()
                     self.srf_set.reverse()
-                self.nested_keystone_srf_list.extend(temp_srfs)
+                self.nested_keystone_srf_list.append(temp_srfs)
         # relating all the surfaces
         # self.base_srf_list = source surfaces; self.keystone_srf_list = keystone surfaces
         self.base_srf_list = [[[] for j in range(self.seam_set_item_count[i])] for i in range(self.seam_set_count)]
@@ -85,10 +85,10 @@ class Keystone(object):
         for i in range(self.seam_set_count):
             local_i = int((i - i % self.loc_pat_len) / self.loc_pat_len)
             for j in range(self.seam_set_item_count[local_i]):
-                self.base_srf_list[local_i][j].extend(self.nested_srf_set[i][j])
-                self.keystone_srf_list[local_i][j].extend(self.self.nested_keystone_srf_list[i][j])
+                self.base_srf_list[local_i][j].append(self.nested_srf_set[i][j])
+                self.keystone_srf_list[local_i][j].append(self.nested_keystone_srf_list[i][j])
 
-    def blend_crv_count_f(self, blend_overlap, blend_precision):
+    def blend_crv_count_f(self, blend_precision, blend_overlap):
         """ method that defines how many isocurves have to be generated and how many than have to be blendend
 
             :param blend_overlap:       In case it becomes usefull, how many extra blend curves will be considered to smoothen out the surface
@@ -96,21 +96,26 @@ class Keystone(object):
         """
 
         #  making sure the v_div is set to an even value -> uneven amount of beams
+        print "v_div = ", self.v_div
         self.v_div += self.v_div % 2
+        print "v_div after rounding = ", self.v_div
 
         if (blend_precision is None or blend_precision == 0 or blend_precision == 2):
             # as if the blend_precision == 2
-            self.blend_isocrvs_count = int(self.v_div * 2 + 1)
-            self.blend_crv_count = int(self.v_div)
+            self.blend_isocrvs_count = int(self.v_div * 2)
+            self.blend_crv_count = int(self.v_div + 1)
             self.blend_p = 2
             print "blend precision = None"
         else:
             # all other blend_precision values
             blend_precision += blend_precision % 2
             self.blend_p = blend_precision
-            self.blend_crv_count = int(self.blend_p * self.v_div / 2 + 1)
-            self.blend_isocrvs_count = int(self.v_div * self.blend_p / 2 - m.floor((self.blend_p - 1) / 2))
-            print "blend precision = ", self.blend_p
+            self.blend_crv_count = int(self.blend_p * self.v_div + 1)
+            self.blend_isocrvs_count = int(self.v_div * self.blend_p / 2.0 - m.floor((self.blend_p - 1) / 2))
+
+        print "blend precision = ", self.blend_p
+        print "blend curve count = ", self.blend_crv_count
+        print "blend isocurve count = ", self.blend_isocrvs_count
 
         if (blend_overlap is None or blend_overlap == 0):
             self.blend_overlap = 5
@@ -132,7 +137,7 @@ class Keystone(object):
         self.isocurves()
         self.curve_blending(200, rebuild)
         self.blend_curve_split_function()
-        self.curve_blend_splicing(0)
+        self.curve_blend_splicing()
         self.invert_uv_isocurves()
         self.lofting_crvs()
 
@@ -165,6 +170,7 @@ class Keystone(object):
         self.blend_crv_avg_len = 0
 
         for i in range (self.blend_crv_count):
+            print i, self.blend_crv_count
             for j in range(self.srf_count):
                 curve_0 = self.isocurve_set[j][i]
                 curve_1 = self.isocurve_set[(j - 1) % self.srf_count][self.blend_isocrvs_count - i]
@@ -314,8 +320,8 @@ class Keystone(object):
         loft_type = rg.LoftType.Tight
         for uv_switched_crvs in self.uv_switched_crvs_set:
             local_new_srf = rg.Brep.CreateFromLoftRebuild(uv_switched_crvs, rg.Point3d.Unset, rg.Point3d.Unset, loft_type, False, 50)[0]
-            local_new_srf.Faces.Item[0].ToNurbsSurface()
-            local_new_srf = c.deepcopy(local_new_srf)
+            local_new_srf = c.deepcopy(local_new_srf.Faces.Item[0].ToNurbsSurface())
+            print local_new_srf
             self.keystone_srfs.append(local_new_srf)
 
     def output(self):
