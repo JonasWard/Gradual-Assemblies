@@ -64,11 +64,25 @@ class Keystone(object):
             self.srf_count = len(self.srf_set)
             print "none nested list!"
 
+    def __loc_pattern_based_parameters(self, loc):
+        """ Internal method that sets some variables based on what type of surface the keystone srf is
+
+            :param loc:     Relative location value
+        """
+        if (loc == 0):
+            self.reverse_list = False
+        elif (loc == 1):
+            self.reverse_list = True
+        self.seam_set_count = int(m.ceil(self.srf_nest_count / self.loc_pat_len))
+        self.seam_set_item_count = [int(len(self.nested_srf_set[i])) for i in range(self.seam_set_count * 2)]
+        print "seam set count: ", self.seam_set_count
+        print "seams set items: ", self.seam_set_item_count
+
     def __surface_set_execution(self):
         """ Internal method that generates the different objects """
         # doing the calculations
         if (self.nested_list):
-            self.new_nested_srf_list = [[] for i in range(self.srf_nest_count)]
+            self.nested_keystone_srf_list = [[] for i in range(self.srf_nest_count)]
             for i in range(self.srf_nest_count):
                 self.srf_set = c.deepcopy(self.nested_srf_set[i])
                 self.srf_count = len(self.srf_set)
@@ -79,25 +93,25 @@ class Keystone(object):
                 if (self.reverse_list):
                     temp_srfs.reverse()
                     self.srf_set.reverse()
-                self.new_nested_srf_list.extend(temp_srfs)
+                self.nested_keystone_srf_list.extend(temp_srfs)
         # relating all the surfaces
-        # base_srf_list
-        self.base_srf_list = [[] for i in range(self.seam_set_count)]
-        # for i, srf_set in enumerate
-        # generated_srf_list
-        self.keystone_srf_list = [[] for i in range(self.seam_set_count)]
+        # self.base_srf_list = source surfaces; self.keystone_srf_list = keystone surfaces
+        self.base_srf_list = [[[] for j in range self.seam_set_item_count[i]] for i in range(self.seam_set_count)]
+        self.keystone_srf_list = [[[] for j in range self.seam_set_item_count[i]] for i in range(self.seam_set_count)]
+        for i in range(self.seam_set_count):
+            local_i = int((i - i % self.loc_pat_len) / self.loc_pat_len)
+            for j in range(self.seam_set_item_count[local_i]):
+                self.base_srf_list[local_i][j].extend(self.nested_srf_set[i][j])
+                self.keystone_srf_list[local_i][j].extend(self.self.nested_keystone_srf_list[i][j])
 
+    def blend_crv_count_f(self, blend_overlap, blend_precision):
+        """ method that defines how many isocurves have to be generated and how many than have to be blendend
 
-    def __loc_pattern_based_parameters(self, loc):
-        if (loc == 0):
-            self.reverse_list = False
-        elif (loc == 1):
-            self.reverse_list = True
-        self.seam_set_count = int(m.ceil(self.srf_nest_count / self.loc_pat_len))
-        print "seam set count: ", self.seam_set_count
+            :param blend_overlap:       In case it becomes usefull, how many extra blend curves will be considered to smoothen out the surface
+            :param blend_precisions:    How much higher the resolution of the isocurves is set than required by the v_divs
+        """
 
-    def blend_crv_count_f(self, blend_precision, blend_overlap):
-        if (blend_precision == None or blend_precision == 0):
+        if (blend_precision is None or blend_precision == 0):
             self.blend_crv_count = int(2 * self.v_div)
             self.blend_div = (self.blend_crv_count * 2 - 1)
             print "blend precision = None"
@@ -106,7 +120,7 @@ class Keystone(object):
             self.blend_div = (self.blend_crv_count * 2 - 1)
             print "blend precision = ", blend_precision
 
-        if (blend_overlap == None or blend_overlap == 0):
+        if (blend_overlap is None or blend_overlap == 0):
             self.blend_overlap = 5
             print "blend overlap = None"
         elif (blend_overlap > self.blend_div - self.blend_crv_count):
@@ -115,6 +129,14 @@ class Keystone(object):
             self.blend_overlap = blend_overlap
 
     def construct_srfs(self, avg_spacing = 200, rebuild = False):
+        """ method that constructs, based on one surface_set, a set of keystone surface_set
+            all the methods called in this function don't spit out any variables but rather (over)write properties of the class instance
+
+            :param avg_spacing:         Value that is used to decide at which length ± the isocurves of the surface should be split
+            :param rebuild:             Whether to rebuild the blend_crvs or not
+            :return self.keystone_srfs: The resulting set of keystone_srfs
+        """
+
         self.isocurves()
         self.curve_blending(200, rebuild)
         self.blend_curve_split_function()
@@ -125,6 +147,7 @@ class Keystone(object):
         return self.keystone_srfs
 
     def isocurves(self):
+        """ method that calculates the isocurves """
         self.isocurve_vis = []
         self.isocurve_set = []
 
@@ -139,6 +162,11 @@ class Keystone(object):
             self.isocurve_set.append(local_isocurve_set)
 
     def curve_blending(self, avg_spacing = 200, rebuild = False):
+        """ method that constructs the blend crvs
+
+            :param avg_spacing:         Value that is used to decide at which length ± the isocurves of the surface should be split
+            :param rebuild:             Whether to rebuild the blend_crvs or not
+        """
         self.blend_crvs = [[] for i in range(self.srf_count)]
         self.blend_crvs_vis = []
         self.avg_spacing = avg_spacing
@@ -165,6 +193,7 @@ class Keystone(object):
         self.blend_div_count += (self.blend_div_count + 1)%2
 
     def blend_curve_split_function(self):
+        """ method that splits a blend_crv """
 
         # TODO Implement v_div as a variable
         if (self.blend_crv_split_f == 0):
@@ -188,12 +217,17 @@ class Keystone(object):
                     local_t_vals = [.5 - diff, .5 + diff]
                 self.t_vals_srf.append(local_t_vals)
 
-    def curve_blend_splicing(self, function_type = 0):
+    def curve_blend_splicing(self, f_type = 0):
+        """ method that controls how to split and merge the blend_crvs
+
+        :paran f_type:      Which function to apply for the blend splitting
+        """
+
         self.struct_pt_cloud = []
         self.vis_pt_cloud = []
         self.blend_crv_split_set = []
         self.vis_blend_crv_split = []
-        self.blend_crv_split_f = function_type
+        self.blend_crv_split_f = f_type
 
         print self.t_vals_srf
 
@@ -224,6 +258,7 @@ class Keystone(object):
             self.blend_crv_split_set.append(local_set)
 
     def invert_uv_isocurves(self):
+        """ method that inverts the new uv_isocurves """
         self.vis_uv_switched_crvs = []
         self.uv_switched_crvs_set = []
         self.vis_uv_switched_pt_set = []
@@ -252,6 +287,7 @@ class Keystone(object):
             self.uv_switched_crvs_set.append(uv_switched_crvs)
 
     def lofting_crvs(self):
+        """ method that create the keystone srfs """
         self.keystone_srfs = []
         loft_type = rg.LoftType.Tight
         for uv_switched_crvs in self.uv_switched_crvs_set:
@@ -268,6 +304,8 @@ split_crvs = keystone.vis_blend_crv_split
 uv_switched_crvs = keystone.vis_uv_switched_crvs
 uv_switched_pts = keystone.vis_uv_switched_pt_set
 if keystone.nested_list:
-    new_srf_set_keystone = keystone.new_nested_srf_list
+    keystone_srf_set = keystone.keystone_srf_list
+    reference_srf_set = keystone.base_srf_list
 else:
-    new_srf_set_keystone = keystone.srf_set
+    keystone_srf_set = keystone.keystone_srfs
+    reference_srf_set = keystone.srf_set
