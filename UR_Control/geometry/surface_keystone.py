@@ -6,7 +6,7 @@ import copy as c
 import types
 
 class Keystone(object):
-    def __init__(self, srf_set, v_div = 3, blend_precision = None, loc_pat = [0, 1], blend_overlap = 5, dir = True, split_function = 0, f_args = [[0, 0, .15, .05], [0, 0, .15, .05], []]):
+    def __init__(self, srf_set, v_div = 3, blend_precision = None, split_function = 0, f_args = [[0, 0, .15, .05], [0, 0, .15, .05], []], loc_pat = [0, 1], blend_overlap = 5, dir = True):
         """ initialization of a surface class based on either a list of input srfs or a nested list of input srfs
 
             :param srf_set:         List or rg.NurbsSurface 's or nested list of srfs on which the keystone surface set will be based
@@ -48,14 +48,14 @@ class Keystone(object):
             self.srf_count = len(self.srf_set)
             print "none nested list!"
 
-    def __loc_pattern_based_parameters(self, loc):
+    def __loc_pattern_based_parameters(self):
         """ Internal method that sets some variables based on what type of surface the keystone srf is
 
             :param loc:     Relative location value
         """
-        if (loc == 0):
+        if (self.loc == 0):
             self.reverse_list = False
-        elif (loc == 1):
+        elif (self.loc == 1):
             self.reverse_list = True
         self.seam_set_count = int(m.ceil(self.srf_nest_count / self.loc_pat_len))
         self.seam_set_item_count = [int(len(self.nested_srf_set[i])) for i in range(self.seam_set_count * 2)]
@@ -70,7 +70,8 @@ class Keystone(object):
             for i in range(self.srf_nest_count):
                 self.srf_set = c.deepcopy(self.nested_srf_set[i])
                 self.srf_count = len(self.srf_set)
-                self.__loc_pattern_based_parameters(self.loc_pat[i % self.loc_pat_len])
+                self.loc = self.loc_pat[i % self.loc_pat_len]
+                self.__loc_pattern_based_parameters()
                 if (self.reverse_list):
                     self.srf_set.reverse()
                 temp_srfs = c.deepcopy(self.construct_srfs())
@@ -82,6 +83,7 @@ class Keystone(object):
         # self.base_srf_list = source surfaces; self.keystone_srf_list = keystone surfaces
         self.base_srf_list = [[[] for j in range(self.seam_set_item_count[i])] for i in range(self.seam_set_count)]
         self.keystone_srf_list = [[[] for j in range(self.seam_set_item_count[i])] for i in range(self.seam_set_count)]
+        print self.seam_set_count
         for i in range(self.seam_set_count):
             local_i = int((i - i % self.loc_pat_len) / self.loc_pat_len)
             for j in range(self.seam_set_item_count[local_i]):
@@ -102,15 +104,15 @@ class Keystone(object):
 
         if (blend_precision is None or blend_precision == 0 or blend_precision == 2):
             # as if the blend_precision == 2
-            self.blend_isocrvs_count = int(self.v_div * 2)
-            self.blend_crv_count = int(self.v_div + 1)
+            self.blend_isocrvs_count = int(self.v_div * 2 - 1)
+            self.blend_crv_count = int(self.v_div)
             self.blend_p = 2
             print "blend precision = None"
         else:
             # all other blend_precision values
             blend_precision += blend_precision % 2
             self.blend_p = blend_precision
-            self.blend_crv_count = int(self.blend_p * self.v_div + 1)
+            self.blend_crv_count = int(self.v_div * self.blend_p / 2)
             self.blend_isocrvs_count = int(self.v_div * self.blend_p / 2.0 - m.floor((self.blend_p - 1) / 2))
 
         print "blend precision = ", self.blend_p
@@ -257,8 +259,6 @@ class Keystone(object):
         self.blend_crv_split_set = []
         self.vis_blend_crv_split = []
 
-        print self.t_vals_srf
-
         temp_new_sets_pos = []
         temp_new_sets_neg = []
 
@@ -321,7 +321,6 @@ class Keystone(object):
         for uv_switched_crvs in self.uv_switched_crvs_set:
             local_new_srf = rg.Brep.CreateFromLoftRebuild(uv_switched_crvs, rg.Point3d.Unset, rg.Point3d.Unset, loft_type, False, 50)[0]
             local_new_srf = c.deepcopy(local_new_srf.Faces.Item[0].ToNurbsSurface())
-            print local_new_srf
             self.keystone_srfs.append(local_new_srf)
 
     def output(self):
