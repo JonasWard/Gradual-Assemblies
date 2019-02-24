@@ -83,8 +83,8 @@ class Keystone(object):
                 self.nested_keystone_srf_list.extend(temp_srfs)
         # relating all the surfaces
         # self.base_srf_list = source surfaces; self.keystone_srf_list = keystone surfaces
-        self.base_srf_list = [[[] for j in range self.seam_set_item_count[i]] for i in range(self.seam_set_count)]
-        self.keystone_srf_list = [[[] for j in range self.seam_set_item_count[i]] for i in range(self.seam_set_count)]
+        self.base_srf_list = [[[] for j in range(self.seam_set_item_count[i])] for i in range(self.seam_set_count)]
+        self.keystone_srf_list = [[[] for j in range(self.seam_set_item_count[i])] for i in range(self.seam_set_count)]
         for i in range(self.seam_set_count):
             local_i = int((i - i % self.loc_pat_len) / self.loc_pat_len)
             for j in range(self.seam_set_item_count[local_i]):
