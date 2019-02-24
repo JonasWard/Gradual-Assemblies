@@ -12,22 +12,60 @@ srf_set
 # local inputs
 
 class Keystone(object):
-    def __init__(self, srf_set, v_div, blend_precision = None, dir = True, split_function = 0):
+    def __init__(self, srf_set, loc_pat = [0, 1], v_div, blend_precision = None, dir = True, split_function = 0, f_args = [[1, 0]]):
+        """ initialization of a surface class
+
+            :param srf_set:         List or rg.NurbsSurface 's or nested list of srfs on which the keystone surface set will be based
+            :param locat_pattern:     Nested list that describes whether the surface_set is nested, which ones are on top, which ones are on the bottom (default = [0, 1])
+            :param v_div:           Defines the amount of divisions in the V direction (if not even then it will be rounded up)
+            :param blend_precision: Int that describes the amount of blend curves that are created to describe the new surface set internally (default = None (= 10))
+            :param dir:             Boolean used to indicate the direction of the blend creation (default = True)
+            :param split_function:  Int that indicates which function defines the split function (default = 0)
+            :param f_args:          Nested list of values that apply to the split function (default [[1, 0]])
+        """
+
+        # surface check parameters
         self.srf_set = srf_set
         self.__nested_list_qm()
-        self.srf_count = len(srf_set)
+        self.loc_pat = loc_pat
+        self.loc_pat_len = len(loc_pat)
 
+        # blend curve parameters
+        self.v_div = v_div
         self.blend_crv_count_f(blend_precision)
         self.dir = dir
-        self.v_div = v_div
-
         self.blend_crv_split_f = split_function
+        self.blend_crv_split_args = f_args[split_function]
 
     def __nested_list_qm(self):
+        """ Internal method that checks whether the function is fed a list of srf or a nested list """
         if isinstance(self.srf_set[0], types.ListType):
+            self.nested_srf_set = deepcopy(self.srf_set)
             self.nested_list = True
+            self.srf_nest_count = len(self.srf_set)
         else:
             self.nested_list = False
+            self.srf_count = len(self.srf_set)
+
+    def __surface_set_execution(self):
+        """ Internal method that generates the different objects """
+        if (self.nested_list):
+            new_nested_srf_list = [[] for i in range(self.srf_nest_count)]
+            for i, self.srf_set in enumerate(self.nested_srf_set):
+                self.srf_count = len(self.srf_set) 
+                self.__loc_pat_based_par(self.loc_pat[i % self.loc_pat_len])
+                if(self.reverse_list):
+                    self.srf_set.reverse()
+                new_nested_srf_list.extend(deepcopy(self.construct_srf))
+
+
+    def __loc_pattern_based_parameters(self, loc):
+        if (loc == 0):
+            self.reverse_list = False
+        elif (loc == 1):
+            self.reverse_list = True
+
+        self.seam_logic = [(i % self.loc_pat_len) for i in range(self.srf_nest_count)]
 
     def blend_crv_count_f(self, blend_precision):
         if blend_precision == None:

@@ -187,6 +187,7 @@ class surface_ordering(object):
             old_work_surface_index = work_surface_index
             work_surface_index = self.side_loop(work_surface_index, 1, start_surface_location, new_srf_i_values)
 
+        # setting up the loops for the surface organising
         last_srf_i_values = self.srfs[work_surface_index].get_solved_indexes()
         self.dir_0_index = [(index - 1) % 4 for index in last_srf_i_values]
         self.corner_srf_index = work_surface_index
@@ -194,13 +195,14 @@ class surface_ordering(object):
 
     def organise(self):
         # start value
-        print self.srfs[self.corner_srf_index].index_value
+        new_srf_i_values = self.dir_0_index
+        work_surface_index = self.corner_srf_index
+        start_surface_location = work_surface_index
+        while not(self.reached_side):
+            pass
 
     def set_unsolved(self):
-        for srf in self.srfs:
-            srf.set_unsolved()
-
-
+        [srf.set_unsolved() for srf in self.srfs]
 
 x_count = 6
 y_count = 5
