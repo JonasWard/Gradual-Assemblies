@@ -18,7 +18,7 @@ class Keystone(object):
             :param srf_set:         List or rg.NurbsSurface 's or nested list of srfs on which the keystone surface set will be based
             :param locat_pattern:     Nested list that describes whether the surface_set is nested, which ones are on top, which ones are on the bottom (default = [0, 1])
             :param v_div:           Defines the amount of divisions in the V direction (if not even then it will be rounded up)
-            :param blend_precision: Int that describes the amount of blend curves that are created to describe the new surface set internally (default = None (= 10))
+            :param blend_precision: Int that describes the multiple of v_div that define the EXTRA blend curves that are created to describe the new surface set internally (default = None (= 2))
             :param dir:             Boolean used to indicate the direction of the blend creation (default = True)
             :param split_function:  Int that indicates which function defines the split function (default = 0)
             :param f_args:          Nested list of values that apply to the split function (default [[1, 0]])
@@ -52,12 +52,11 @@ class Keystone(object):
         if (self.nested_list):
             new_nested_srf_list = [[] for i in range(self.srf_nest_count)]
             for i, self.srf_set in enumerate(self.nested_srf_set):
-                self.srf_count = len(self.srf_set) 
+                self.srf_count = len(self.srf_set)
                 self.__loc_pat_based_par(self.loc_pat[i % self.loc_pat_len])
                 if(self.reverse_list):
                     self.srf_set.reverse()
                 new_nested_srf_list.extend(deepcopy(self.construct_srf))
-
 
     def __loc_pattern_based_parameters(self, loc):
         if (loc == 0):
@@ -69,12 +68,12 @@ class Keystone(object):
 
     def blend_crv_count_f(self, blend_precision):
         if blend_precision == None:
-            self.blend_div = 10 * 2 + 1
-            self.blend_crv_count = 10
+            self.blend_crv_count = 2 * self.v_div
+            self.blend_div = (self.blend_crv_count * 2 - 1)
             print "blend precision = None"
         else:
-            self.blend_div = (blend_precision * 2 - 1)
-            self.blend_crv_count = blend_precision
+            self.blend_crv_count = blend_precision * self.v_div
+            self.blend_div = (self.blend_crv_count * 2 - 1)
             print "blend precision = ", blend_precision
 
     def construct_srf(self, avg_spacing = 200, rebuild = False):
