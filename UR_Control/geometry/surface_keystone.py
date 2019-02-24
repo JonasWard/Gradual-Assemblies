@@ -107,7 +107,7 @@ class Keystone(object):
             # all other blend_precision values
             blend_precision += blend_precision % 2
             self.blend_crv_count = int(blend_precision * self.v_div / 2 + 1)
-            self.blend_isocrvs_count = int(self.v_div * blend_precision / 2 - m.floor((blend_precision - 1))
+            self.blend_isocrvs_count = int(self.v_div * blend_precision / 2 - m.floor((blend_precision - 1) / 2))
             print "blend precision = ", blend_precision
 
         if (blend_overlap is None or blend_overlap == 0):
