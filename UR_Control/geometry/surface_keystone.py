@@ -23,10 +23,10 @@ loc_pat = [0, 1]
 
 class Keystone(object):
     def __init__(self, srf_set, loc_pat = [0, 1], v_div = 3, blend_precision = None, blend_overlap = 5, dir = True, split_function = 0, f_args = [[1, 0]]):
-        """ initialization of a surface class
+        """ initialization of a surface class based on either a list of input srfs or a nested list of input srfs
 
             :param srf_set:         List or rg.NurbsSurface 's or nested list of srfs on which the keystone surface set will be based
-            :param locat_pattern:     Nested list that describes whether the surface_set is nested, which ones are on top, which ones are on the bottom (default = [0, 1])
+            :param locat_pattern:   List that describes whether the surface_set is nested, which ones are on top, which ones are on the bottom (default = [0, 1])
             :param v_div:           Defines the amount of divisions in the V direction (if not even then it will be rounded up)
             :param blend_precision: Int that describes the multiple of v_div that define the EXTRA blend curves that are created to describe the new surface set internally (default = None (= 2))
             :param dir:             Boolean used to indicate the direction of the blend creation (default = True)
@@ -296,16 +296,23 @@ class Keystone(object):
             local_new_srf = c.deepcopy(local_new_srf)
             self.keystone_srfs.append(local_new_srf)
 
+    def output(self):
+        """ method that returns the organised surfaces
+        :return reference_srf_set, keystone_srf_set:    As the name says, either 2 x list of srfs or 2 x a nested list of srfs, grouped together based on the assembly logic
+        """
+        if keystone.nested_list:
+            keystone_srf_set = keystone.keystone_srf_list
+            reference_srf_set = keystone.base_srf_list
+        else:
+            keystone_srf_set = keystone.keystone_srfs
+            reference_srf_set = keystone.srf_set
+
+        return reference_srf_set, keystone_srf_set
+
 if srf_set_or_sets:
     srf_set = [srf_set_1, srf_set_2, srf_set_1, srf_set_2]
+else:
+    srf_set = srf_set
 
 keystone = Keystone(srf_set, loc_pat, v_div, blend_precision, dir)
-split_crvs = keystone.vis_blend_crv_split
-uv_switched_crvs = keystone.vis_uv_switched_crvs
-uv_switched_pts = keystone.vis_uv_switched_pt_set
-if keystone.nested_list:
-    keystone_srf_set = keystone.keystone_srf_list
-    reference_srf_set = keystone.base_srf_list
-else:
-    keystone_srf_set = keystone.keystone_srfs
-    reference_srf_set = keystone.srf_set
+keystone_srf_set, reference_srf_set = keystone.output()
