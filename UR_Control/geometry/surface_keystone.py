@@ -6,7 +6,7 @@ import copy as c
 import types
 
 class Keystone(object):
-    def __init__(self, srf_set, loc_pat = [0, 1], v_div = 3, blend_precision = None, blend_overlap = 5, dir = True, split_function = 0, f_args = [[1, 0]]):
+    def __init__(self, srf_set, loc_pat = [0, 1], v_div = 3, blend_precision = None, blend_overlap = 5, dir = True, split_function = 0, f_args = [[0, 0, .15, .05], [0, 0, .15, .05], []]):
         """ initialization of a surface class based on either a list of input srfs or a nested list of input srfs
 
             :param srf_set:         List or rg.NurbsSurface 's or nested list of srfs on which the keystone surface set will be based
@@ -102,13 +102,15 @@ class Keystone(object):
             # as if the blend_precision == 2
             self.blend_isocrvs_count = int(self.v_div * 2 + 1)
             self.blend_crv_count = int(self.v_div)
+            self.blend_p = 2
             print "blend precision = None"
         else:
             # all other blend_precision values
             blend_precision += blend_precision % 2
-            self.blend_crv_count = int(blend_precision * self.v_div / 2 + 1)
-            self.blend_isocrvs_count = int(self.v_div * blend_precision / 2 - m.floor((blend_precision - 1) / 2))
-            print "blend precision = ", blend_precision
+            self.blend_p = blend_precision
+            self.blend_crv_count = int(self.blend_p * self.v_div / 2 + 1)
+            self.blend_isocrvs_count = int(self.v_div * self.blend_p / 2 - m.floor((self.blend_p - 1) / 2))
+            print "blend precision = ", self.blend_p
 
         if (blend_overlap is None or blend_overlap == 0):
             self.blend_overlap = 5
@@ -186,7 +188,7 @@ class Keystone(object):
         """ method that splits a blend_crv """
         if (self.blend_crv_split_f == 0):
             # very very basic splicing function
-            start_shift = 0 / (2 * (self.blend_isocrvs_count_count - 1))
+            start_t_shift = 0 / (2 * (self.blend_isocrvs_count_count - 1))
             shift_start = 1 - .05 * self.srf_count
             shift_max = .025 * self.srf_count
             start_split_index = int(shift_start * self.blend_crv_count)
@@ -198,30 +200,56 @@ class Keystone(object):
             for i in range(self.blend_crv_count):
                 local_t_vals = []
                 if (i < start_split_index):
-                    diff = start_shift
+                    diff = start_t_shift
                     local_t_vals = [.5 - diff, .5 + diff]
                 else:
                     n_var = i + 1 - start_split_index
-                    diff = (1 - m.sqrt( 1 - shift_variation * n_var ** 2)) / 2 + start_shift
+                    diff = (1 - m.sqrt(1 - shift_variation * n_var ** 2)) / 2 + start_t_shift
                     local_t_vals = [.5 - diff, .5 + diff]
                 self.t_vals_srf.append(local_t_vals)
 
-        if (self_crv_split_f == 1):
+        if (self.blend_crv_split_f == 1):
             # more intricate splicing function
+            start_i_shift, start_t_shift, max_t_shift, max_t_shift_diff = self.blend_crv_split_args
+            # in case it would be usefull, a start shift can be set!
+            if self.loc == 0:
+                # means that the first beam is supposed to be flush with the beam on the next surface
+                # implies that you only start splicing after the 2nd v split point
+                start_split_index = int(self.blend_p * 3 / 2) + start_i_shift
+                shift_max = max_t_shift
+
+            elif self.loc == 1:
+                # means that the first beam is spaced compored to the surface besides it
+                # implies that you start splicing nearly straight away!
+                start_split_index = int(self.blend_p / 2) + start_i_shift
+                shift_max = max_t_shift + max_t_shift_diff
+
+            split_difference = self.blend_crv_count - start_split_index
+            split_differential = shift_max / (split_difference)
+            shift_variation = (1 - (1 - shift_max) ** 2) / split_difference ** 2
+
+            self.t_vals_srf = []
+            for i in range(self.blend_crv_count):
+                local_t_vals = []
+                if (i < start_split_index):
+                    local_t_vals = [.5 - start_t_shift, .5 + start_t_shift]
+                else:
+                    n_var = i + 1 - start_split_index
+                    diff = (1 - m.sqrt(1 - shift_variation * n_var ** 2)) / 2 + start_t_shift
+                    local_t_vals = [.5 - diff, .5 + diff]
+                self.t_vals_srf.append(local_t_vals)
+
+        if (self.blend_crv_split_f == 2):
+            # sin wave, using
             pass
 
-
-    def curve_blend_splicing(self, f_type = 0):
-        """ method that controls how to split and merge the blend_crvs
-
-        :paran f_type:      Which function to apply for the blend splitting
-        """
+    def curve_blend_splicing(self):
+        """ method that controls how to split and merge the blend_crvs """
 
         self.struct_pt_cloud = []
         self.vis_pt_cloud = []
         self.blend_crv_split_set = []
         self.vis_blend_crv_split = []
-        self.blend_crv_split_f = f_type
 
         print self.t_vals_srf
 
@@ -294,11 +322,11 @@ class Keystone(object):
         """ method that returns the organised surfaces
         :return reference_srf_set, keystone_srf_set:    As the name says, either 2 x list of srfs or 2 x a nested list of srfs, grouped together based on the assembly logic
         """
-        if keystone.nested_list:
-            keystone_srf_set = keystone.keystone_srf_list
-            reference_srf_set = keystone.base_srf_list
+        if self.nested_list:
+            keystone_srf_set = self.keystone_srf_list
+            reference_srf_set = self.base_srf_list
         else:
-            keystone_srf_set = keystone.keystone_srfs
-            reference_srf_set = keystone.srf_set
+            keystone_srf_set = self.keystone_srfs
+            reference_srf_set = self.srf_set
 
         return reference_srf_set, keystone_srf_set
