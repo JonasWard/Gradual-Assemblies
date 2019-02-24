@@ -49,10 +49,7 @@ class Keystone(object):
             print "none nested list!"
 
     def __loc_pattern_based_parameters(self):
-        """ Internal method that sets some variables based on what type of surface the keystone srf is
-
-            :param loc:     Relative location value
-        """
+        """ Internal method that sets some variables based on what type of surface the keystone srf is """
         if (self.loc == 0):
             self.reverse_list = False
         elif (self.loc == 1):
@@ -83,19 +80,22 @@ class Keystone(object):
         # self.base_srf_list = source surfaces; self.keystone_srf_list = keystone surfaces
         self.base_srf_list = [[[] for j in range(self.seam_set_item_count[i])] for i in range(self.seam_set_count)]
         self.keystone_srf_list = [[[] for j in range(self.seam_set_item_count[i])] for i in range(self.seam_set_count)]
-        print "base srf list: ", self.base_srf_list
-        print "keystone srf list: ", self.keystone_srf_list
-        print "seam set count: ", self.seam_set_count
-        print "local pat len: ", self.loc_pat_len
         for i in range(self.srf_nest_count):
             local_i = int((i - i % self.loc_pat_len) / self.loc_pat_len)
             for j in range(self.seam_set_item_count[local_i]):
                 srf_ref = self.nested_srf_set[i][j]
                 srf_keystone = self.nested_keystone_srf_list[i][j]
-                print self.base_srf_list
-                print self.keystone_srf_list
                 self.base_srf_list[local_i][j].append(srf_ref)
                 self.keystone_srf_list[local_i][j].append(srf_keystone)
+
+        self.base_srf_pair_list = []
+        self.keystone_pair_list = []
+        for keystone_set in self.base_srf_list:
+            for pair in keystone_set:
+                self.base_srf_pair_list.append(pair)
+        for keystone_set in self.keystone_srf_list:
+            for pair in keystone_set:
+                self.keystone_pair_list.append(pair)
 
     def blend_crv_count_f(self, blend_precision, blend_overlap):
         """ method that defines how many isocurves have to be generated and how many than have to be blendend
@@ -334,8 +334,8 @@ class Keystone(object):
         :return reference_srf_set, keystone_srf_set:    As the name says, either 2 x list of srfs or 2 x a nested list of srfs, grouped together based on the assembly logic
         """
         if self.nested_list:
-            keystone_srf_set = self.keystone_srf_list
-            reference_srf_set = self.base_srf_list
+            keystone_srf_set = self.keystone_pair_list
+            reference_srf_set = self.base_srf_pair_list
         else:
             keystone_srf_set = self.keystone_srfs
             reference_srf_set = self.srf_set
