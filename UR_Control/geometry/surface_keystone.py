@@ -5,19 +5,6 @@ import math as m
 import copy as c
 import types
 
-# grasshopper inputs
-
-srf_set_1
-srf_set_2
-srf_set
-
-srf_set_or_sets
-
-v_div
-blend_precision
-blend_overlap
-dir
-
 # local inputs
 loc_pat = [0, 1]
 
@@ -138,7 +125,7 @@ class Keystone(object):
         """ method that constructs, based on one surface_set, a set of keystone surface_set
             all the methods called in this function don't spit out any variables but rather (over)write properties of the class instance
 
-            :param avg_spacing:         Value that is used to decide at which length ± the isocurves of the surface should be split
+            :param avg_spacing:         Value that is used to decide at which length +- the isocurves of the surface should be split
             :param rebuild:             Whether to rebuild the blend_crvs or not
             :return self.keystone_srfs: The resulting set of keystone_srfs
         """
@@ -170,7 +157,7 @@ class Keystone(object):
     def curve_blending(self, avg_spacing = 200, rebuild = False):
         """ method that constructs the blend crvs
 
-            :param avg_spacing:         Value that is used to decide at which length ± the isocurves of the surface should be split
+            :param avg_spacing:         Value that is used to decide at which length +- the isocurves of the surface should be split
             :param rebuild:             Whether to rebuild the blend_crvs or not
         """
         self.blend_crvs = [[] for i in range(self.srf_count)]
@@ -318,11 +305,3 @@ class Keystone(object):
             reference_srf_set = keystone.srf_set
 
         return reference_srf_set, keystone_srf_set
-
-if srf_set_or_sets:
-    srf_set = [srf_set_1, srf_set_2, srf_set_1, srf_set_2]
-else:
-    srf_set = srf_set
-
-keystone = Keystone(srf_set, loc_pat, v_div, blend_precision, dir)
-keystone_srf_set, reference_srf_set = keystone.output()
