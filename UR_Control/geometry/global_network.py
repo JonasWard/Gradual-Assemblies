@@ -1,4 +1,6 @@
-from geometry import Surface, LocalNetwork, SharedEdge 
+from geometry.surface import Surface
+from geometry.local_network import LocalNetwork
+from geometry.shared_edge import SharedEdge
 
 class GlobalNetwork(object):
 
@@ -180,9 +182,10 @@ class GlobalNetwork(object):
 
             surface_networks.append([no_pair])
 
-        # in case feeding a single surface
+        # in case only feeding single surfaces
         if len(surface_networks) == 0:
-            surface_networks.append([[self.surfaces[0]]])
+            for s in self.surfaces:
+                surface_networks.append([[s]])
 
         self.local_networks = []
 

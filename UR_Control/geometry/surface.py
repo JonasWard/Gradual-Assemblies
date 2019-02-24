@@ -1,5 +1,5 @@
 import Rhino.Geometry as rg
-from geometry import Beam
+from geometry.beam import Beam
 import copy
 import math
 
@@ -34,7 +34,7 @@ class Surface(object):
         self.beams = []
 
         surface = self.__offset_sides_surface(self.surface, 200)
-        surface = self.__seam_regrades(surface)
+        self.surface = self.__seam_regrades(surface)
 
         for u in range(self.u_div + 1):
 
