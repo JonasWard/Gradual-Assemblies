@@ -27,8 +27,8 @@ class Keystone(object):
 
             :param srf_set:         List or rg.NurbsSurface 's or nested list of srfs on which the keystone surface set will be based
             :param locat_pattern:   List that describes whether the surface_set is nested, which ones are on top, which ones are on the bottom (default = [0, 1])
-            :param v_div:           Defines the amount of divisions in the V direction (if not even then it will be rounded up)
-            :param blend_precision: Int that describes the multiple of v_div that define the EXTRA blend curves that are created to describe the new surface set internally (default = None (= 2))
+            :param v_div:           Defines the amount of divisions in the V direction (if not even then it will be rounded up!)
+            :param blend_precision: Int that describes the multiple of v_div that define the EXTRA blend curves that are created to describe the new surface set internally (if not even then it will be rounded up!), (default = None (= 2))
             :param dir:             Boolean used to indicate the direction of the blend creation (default = True)
             :param split_function:  Int that indicates which function defines the split function (default = 0)
             :param f_args:          Nested list of values that apply to the split function (default [[1, 0]])
@@ -111,20 +111,26 @@ class Keystone(object):
             :param blend_precisions:    How much higher the resolution of the isocurves is set than required by the v_divs
         """
 
-        if (blend_precision is None or blend_precision == 0):
-            self.blend_crv_count = int(2 * self.v_div)
-            self.blend_div = (self.blend_crv_count * 2 - 1)
+        #  making sure the v_div is set to an even value -> uneven amount of beams
+        self.v_div += self.v_div % 2
+
+        if (blend_precision is None or blend_precision == 0 or blend_precision == 2):
+            # as if the blend_precision == 2
+            self.blend_isocrvs_count = int(self.v_div * 2 + 1)
+            self.blend_crv_count = int(self.v_div)
             print "blend precision = None"
         else:
-            self.blend_crv_count = int(blend_precision * self.v_div)
-            self.blend_div = (self.blend_crv_count * 2 - 1)
+            # all other blend_precision values
+            blend_precision += blend_precision % 2
+            self.blend_crv_count = int(blend_precision * self.v_div / 2 + 1)
+            self.blend_isocrvs_count = int(self.v_div * blend_precision / 2 - m.floor((blend_precision - 1))
             print "blend precision = ", blend_precision
 
         if (blend_overlap is None or blend_overlap == 0):
             self.blend_overlap = 5
             print "blend overlap = None"
-        elif (blend_overlap > self.blend_div - self.blend_crv_count):
-            self.blend_overlap = self.blend_div - self.blend_crv_count
+        elif (blend_overlap > self.blend_isocrvs_count - self.blend_crv_count):
+            self.blend_overlap = self.blend_isocrvs_count - self.blend_crv_count
         else:
             self.blend_overlap = blend_overlap
 
@@ -152,10 +158,10 @@ class Keystone(object):
         self.isocurve_set = []
 
         for surface in self.srf_set:
-            surface.SetDomain(0, rg.Interval(0, self.blend_div))
-            surface.SetDomain(1, rg.Interval(0, self.blend_div))
+            surface.SetDomain(0, rg.Interval(0, self.blend_isocrvs_count))
+            surface.SetDomain(1, rg.Interval(0, self.blend_isocrvs_count))
             local_isocurve_set = []
-            for v_val in range(self.blend_div + 1):
+            for v_val in range(self.blend_isocrvs_count + 1):
                 local_isocurve = surface.IsoCurve(0, v_val)
                 self.isocurve_vis.append(local_isocurve)
                 local_isocurve_set.append(local_isocurve)
@@ -175,7 +181,7 @@ class Keystone(object):
         for i in range (self.blend_crv_count):
             for j in range(self.srf_count):
                 curve_0 = self.isocurve_set[j][i]
-                curve_1 = self.isocurve_set[(j - 1) % self.srf_count][self.blend_div - i]
+                curve_1 = self.isocurve_set[(j - 1) % self.srf_count][self.blend_isocrvs_count - i]
                 if self.dir:
                     t0, t1 = curve_0.Domain[0], curve_1.Domain[0]
                 else:
@@ -189,15 +195,14 @@ class Keystone(object):
                 self.blend_crvs_vis.append(local_blend_crv)
 
         self.blend_crv_avg_len /= (self.blend_crv_count * self.srf_count)
-        self.blend_div_count = int(m.ceil(self.blend_crv_avg_len / self.avg_spacing))
-        self.blend_div_count += (self.blend_div_count + 1)%2
+        self.blend_isocrvs_count_count = int(m.ceil(self.blend_crv_avg_len / self.avg_spacing))
+        self.blend_isocrvs_count_count += (self.blend_isocrvs_count_count + 1)%2
 
     def blend_curve_split_function(self):
         """ method that splits a blend_crv """
-
-        # TODO Implement v_div as a variable
         if (self.blend_crv_split_f == 0):
-            start_shift = 0 / (2 * (self.blend_div_count - 1))
+            # very very basic splicing function
+            start_shift = 0 / (2 * (self.blend_isocrvs_count_count - 1))
             shift_start = 1 - .05 * self.srf_count
             shift_max = .025 * self.srf_count
             start_split_index = int(shift_start * self.blend_crv_count)
@@ -216,6 +221,11 @@ class Keystone(object):
                     diff = (1 - m.sqrt( 1 - shift_variation * n_var ** 2)) / 2 + start_shift
                     local_t_vals = [.5 - diff, .5 + diff]
                 self.t_vals_srf.append(local_t_vals)
+
+        if (self_crv_split_f == 1):
+            # more intricate splicing function
+
+
 
     def curve_blend_splicing(self, f_type = 0):
         """ method that controls how to split and merge the blend_crvs
