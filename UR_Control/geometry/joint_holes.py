@@ -201,7 +201,7 @@ class JointHoles(object):
                 self.translation_variable_sets = [[x0_ext_set], [cover_h_set], [x1_ext_set]]
 
         # setting the symmetry flags for both all the triple dowel connections
-        if (self_type < 6 and self.type_completed_flag):
+        if (self.type < 6 and self.type_completed_flag):
             if (symmetry_flag):
                 self.v1_sw = -1
             else:
