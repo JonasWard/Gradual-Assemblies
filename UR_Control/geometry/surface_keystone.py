@@ -2,17 +2,27 @@
 
 import Rhino.Geometry as rg
 import math as m
-import copy
+import copy as c
 import types
 
 # grasshopper inputs
 
+srf_set_1
+srf_set_2
 srf_set
 
+srf_set_or_sets
+
+v_div
+blend_precision
+blend_overlap
+dir
+
 # local inputs
+loc_pat = [0, 1]
 
 class Keystone(object):
-    def __init__(self, srf_set, loc_pat = [0, 1], v_div, blend_precision = None, dir = True, split_function = 0, f_args = [[1, 0]]):
+    def __init__(self, srf_set, loc_pat = [0, 1], v_div = 3, blend_precision = None, blend_overlap = 5, dir = True, split_function = 0, f_args = [[1, 0]]):
         """ initialization of a surface class
 
             :param srf_set:         List or rg.NurbsSurface 's or nested list of srfs on which the keystone surface set will be based
@@ -23,7 +33,6 @@ class Keystone(object):
             :param split_function:  Int that indicates which function defines the split function (default = 0)
             :param f_args:          Nested list of values that apply to the split function (default [[1, 0]])
         """
-
         # surface check parameters
         self.srf_set = srf_set
         self.__nested_list_qm()
@@ -32,51 +41,80 @@ class Keystone(object):
 
         # blend curve parameters
         self.v_div = v_div
-        self.blend_crv_count_f(blend_precision)
+        self.blend_crv_count_f(blend_precision, blend_overlap)
         self.dir = dir
         self.blend_crv_split_f = split_function
         self.blend_crv_split_args = f_args[split_function]
 
+        # execution
+        if (self.nested_list):
+            self.__surface_set_execution()
+        else:
+            self.construct_srfs
+
     def __nested_list_qm(self):
         """ Internal method that checks whether the function is fed a list of srf or a nested list """
         if isinstance(self.srf_set[0], types.ListType):
-            self.nested_srf_set = deepcopy(self.srf_set)
+            self.nested_srf_set = c.deepcopy(self.srf_set)
             self.nested_list = True
             self.srf_nest_count = len(self.srf_set)
+            print "nested list!"
         else:
             self.nested_list = False
             self.srf_count = len(self.srf_set)
+            print "none nested list!"
 
     def __surface_set_execution(self):
         """ Internal method that generates the different objects """
+        # doing the calculations
         if (self.nested_list):
-            new_nested_srf_list = [[] for i in range(self.srf_nest_count)]
-            for i, self.srf_set in enumerate(self.nested_srf_set):
+            self.new_nested_srf_list = [[] for i in range(self.srf_nest_count)]
+            for i in range(self.srf_nest_count):
+                print self.srf_set
+                self.srf_set = c.deepcopy(self.nested_srf_set[i])
+                print self.srf_set
                 self.srf_count = len(self.srf_set)
-                self.__loc_pat_based_par(self.loc_pat[i % self.loc_pat_len])
-                if(self.reverse_list):
+                self.__loc_pattern_based_parameters(self.loc_pat[i % self.loc_pat_len])
+                if (self.reverse_list):
                     self.srf_set.reverse()
-                new_nested_srf_list.extend(deepcopy(self.construct_srf))
+                temp_srfs = c.deepcopy(self.construct_srfs())
+                if (self.reverse_list):
+                    temp_srfs.reverse()
+                    self.srf_set.reverse()
+                self.new_nested_srf_list.extend(temp_srfs)
+        # relating all the surfaces
+        # base_srf_list
+
+        # generated_srf_list
+
 
     def __loc_pattern_based_parameters(self, loc):
         if (loc == 0):
             self.reverse_list = False
         elif (loc == 1):
             self.reverse_list = True
-
+        self.seam_set_count = int(m.ceil(self.srf_nest_count / self.loc_pat_len))
         self.seam_logic = [(i % self.loc_pat_len) for i in range(self.srf_nest_count)]
 
-    def blend_crv_count_f(self, blend_precision):
-        if blend_precision == None:
-            self.blend_crv_count = 2 * self.v_div
+    def blend_crv_count_f(self, blend_precision, blend_overlap):
+        if (blend_precision == None or blend_precision == 0):
+            self.blend_crv_count = int(2 * self.v_div)
             self.blend_div = (self.blend_crv_count * 2 - 1)
             print "blend precision = None"
         else:
-            self.blend_crv_count = blend_precision * self.v_div
+            self.blend_crv_count = int(blend_precision * self.v_div)
             self.blend_div = (self.blend_crv_count * 2 - 1)
             print "blend precision = ", blend_precision
 
-    def construct_srf(self, avg_spacing = 200, rebuild = False):
+        if (blend_overlap == None or blend_overlap == 0):
+            self.blend_overlap = 5
+            print "blend overlap = None"
+        elif (blend_overlap > self.blend_div - self.blend_crv_count):
+            self.blend_overlap = self.blend_div - self.blend_crv_count
+        else:
+            self.blend_overlap = blend_overlap
+
+    def construct_srfs(self, avg_spacing = 200, rebuild = False):
         self.isocurves()
         self.curve_blending(200, rebuild)
         self.blend_curve_split_function()
@@ -207,7 +245,7 @@ class Keystone(object):
 
             uv_switched_crvs = []
             for point_set in point_list:
-                local_curve = rg.NurbsCurve.Create(False, 5, point_set)
+                local_curve = rg.NurbsCurve.Create(False, 4, point_set)
                 self.vis_uv_switched_pt_set.extend(point_set)
                 uv_switched_crvs.append(local_curve)
                 self.vis_uv_switched_crvs.append(local_curve)
@@ -219,11 +257,17 @@ class Keystone(object):
         for uv_switched_crvs in self.uv_switched_crvs_set:
             local_new_srf = rg.Brep.CreateFromLoftRebuild(uv_switched_crvs, rg.Point3d.Unset, rg.Point3d.Unset, loft_type, False, 50)[0]
             local_new_srf.Faces.Item[0].ToNurbsSurface()
-            local_new_srf = copy.deepcopy(local_new_srf)
+            local_new_srf = c.deepcopy(local_new_srf)
             self.keystone_srfs.append(local_new_srf)
 
-keystone = Keystone(srf_set, v_div, blend_precision, dir)
-keystone_srfs = keystone.construct_srf(200, True)
+if srf_set_or_sets:
+    srf_set = [srf_set_1, srf_set_2]
+
+keystone = Keystone(srf_set, loc_pat, v_div, blend_precision, dir)
 split_crvs = keystone.vis_blend_crv_split
 uv_switched_crvs = keystone.vis_uv_switched_crvs
 uv_switched_pts = keystone.vis_uv_switched_pt_set
+if keystone.nested_list:
+    new_srf_set_keystone = keystone.new_nested_srf_list
+else:
+    new_srf_set_keystone = keystone.srf_set

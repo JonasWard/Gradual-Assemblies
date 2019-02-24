@@ -16,7 +16,7 @@ import Rhino.Geometry as rg
 
 class JointHoles(object):
     """ Hole class that defines some hole positions baded on a beam """
-    def __init__(self, beam_set, location_index = None, type = 0, type_args=[250, 40, 70, True, False, True]):
+    def __init__(self, beam_set, location_index = None, type = 0, type_args=[250, 40, 70, True, False, False]):
         """ initialization
 
             :param beam:            Beam that's being considered
@@ -41,7 +41,9 @@ class JointHoles(object):
             print self.error_message
 
     def __location_mapping(self):
+        """ based on the inputs, these lists indicate which sets of points will be used to use with the dowel generation """
         if (self.type == 0 or self.type == 3):
+            # the triple dowel logic
             if (self.loc_index == 1):
                 self.t_locs_beam = [1, 0, 1]
                 self.dow_pts_i = [[0], [0, 1, 2]]
@@ -86,6 +88,7 @@ class JointHoles(object):
             pass
 
     def __beam_linking(self):
+        """ the actual dowel generation """
         if (self.type == 0 or self.type == 3):
             # the triple joint
             if self.fit_line_flag:
@@ -131,8 +134,9 @@ class JointHoles(object):
 
             type = 7    -> End type
                 I Don't Know
-
         """
+
+        # TO CONSIDER: for now the end and triple set are kept appart, maybe that is not necessary could change easily
 
         # normal triple dowel
         if (self.type == 0):
@@ -140,7 +144,6 @@ class JointHoles(object):
 
             type_args_count = len(self.type_args)
             if not(type_args_count == type_input_count):
-                self.error_message = ''.join(["You should've given ", str(type_input_count), " values, but you only gave ", str(type_args_count)])
                 self.type_completed_flag = False
 
             else:
@@ -155,7 +158,6 @@ class JointHoles(object):
 
             type_args_count = len(self.type_args)
             if not(type_args_count == type_input_count):
-                self.error_message = ''.join(["You should've given ", str(type_input_count), " values, but you only gave ", str(type_args_count)])
                 self.type_completed_flag = False
 
             else:
@@ -170,7 +172,6 @@ class JointHoles(object):
 
             type_args_count = len(self.type_args)
             if not(type_args_count == type_input_count):
-                self.error_message = ''.join(["You should've given ", str(type_input_count), " values, but you only gave ", str(type_args_count)])
                 self.type_completed_flag = False
 
             else:
@@ -188,7 +189,6 @@ class JointHoles(object):
 
             type_args_count = len(self.type_args)
             if not(type_args_count == type_input_count):
-                self.error_message = ''.join(["You should've given ", str(type_input_count), " values, but you only gave ", str(type_args_count)])
                 self.type_completed_flag = False
 
             else:
@@ -212,6 +212,10 @@ class JointHoles(object):
             else:
                 self.v2_sw = 1
 
+        # general error message on type generation
+        if not(self.type_completed_flag):
+            self.error_message = ''.join(["You should've given ", str(type_input_count), " values, but you only gave ", str(type_args_count)])
+
     def __parametric_hole_vars_f(self):
         """ internal method that sets the stage for parametric variation of the hole locations """
         self.param_holes_triple_joint = False
@@ -232,7 +236,7 @@ class JointHoles(object):
         if (self.param_holes_triple_joint):
             pass  # for now
         else:
-            pass
+            pass  # for now
 
     def __transformation_vecs(self, local_beam):
         if (self.type < 6):
@@ -259,7 +263,6 @@ class JointHoles(object):
 
             :param beam_index:  The index of the beam to consider.
             :return:            The beam hole locations.
-
         """
         if (self.type < 6):
             # normal joint type hole methods
