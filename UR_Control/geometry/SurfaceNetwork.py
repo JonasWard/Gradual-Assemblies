@@ -278,97 +278,110 @@ class GlobalNetwork(object):
         ### find sequences
         ###
 
-        u_pairs = self.u_shared_edges[0]
-        u_sequence_list = [[u_pairs.surface_2, u_pairs.surface_1]]
-         
-        u_shared_edges = list(u_shared_edges)[1:]
-        
-        while u_shared_edges:
-            
-            found_pair = False
-            
-            for i, shared_edge in enumerate(u_shared_edges):
-                
-                left, right = shared_edge.surface_2, shared_edge.surface_1
-                
-                for sequence in u_sequence_list:
-                    
-                    index = sequence.index(left) if left in sequence else -1
-                    
-                    if index > -1:
-                        
-                        if not right in sequence:
-                            sequence.insert(index + 1, right)
-                        found_pair = True
+        if len(self.u_shared_edges) == 0:
 
-                    index = sequence.index(right) if right in sequence else -1
-                    
-                    if index > -1:
-                        
-                        if not left in sequence:
-                            sequence.insert(index, left)
-                        found_pair = True
+            u_sequence_list = []
 
+        else:
+
+            u_pairs = self.u_shared_edges[0]
+            u_sequence_list = [[u_pairs.surface_2, u_pairs.surface_1]]
+            
+            u_shared_edges = list(u_shared_edges)[1:]
+            
+            while u_shared_edges:
+                
+                found_pair = False
+                
+                for i, shared_edge in enumerate(u_shared_edges):
+                    
+                    left, right = shared_edge.surface_2, shared_edge.surface_1
+                    
+                    for sequence in u_sequence_list:
+                        
+                        index = sequence.index(left) if left in sequence else -1
+                        
+                        if index > -1:
+                            
+                            if not right in sequence:
+                                sequence.insert(index + 1, right)
+                            found_pair = True
+
+                        index = sequence.index(right) if right in sequence else -1
+                        
+                        if index > -1:
+                            
+                            if not left in sequence:
+                                sequence.insert(index, left)
+                            found_pair = True
+
+                        if found_pair:
+                            break
+                        
                     if found_pair:
+                        del u_shared_edges[i]
                         break
-                    
-                if found_pair:
-                    del u_shared_edges[i]
-                    break
-                    
-            if not found_pair and u_shared_edges:
-                
-                shared_edge = u_shared_edges[0]
-                left, right = shared_edge.surface_2, shared_edge.surface_1
-                u_sequence_list.append([left, right])
-                
-                u_shared_edges = u_shared_edges[1:]
-
-        v_pairs = self.v_shared_edges[0]
-        v_sequence_list = [[v_pairs.surface_2, v_pairs.surface_1]]
-         
-        v_shared_edges = list(v_shared_edges)[1:]
-        
-        while v_shared_edges:
-            
-            found_pair = False
-            
-            for i, shared_edge in enumerate(v_shared_edges):
-                
-                bottom, top = shared_edge.surface_2, shared_edge.surface_1
-                
-                for sequence in v_sequence_list:
-                    
-                    index = sequence.index(bottom) if bottom in sequence else -1
-                    
-                    if index > -1:
                         
-                        if not top in sequence:
-                            sequence.insert(index + 1, top)
-                        found_pair = True
-
-                    index = sequence.index(top) if top in sequence else -1
+                if not found_pair and u_shared_edges:
                     
-                    if index > -1:
-                        
-                        if not bottom in sequence:
-                            sequence.insert(index, bottom)
-                        found_pair = True
+                    shared_edge = u_shared_edges[0]
+                    left, right = shared_edge.surface_2, shared_edge.surface_1
+                    u_sequence_list.append([left, right])
+                    
+                    u_shared_edges = u_shared_edges[1:]
 
+
+        if len(self.v_shared_edges) == 0:
+            
+            v_sequence_list = []
+
+        else:
+                
+            v_pairs = self.v_shared_edges[0]
+            v_sequence_list = [[v_pairs.surface_2, v_pairs.surface_1]]
+            
+            v_shared_edges = list(v_shared_edges)[1:]
+            
+            while v_shared_edges:
+                
+                found_pair = False
+                
+                for i, shared_edge in enumerate(v_shared_edges):
+                    
+                    bottom, top = shared_edge.surface_2, shared_edge.surface_1
+                    
+                    for sequence in v_sequence_list:
+                        
+                        index = sequence.index(bottom) if bottom in sequence else -1
+                        
+                        if index > -1:
+                            
+                            if not top in sequence:
+                                sequence.insert(index + 1, top)
+                            found_pair = True
+
+                        index = sequence.index(top) if top in sequence else -1
+                        
+                        if index > -1:
+                            
+                            if not bottom in sequence:
+                                sequence.insert(index, bottom)
+                            found_pair = True
+
+                        if found_pair:
+                            break
+                        
                     if found_pair:
+                        del v_shared_edges[i]
                         break
+                        
+                if not found_pair and v_shared_edges:
                     
-                if found_pair:
-                    del v_shared_edges[i]
-                    break
+                    shared_edge = v_shared_edges[0]
+                    bottom, top = shared_edge.surface_2, shared_edge.surface_1
+                    v_sequence_list.append([bottom, top])
                     
-            if not found_pair and v_shared_edges:
-                
-                shared_edge = v_shared_edges[0]
-                bottom, top = shared_edge.surface_2, shared_edge.surface_1
-                v_sequence_list.append([bottom, top])
-                
-                v_shared_edges = v_shared_edges[1:]
+                    v_shared_edges = v_shared_edges[1:]
         
         uv_pairs = []
         pair_index_list = []
@@ -401,7 +414,7 @@ class GlobalNetwork(object):
         for pair_index in pair_index_list:
             del no_pairs[pair_index]
 
-        surface_networks = [uv_pairs[0]]
+        surface_networks = [uv_pairs[0]] if len(uv_pairs) > 0 else []
         uv_pairs = uv_pairs[1:]
         
         while uv_pairs:
@@ -430,7 +443,11 @@ class GlobalNetwork(object):
         for no_pair in no_pairs:
             
             surface_networks.append([no_pair])
-
+        
+        # in case feeding a single surface
+        if len(surface_networks) == 0:
+            surface_networks.append([[self.surfaces[0]]])
+        
         self.local_networks = []
         
         for surface_network in surface_networks:
