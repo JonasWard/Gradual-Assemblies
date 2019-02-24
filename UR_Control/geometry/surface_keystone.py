@@ -83,12 +83,19 @@ class Keystone(object):
         # self.base_srf_list = source surfaces; self.keystone_srf_list = keystone surfaces
         self.base_srf_list = [[[] for j in range(self.seam_set_item_count[i])] for i in range(self.seam_set_count)]
         self.keystone_srf_list = [[[] for j in range(self.seam_set_item_count[i])] for i in range(self.seam_set_count)]
-        print self.seam_set_count
-        for i in range(self.seam_set_count):
+        print "base srf list: ", self.base_srf_list
+        print "keystone srf list: ", self.keystone_srf_list
+        print "seam set count: ", self.seam_set_count
+        print "local pat len: ", self.loc_pat_len
+        for i in range(self.srf_nest_count):
             local_i = int((i - i % self.loc_pat_len) / self.loc_pat_len)
             for j in range(self.seam_set_item_count[local_i]):
-                self.base_srf_list[local_i][j].append(self.nested_srf_set[i][j])
-                self.keystone_srf_list[local_i][j].append(self.nested_keystone_srf_list[i][j])
+                srf_ref = self.nested_srf_set[i][j]
+                srf_keystone = self.nested_keystone_srf_list[i][j]
+                print self.base_srf_list
+                print self.keystone_srf_list
+                self.base_srf_list[local_i][j].append(srf_ref)
+                self.keystone_srf_list[local_i][j].append(srf_keystone)
 
     def blend_crv_count_f(self, blend_precision, blend_overlap):
         """ method that defines how many isocurves have to be generated and how many than have to be blendend
@@ -112,8 +119,8 @@ class Keystone(object):
             # all other blend_precision values
             blend_precision += blend_precision % 2
             self.blend_p = blend_precision
-            self.blend_crv_count = int(self.v_div * self.blend_p / 2)
-            self.blend_isocrvs_count = int(self.v_div * self.blend_p / 2.0 - m.floor((self.blend_p - 1) / 2))
+            self.blend_crv_count = int((self.v_div + (self.v_div - 1) * self.blend_p) / 2)
+            self.blend_isocrvs_count = int(self.blend_crv_count * 2 - 1)
 
         print "blend precision = ", self.blend_p
         print "blend curve count = ", self.blend_crv_count
@@ -172,7 +179,6 @@ class Keystone(object):
         self.blend_crv_avg_len = 0
 
         for i in range (self.blend_crv_count):
-            print i, self.blend_crv_count
             for j in range(self.srf_count):
                 curve_0 = self.isocurve_set[j][i]
                 curve_1 = self.isocurve_set[(j - 1) % self.srf_count][self.blend_isocrvs_count - i]
