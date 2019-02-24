@@ -2,15 +2,8 @@
 
 import sys
 
-# existing beam class
-double_parent = "/Users/jonas/Dropbox/0.dfab/Trimester 2/Project I - Gradual Assemblies/Gradual-Assemblies"
-path_to_append = ''.join([double_parent, "/UR_Control"])
-sys.path.append(path_to_append)
-
 import geometry.beam as beam
 import geometry.dowel as dowel
-reload(beam)
-reload(dowel)
 
 import Rhino.Geometry as rg
 
@@ -102,7 +95,7 @@ class JointHoles(object):
         for local_beam in self.beam_set:
             local_dowel = dowel.Dowel(None, self.dowel_line)
             local_beam.add_dowel(local_dowel)
-            self.dowel = local_dowel.brep_representation()
+            self.dowel = local_dowel
 
     def __type_definitions(self):
         """ internal method that defines the different joint types
