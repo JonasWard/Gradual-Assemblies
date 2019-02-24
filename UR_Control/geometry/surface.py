@@ -36,6 +36,8 @@ class Surface(object):
         surface = self.__offset_sides_surface(self.surface, 200)
         self.surface = self.__seam_regrades(surface)
 
+        surface = self.surface
+
         for u in range(self.u_div + 1):
 
             inner_arr = []
