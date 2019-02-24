@@ -5,9 +5,6 @@ import math as m
 import copy as c
 import types
 
-# local inputs
-loc_pat = [0, 1]
-
 class Keystone(object):
     def __init__(self, srf_set, loc_pat = [0, 1], v_div = 3, blend_precision = None, blend_overlap = 5, dir = True, split_function = 0, f_args = [[1, 0]]):
         """ initialization of a surface class based on either a list of input srfs or a nested list of input srfs
@@ -211,7 +208,7 @@ class Keystone(object):
 
         if (self_crv_split_f == 1):
             # more intricate splicing function
-
+            pass
 
 
     def curve_blend_splicing(self, f_type = 0):
