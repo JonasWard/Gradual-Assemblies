@@ -70,9 +70,7 @@ class Keystone(object):
         if (self.nested_list):
             self.new_nested_srf_list = [[] for i in range(self.srf_nest_count)]
             for i in range(self.srf_nest_count):
-                print self.srf_set
                 self.srf_set = c.deepcopy(self.nested_srf_set[i])
-                print self.srf_set
                 self.srf_count = len(self.srf_set)
                 self.__loc_pattern_based_parameters(self.loc_pat[i % self.loc_pat_len])
                 if (self.reverse_list):
@@ -84,8 +82,10 @@ class Keystone(object):
                 self.new_nested_srf_list.extend(temp_srfs)
         # relating all the surfaces
         # base_srf_list
-
+        self.base_srf_list = [[] for i in range(self.seam_set_count)]
+        # for i, srf_set in enumerate
         # generated_srf_list
+        self.keystone_srf_list = [[] for i in range(self.seam_set_count)]
 
 
     def __loc_pattern_based_parameters(self, loc):
@@ -94,7 +94,7 @@ class Keystone(object):
         elif (loc == 1):
             self.reverse_list = True
         self.seam_set_count = int(m.ceil(self.srf_nest_count / self.loc_pat_len))
-        self.seam_logic = [(i % self.loc_pat_len) for i in range(self.srf_nest_count)]
+        print "seam set count: ", self.seam_set_count
 
     def blend_crv_count_f(self, blend_precision, blend_overlap):
         if (blend_precision == None or blend_precision == 0):
@@ -261,7 +261,7 @@ class Keystone(object):
             self.keystone_srfs.append(local_new_srf)
 
 if srf_set_or_sets:
-    srf_set = [srf_set_1, srf_set_2]
+    srf_set = [srf_set_1, srf_set_2, srf_set_1, srf_set_2]
 
 keystone = Keystone(srf_set, loc_pat, v_div, blend_precision, dir)
 split_crvs = keystone.vis_blend_crv_split
