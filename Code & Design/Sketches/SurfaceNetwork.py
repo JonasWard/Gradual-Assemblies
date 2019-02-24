@@ -11,8 +11,7 @@ __version__ = "2019.02.23"
 
 import Rhino.Geometry as rg
 
-from geometry.global_network import GlobalNetwork
-from geometry.local_network import LocalNetwork
+from geometry import GlobalNetwork, LocalNetwork
 
 import os
 
