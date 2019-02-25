@@ -5,7 +5,7 @@ import math
 
 class Surface(object):
 
-    def __init__(self, surface):
+    def __init__(self, surface, u_div=5, v_div=3):
 
         domain = rg.Interval(0, 1)
         surface.SetDomain(0, domain)
@@ -24,8 +24,8 @@ class Surface(object):
         self.left_pt   = self.left_curve.PointAt(0.5)
         self.right_pt  = self.right_curve.PointAt(0.5)
 
-        self.u_div = 5
-        self.v_div = 3
+        self.u_div = u_div
+        self.v_div = v_div
 
         self.__instantiate_beams()
 

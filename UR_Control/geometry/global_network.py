@@ -4,9 +4,9 @@ from geometry.shared_edge import SharedEdge
 
 class GlobalNetwork(object):
 
-    def __init__(self, surfaces):
+    def __init__(self, surfaces, u_div=3, v_div=5):
 
-        self.surfaces = [Surface(s) for s in surfaces]
+        self.surfaces = [Surface(s, u_div, v_div) for s in surfaces]
 
         u_shared_edges, v_shared_edges = SharedEdge.generate(self.surfaces)
         self.u_shared_edges = u_shared_edges
