@@ -28,9 +28,7 @@ class Surface(object):
         self.v_div = v_div
         self.offset_value = offset_value
 
-        self.__instantiate_beams()
-
-    def __instantiate_beams(self):
+    def instantiate_beams(self, will_flip=False):
 
         self.beams = []
 
@@ -38,6 +36,13 @@ class Surface(object):
         self.surface = self.__seam_regrades(surface)
 
         surface = self.surface
+
+        if will_flip:
+            
+            # flip
+            domain = rg.Interval(0, 1)
+            surface.Reverse(0, True)
+            surface.SetDomain(0, domain)
 
         for u in range(self.u_div + 1):
 
@@ -64,11 +69,20 @@ class Surface(object):
 
                 plane = rg.Plane(center, x_axis, normal)
 
-                beam = Beam(plane, length, 80, 20)
+                beam = Beam(plane, length, 160, 40)
 
                 inner_arr.append(beam)
 
             self.beams.append(inner_arr)
+
+        if will_flip:
+            
+            # flip back
+            domain = rg.Interval(0, 1)
+            surface.Reverse(0, True)
+            surface.SetDomain(0, domain)
+            self.beams = list(reversed(self.beams))
+
 
     def __offset_sides_surface(self ,surface, offset_dis=20, sides = 2, sampling_count = 25):
         """ method that returns a slightly shrunk version of the surface along the v direction

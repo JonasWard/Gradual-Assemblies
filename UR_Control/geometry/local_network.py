@@ -16,13 +16,11 @@ class LocalNetwork(object):
 
             for u_index, surface in enumerate(v_sequence):
 
-                if u_index % 2 == 0:
+                will_flip = True if u_index % 2 == 1 else False
 
-                    beams = list(surface.beams)
+                surface.instantiate_beams(will_flip)
 
-                else:
-
-                    beams = list(reversed(surface.beams))
+                beams = list(surface.beams)
 
                 if len(beams_2d) == 0:
 
@@ -33,7 +31,7 @@ class LocalNetwork(object):
                     for src_beams, new_beams in zip(beams_2d, beams):
 
                         src_beams.extend(new_beams)
-
+                
             self.beams.extend(beams_2d)
 
 
