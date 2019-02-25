@@ -251,14 +251,31 @@ class Keystone(object):
                 self.t_vals_srf.append(local_t_vals)
 
         elif (self.blend_crv_split_f == 2):
+            # setting domain of the sin wave curve
+            # domain [a, b] -> [c, d] remapping f(x):
+            # f(x) = (c - d) / (a - b) * (x - a) + c;
+            # f(x) = p1 * (x - p2) + p3
+
+            # from [indexes] to [-Pi / 2 to Pi / 2]
+            a, b = start_split_index - 1, self.blend_crv_count - 1
+            half_pi = m.pi / 2
+            c, d = -half_pi, half_pi
+            p1, p2, p3 = (c - d) / (a - b), a, c
+            # from [-1 to 1] to [0, shift_max]
+            a, b = -1, 1
+            c, d = 0, shift_max
+            p4, p5, p6 = (c - d) / (a - b), a, c
             # t_vals for the sin splicing function
             for i in range(self.blend_crv_count):
                 local_t_vals = []
                 if (i < start_split_index):
                     local_t_vals = [.5 - start_t_shift, .5 + start_t_shift]
                 else:
-                    n_var = i + 1 - start_split_index
-                    diff = (1 - m.sqrt(1 - shift_variation * n_var ** 2)) / 2 + start_t_shift
+                    # f1 remapping domain, f2 sin, f3 second remapping
+                    f1_y = p1 * (i - p2) + p3
+                    f2_y = m.sin(f1_y)
+                    f3_y = p4 * (f2_y - p5) + p6
+                    diff = f3_y + start_t_shift
                     local_t_vals = [.5 - diff, .5 + diff]
                 self.t_vals_srf.append(local_t_vals)
 
