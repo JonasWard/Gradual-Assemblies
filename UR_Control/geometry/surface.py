@@ -172,7 +172,7 @@ class Surface(object):
         total_t_vals = u_extra_precision
         for i in range(precision):
             alfa = half_pi_over_precision * i
-            local_t_val = math.sin(alfa)
+            local_t_val = math.sin(alfa) ** 2
             ini_t_vals.append(local_t_val)
             total_t_vals += local_t_val
 

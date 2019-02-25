@@ -4,7 +4,7 @@ from geometry.shared_edge import SharedEdge
 
 class GlobalNetwork(object):
 
-    def __init__(self, surfaces, u_div=3, v_div=5, offset_value=20):
+    def __init__(self, surfaces, u_div=3, v_div=5, offset_value=20, will_reverse=False, type_args=[40, 20, 20, True, False, False]):
 
         self.surfaces = [Surface(s, u_div, v_div, offset_value) for s in surfaces]
 
@@ -200,5 +200,5 @@ class GlobalNetwork(object):
 
                 has_loop = False
 
-            local_network = LocalNetwork(surface_network, has_loop)
+            local_network = LocalNetwork(surface_network, has_loop, will_reverse, type_args)
             self.local_networks.append(local_network)

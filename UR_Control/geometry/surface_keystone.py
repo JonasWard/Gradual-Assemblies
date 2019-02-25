@@ -22,6 +22,7 @@ class Keystone(object):
         self.srf_set = srf_set
         self.__nested_list_qm()
         self.loc_pat = loc_pat
+        self.loc = loc_pat[0]
         self.loc_pat_len = len(loc_pat)
 
         # blend curve parameters
@@ -144,6 +145,9 @@ class Keystone(object):
             :param rebuild:             Whether to rebuild the blend_crvs or not
             :return self.keystone_srfs: The resulting set of keystone_srfs
         """
+        if not(self.nested_list):
+            if (self.loc == 1):
+                self.srf_set.reverse()
 
         self.isocurves()
         self.curve_blending(200, rebuild)

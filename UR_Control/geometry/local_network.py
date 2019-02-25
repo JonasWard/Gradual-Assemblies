@@ -3,12 +3,13 @@ import itertools
 
 class LocalNetwork(object):
 
-    def __init__(self, surface_network, has_loop = False):
+    def __init__(self, surface_network, has_loop = False, will_reverse=False, type_args=[40, 20, 20, True, False, False]):
 
         self.beams = []
         self.has_loop = has_loop
         self.u_div = surface_network[0][0].u_div
         self.v_div = surface_network[0][0].v_div
+        self.type_args = type_args
 
         for v_index, v_sequence in enumerate(surface_network):
 
@@ -16,7 +17,8 @@ class LocalNetwork(object):
 
             for u_index, surface in enumerate(v_sequence):
 
-                will_flip = True if u_index % 2 == 1 else False
+                vvv = 1 if not will_reverse else 0
+                will_flip = True if u_index % 2 == vvv else False
 
                 surface.instantiate_beams(will_flip)
 
@@ -33,6 +35,9 @@ class LocalNetwork(object):
                         src_beams.extend(new_beams)
                 
             self.beams.extend(beams_2d)
+ 
+        if will_reverse:
+            self.beams = list(reversed(self.beams))
 
 
     def get_flatten_beams(self):
@@ -64,7 +69,7 @@ class LocalNetwork(object):
                         middle = middle_beams[j]    # _____
                         right  = right_beams[j]     #    _____
 
-                        joint_holes = JointHoles([left, middle, right], 0)
+                        joint_holes = JointHoles([left, middle, right], 0, type_args=self.type_args)
                         dowels.append(joint_holes.dowel)
 
                     if j > 0:
@@ -73,7 +78,7 @@ class LocalNetwork(object):
                         middle = middle_beams[j-1]  #    _____
                         right  = right_beams[j]     # _____
 
-                        joint_holes = JointHoles([left, middle, right], 1)
+                        joint_holes = JointHoles([left, middle, right], 1, type_args=self.type_args)
                         dowels.append(joint_holes.dowel)
 
             else:
@@ -84,7 +89,7 @@ class LocalNetwork(object):
                     middle = middle_beams[j]    # _____
                     right  = right_beams[j]     #    _____
 
-                    joint_holes = JointHoles([left, middle, right], 1)
+                    joint_holes = JointHoles([left, middle, right], 1, type_args=self.type_args)
                     dowels.append(joint_holes.dowel)
 
                     if j < len(middle_beams) - 1:
@@ -94,7 +99,7 @@ class LocalNetwork(object):
                         right  = right_beams[j]     # _____
 
 
-                        joint_holes = JointHoles([left, middle, right], 0)
+                        joint_holes = JointHoles([left, middle, right], 0, type_args=self.type_args)
                         dowels.append(joint_holes.dowel)
 
         return dowels
@@ -120,14 +125,14 @@ class LocalNetwork(object):
             left  = left_beams[i]
             right = right_beams[i]
 
-            joint_holes = JointHoles([left, right], 1, 1)
+            joint_holes = JointHoles([left, right], 1, 1, type_args=self.type_args)
             dowels.append(joint_holes.dowel)
 
             if len(left_beams) > i + 1:
                 left  = left_beams[i+1]
                 right = right_beams[i]
 
-                joint_holes = JointHoles([left, right], 0, 1)
+                joint_holes = JointHoles([left, right], 0, 1, type_args=self.type_args)
                 dowels.append(joint_holes.dowel)
 
         # ending side
@@ -142,14 +147,14 @@ class LocalNetwork(object):
             left  = left_beams[i]
             right = right_beams[i]
 
-            joint_holes = JointHoles([left, right], 0 if is_odd_division else 1, 2)
+            joint_holes = JointHoles([left, right], 0 if is_odd_division else 1, 2, type_args=self.type_args)
             dowels.append(joint_holes.dowel)
 
             if len(left_beams) > i + 1:
                 left  = left_beams[i+1]
                 right = right_beams[i]
 
-                joint_holes = JointHoles([left, right], 1 if is_odd_division else 0, 2)
+                joint_holes = JointHoles([left, right], 1 if is_odd_division else 0, 2, type_args=self.type_args)
                 dowels.append(joint_holes.dowel)
 
         return dowels
