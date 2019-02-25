@@ -14,7 +14,7 @@ class JointHoles(object):
 
             :param beam:            Beam that's being considered
             :param location_index:  Index that indicating which t_vals on the beam baseline curve to consider, should take int (default = None)
-            :param type:            Which join type you are dealin with     0 - simple triple, 1 & 2 left & right ends ; 3 - parametric triple, 4 & 5 left & right ends ; 6 - foundation ; 7 - top
+            :param type:            Which join type you are dealin with     0 - simple triple, 1 & 2 left & right ends ; 3 - parametric triple, 4 & 5 left & right ends ; 6 - foundation ; 7 - top; 8  (construction) seams
             :param type_args:       Iterable list containing parametrs defining the position of the joint holes in relationship to the joint type, first value is always the type!
         """
 
@@ -80,6 +80,10 @@ class JointHoles(object):
             # the top beams
             pass
 
+        if (self.type == 8):
+            # the seams - also construction !!!
+            pass
+
     def __beam_linking(self):
         """ the actual dowel generation """
         if (self.type == 0 or self.type == 3):
@@ -126,6 +130,9 @@ class JointHoles(object):
                 I Don't Know
 
             type = 7    -> End type
+                I Don't Know
+
+            type = 8    -> Seam typology
                 I Don't Know
         """
 
