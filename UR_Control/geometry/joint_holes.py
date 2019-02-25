@@ -9,7 +9,7 @@ import Rhino.Geometry as rg
 
 class JointHoles(object):
     """ Hole class that defines some hole positions baded on a beam """
-    def __init__(self, beam_set, location_index = None, type = 0, type_args=[250, 40, 70, True, False, False]):
+    def __init__(self, beam_set, location_index = None, type = 0, type_args=[40, 20, 20, True, False, False]):
         """ initialization
 
             :param beam:            Beam that's being considered

@@ -26,7 +26,7 @@ class Keystone(object):
         # blend curve parameters
         self.v_div = v_div
         self.blend_crv_count_f(blend_precision, blend_overlap)
-        self.dir = dir
+        self.global_dir = dir
         self.blend_crv_split_f = split_function
         self.blend_crv_split_args = f_args[split_function]
 
@@ -53,8 +53,10 @@ class Keystone(object):
         """ Internal method that sets some variables based on what type of surface the keystone srf is """
         if (self.loc == 0):
             self.reverse_list = False
+            self.dir = self.global_dir
         elif (self.loc == 1):
             self.reverse_list = True
+            self.dir = True if not self.global_dir else False
         self.seam_set_count = int(m.ceil(self.srf_nest_count / self.loc_pat_len))
         self.seam_set_item_count = [int(len(self.nested_srf_set[i])) for i in range(self.seam_set_count * 2)]
         print "seam set count: ", self.seam_set_count
@@ -227,13 +229,13 @@ class Keystone(object):
             # more intricate splicing function
             start_i_shift, start_t_shift, max_t_shift, max_t_shift_diff = self.blend_crv_split_args
             # in case it would be usefull, a start shift can be set!
-            if self.loc == 0:
+            if self.loc == 1:
                 # means that the first beam is supposed to be flush with the beam on the next surface
                 # implies that you only start splicing after the 2nd v split point
                 start_split_index = int(self.blend_p * 3 / 2) + start_i_shift
                 shift_max = max_t_shift
 
-            elif self.loc == 1:
+            elif self.loc == 0:
                 # means that the first beam is spaced compored to the surface besides it
                 # implies that you start splicing nearly straight away!
                 start_split_index = int(self.blend_p / 2) + start_i_shift

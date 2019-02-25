@@ -5,7 +5,7 @@ import math
 
 class Surface(object):
 
-    def __init__(self, surface, u_div=5, v_div=3):
+    def __init__(self, surface, u_div=5, v_div=3, offset_value=20):
 
         domain = rg.Interval(0, 1)
         surface.SetDomain(0, domain)
@@ -26,6 +26,7 @@ class Surface(object):
 
         self.u_div = u_div
         self.v_div = v_div
+        self.offset_value = offset_value
 
         self.__instantiate_beams()
 
@@ -33,7 +34,7 @@ class Surface(object):
 
         self.beams = []
 
-        surface = self.__offset_sides_surface(self.surface, 200)
+        surface = self.__offset_sides_surface(self.surface, self.offset_value)
         self.surface = self.__seam_regrades(surface)
 
         surface = self.surface
@@ -63,7 +64,7 @@ class Surface(object):
 
                 plane = rg.Plane(center, x_axis, normal)
 
-                beam = Beam(plane, length, 180, 40)
+                beam = Beam(plane, length, 80, 20)
 
                 inner_arr.append(beam)
 
