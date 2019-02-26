@@ -32,23 +32,88 @@ class Keystone(object):
         self.blend_crv_split_args = f_args[split_function]
 
         # execution
-        if (self.nested_list):
+        if (self.is_nested_list):
+            print "nested list execution"
             self.__surface_set_execution()
-        else:
+        elif (self.is_list):
+            print "list execution"
             self.loc = self.loc_pat[0]
             self.construct_srfs()
+        elif (self.is_single_srf):
+            print "execution"
+            self.loc = self.loc_pat[0]
+            self.srf_set = [self.srf_set]
+            self.__single_surface_warp()
 
     def __nested_list_qm(self):
         """ Internal method that checks whether the function is fed a list of srf or a nested list """
-        if isinstance(self.srf_set[0], types.ListType):
+        if (isinstance(self.srf_set, rg.Surface) or isinstance(self.srf_set, rg.Surface)):
+            self.is_single_srf, self.is_list, self.is_nested_list = True, False, False
+            self.srf_count = 1
+            print "single surface!"
+        elif (isinstance(self.srf_set, types.ListType) and not(isinstance(self.srf_set[0], types.ListType))):
+            self.is_single_srf, self.is_list, self.is_nested_list = False, True, False
+            self.srf_count = len(self.srf_set)
+            print "list!"
+        else:
+            self.is_single_srf, self.is_list, self.is_nested_list = False, False, True
             self.nested_srf_set = c.deepcopy(self.srf_set)
-            self.nested_list = True
             self.srf_nest_count = len(self.srf_set)
             print "nested list!"
-        else:
-            self.nested_list = False
-            self.srf_count = len(self.srf_set)
-            print "none nested list!"
+
+    def __single_surface_warp(self):
+        """ Internal method that gives you an regraded item in the case you are dealing with just a singel surface, kind of a hack ... """
+        temp_storage_blend_count = self.blend_crv_count
+        self.blend_crv_count = self.blend_isocrvs_count
+        self.isocurves(1)
+        self.blend_crv_count = temp_storage_blend_count
+        self.blend_curve_split_function()
+        temp_t_vals = c.deepcopy(self.t_vals_srf)
+        self.t_vals_srf = [t_vals[0] * 2 for t_vals in temp_t_vals]
+        temp_t_vals = c.deepcopy(self.t_vals_srf)
+        self.t_vals_srf.extend(temp_t_vals[::-1][1:])
+        self.keystone_srfs = self.loft_crvs(self.__trim_srf())
+
+    def __trim_srf(self):
+        """ Internal Method that creates the split isocurves in the case of a single surface """
+        self.struct_pt_cloud = []
+        self.vis_pt_cloud = []
+        self.blend_crv_split_set = []
+        self.vis_blend_crv_split = []
+
+        self.crvs_to_loft = []
+        for crv_index, isocrv in enumerate(self.isocurve_set[0]):
+            start_t, end_t = isocrv.Domain[0], isocrv.Domain[1]
+            t_delta = end_t - start_t
+            local_t = (start_t + t_delta * self.t_vals_srf[crv_index])
+            if (self.t_vals_srf[crv_index] > .999):
+                tmp_crv = isocrv
+            else:
+                tmp_crv = isocrv.Split(local_t)[0]
+            self.crvs_to_loft.append(tmp_crv)
+
+        return self.crvs_to_loft
+
+    def construct_srfs(self, avg_spacing = 200, rebuild = False):
+        """ method that constructs, based on one surface_set, a set of keystone surface_set
+            all the methods called in this function don't spit out any variables but rather (over)write properties of the class instance
+
+            :param avg_spacing:         Value that is used to decide at which length +- the isocurves of the surface should be split
+            :param rebuild:             Whether to rebuild the blend_crvs or not
+            :return self.keystone_srfs: The resulting set of keystone_srfs
+        """
+        if not(self.is_nested_list):
+            if (self.loc == 1):
+                self.srf_set.reverse()
+
+        self.isocurves()
+        self.curve_blending(200, rebuild)
+        self.blend_curve_split_function()
+        self.curve_blend_splicing()
+        self.invert_uv_isocurves()
+        self.lofting_set_of_crvs()
+
+        return self.keystone_srfs
 
     def __loc_pattern_based_parameters(self):
         """ Internal method that sets some variables based on what type of surface the keystone srf is """
@@ -64,7 +129,7 @@ class Keystone(object):
     def __surface_set_execution(self):
         """ Internal method that generates the different objects """
         # doing the calculations
-        if (self.nested_list):
+        if (self.is_nested_list):
             self.nested_keystone_srf_list = []
             for i in range(self.srf_nest_count):
                 self.srf_set = c.deepcopy(self.nested_srf_set[i])
@@ -136,6 +201,7 @@ class Keystone(object):
         else:
             self.blend_overlap = blend_overlap
 
+<<<<<<< HEAD
     def construct_srfs(self, avg_spacing = 200, rebuild = False):
         """ method that constructs, based on one surface_set, a set of keystone surface_set
             all the methods called in this function don't spit out any variables but rather (over)write properties of the class instance
@@ -155,16 +221,19 @@ class Keystone(object):
         return self.keystone_srfs
 
     def isocurves(self):
+=======
+    def isocurves(self, dir = 0):
+>>>>>>> f1b5d11... keystone hack
         """ method that calculates the isocurves """
         self.isocurve_vis = []
         self.isocurve_set = []
 
         for surface in self.srf_set:
-            surface.SetDomain(0, rg.Interval(0, self.blend_isocrvs_count))
-            surface.SetDomain(1, rg.Interval(0, self.blend_isocrvs_count))
+            surface.SetDomain(0, rg.Interval(0, self.blend_isocrvs_count - 1))
+            surface.SetDomain(1, rg.Interval(0, self.blend_isocrvs_count - 1))
             local_isocurve_set = []
-            for v_val in range(self.blend_isocrvs_count + 1):
-                local_isocurve = surface.IsoCurve(0, v_val)
+            for v_val in range(self.blend_isocrvs_count):
+                local_isocurve = surface.IsoCurve(dir, v_val)
                 self.isocurve_vis.append(local_isocurve)
                 local_isocurve_set.append(local_isocurve)
             self.isocurve_set.append(local_isocurve_set)
@@ -181,9 +250,11 @@ class Keystone(object):
         self.blend_crv_avg_len = 0
 
         for i in range (self.blend_crv_count):
+            print "list_count", i
+            print "inverset_list_count", self.blend_isocrvs_count - i - 1
             for j in range(self.srf_count):
                 curve_0 = self.isocurve_set[j][i]
-                curve_1 = self.isocurve_set[(j - 1) % self.srf_count][self.blend_isocrvs_count - i]
+                curve_1 = self.isocurve_set[(j - 1) % self.srf_count][self.blend_isocrvs_count - i - 1]
                 if self.dir:
                     t0, t1 = curve_0.Domain[0], curve_1.Domain[0]
                 else:
@@ -196,20 +267,19 @@ class Keystone(object):
                 self.blend_crv_avg_len += local_blend_crv.GetLength()
                 self.blend_crvs_vis.append(local_blend_crv)
 
-        self.blend_crv_avg_len /= (self.blend_crv_count * self.srf_count)
-        self.blend_isocrvs_count_count = int(m.ceil(self.blend_crv_avg_len / self.avg_spacing))
-        self.blend_isocrvs_count_count += (self.blend_isocrvs_count_count + 1)%2
-
     def blend_curve_split_function(self):
         """ method that splits a blend_crv """
         #  to do implement average closest point to overlap curves / srf
         # setting up the boundary variables
+        if (self.is_single_srf):
+            self.blend_crv_split_args[2], self.blend_crv_split_args[3] = self.blend_crv_split_args[2] / 2, self.blend_crv_split_args[3] / 2
+
         if (self.blend_crv_split_f == 0):
             # reading in the f_args
             start_i_shift, start_t_shift, max_t_shift, max_t_shift_diff = self.blend_crv_split_args
 
             # very very basic splicing function
-            start_t_shift = 0 / (2 * (self.blend_isocrvs_count_count - 1))
+            start_t_shift = 0 / (2 * (self.blend_isocrvs_count - 1))
             shift_start = 1 - .05 * self.srf_count
             shift_max = .025 * self.srf_count
             start_split_index = int(shift_start * self.blend_crv_count + start_i_shift)
@@ -287,8 +357,8 @@ class Keystone(object):
         self.blend_crv_split_set = []
         self.vis_blend_crv_split = []
 
-        temp_new_sets_pos = []
-        temp_new_sets_neg = []
+        self.temp_new_sets_pos = []
+        self.temp_new_sets_neg = []
 
         for i in range(self.srf_count):
             local_pos_list = []
@@ -304,13 +374,14 @@ class Keystone(object):
                 local_neg_list.append(tmp_crv_1)
                 self.vis_blend_crv_split.append(tmp_crv_0)
                 self.vis_blend_crv_split.append(tmp_crv_1)
+
             local_neg_list.reverse()
-            temp_new_sets_pos.append(local_pos_list)
-            temp_new_sets_neg.append(local_neg_list)
+            self.temp_new_sets_pos.append(local_pos_list)
+            self.temp_new_sets_neg.append(local_neg_list)
 
         for j in range(self.srf_count):
-            local_set = temp_new_sets_pos[j]
-            local_set.extend(temp_new_sets_neg[(j + 1) % self.srf_count])
+            local_set = self.temp_new_sets_pos[j]
+            local_set.extend(self.temp_new_sets_neg[(j + 1) % self.srf_count])
             self.blend_crv_split_set.append(local_set)
 
     def invert_uv_isocurves(self):
@@ -342,24 +413,29 @@ class Keystone(object):
                 self.vis_uv_switched_crvs.append(local_curve)
             self.uv_switched_crvs_set.append(uv_switched_crvs)
 
-    def lofting_crvs(self):
+    def lofting_set_of_crvs(self):
         """ method that create the keystone srfs """
         self.keystone_srfs = []
-        loft_type = rg.LoftType.Tight
         for uv_switched_crvs in self.uv_switched_crvs_set:
-            local_new_srf = rg.Brep.CreateFromLoftRebuild(uv_switched_crvs, rg.Point3d.Unset, rg.Point3d.Unset, loft_type, False, 50)[0]
-            local_new_srf = c.deepcopy(local_new_srf.Faces.Item[0].ToNurbsSurface())
-            self.keystone_srfs.append(local_new_srf)
+            self.keystone_srfs.append(self.loft_crvs(uv_switched_crvs))
+
+    def loft_crvs(self, crvs):
+        loft_type = rg.LoftType.Tight
+        local_new_srf = rg.Brep.CreateFromLoftRebuild(crvs, rg.Point3d.Unset, rg.Point3d.Unset, loft_type, False, 50)[0]
+        local_new_srf = c.deepcopy(local_new_srf.Faces.Item[0].ToNurbsSurface())
+        return local_new_srf
 
     def output(self):
         """ method that returns the organised surfaces
         :return reference_srf_set, keystone_srf_set:    As the name says, either 2 x list of srfs or 2 x a nested list of srfs, grouped together based on the assembly logic
         """
-        if self.nested_list:
+        if self.is_nested_list:
             keystone_srf_set = self.keystone_pair_list
             reference_srf_set = self.base_srf_pair_list
+        elif self.is_list:
+            keystone_srf_set = self.keystone_srfs
+            reference_srf_set = self.srf_set
         else:
             keystone_srf_set = self.keystone_srfs
             reference_srf_set = self.srf_set
-
         return reference_srf_set, keystone_srf_set
