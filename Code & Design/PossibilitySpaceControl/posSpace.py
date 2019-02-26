@@ -23,7 +23,7 @@ reload(hole)
 x_dim = 1000
 y_dim = 120
 z_dim = 40
-angle = 65
+angle /= 180
 
 world_origin = rg.Point3d(0, 0, 0)
 
@@ -33,7 +33,7 @@ world_z = rg.Vector3d(0, 0, 1)
 
 beam_1 = beam.Beam(rg.Plane.WorldYZ, x_dim, y_dim, z_dim)
 
-rotation = rg.Transform.Rotation(m.pi / 9.0, world_x, world_origin)
+rotation = rg.Transform.Rotation(m.pi * angle, world_x, world_origin)
 translation = rg.Transform.Translation(rg.Vector3d(1000, 0, 0))
 
 plane = rg.Plane.WorldYZ
@@ -53,17 +53,23 @@ dowels = [dowel.Dowel(None, rg.Line(pts_2[i], pts_1[i])) for i in range(number)]
 
 spheres_boundary = []
 sphere_angles = []
+pipe_dowels = []
 beam_breps = []
 
 beams = [beam_1, beam_2]
 
 for beam_obj in beams:
     [beam_obj.add_dowel(dowel) for dowel in dowels]
-    local_spheres_boundary = beam_obj.check_boundary_constraints()
-    local_spheres_angles = beam_obj.check_angle_constraints()
+    local_spheres_boundary = beam_obj.check_boundary_constraints(a, b, c, d, e)
+    local_spheres_angles = beam_obj.check_angle_constraints(constraint_angle)
     [spheres_boundary.append(local_sphere) for local_sphere in local_spheres_boundary]
     [sphere_angles.append(local_angle) for local_angle in local_spheres_angles]
     beam_breps.append(beam_obj.brep_representation())
+
+for dowel in dowels:
+    temp_breps = dowel.check_spacing_constraints(max_spacing = 300)
+    if not(temp_breps == []):
+        pipe_dowels.extend(temp_breps)
 
 # possibility space in itself
 
@@ -72,7 +78,7 @@ pyramid_list = []
 
 for beam_obj in beams:
     polylines_top = beam_obj.top_recs
-    polylines_bottom = beam_obj.bottom_recs
+    polylines_bottom = beam_obj.bot_recs
     cone_planes = [polylines_top[0].Plane, polylines_bottom[0].Plane]
     distance = 10000
     index = 0
