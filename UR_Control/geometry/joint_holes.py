@@ -47,7 +47,7 @@ class JointHoles(object):
                 print "wrong input, but here's a result anyway (:"
                 self.t_locs_beam = [1, 0, 1]
                 self.dow_pts_i = [[1], [0, 1, 2]]
-        if (self.type == 1 or self.type == 4):
+        elif (self.type == 1 or self.type == 4):
             # the starting naked edge
             if (self.loc_index == 1):
                 self.t_locs_beam = [0, 1]
@@ -59,7 +59,7 @@ class JointHoles(object):
                 print "wrong input, but here's a result anyway (:"
                 self.t_locs_beam = [1, 0]
                 self.dow_pts_i = [[1], [1, 2]]
-        if (self.type == 2 or self.type == 5):
+        elif (self.type == 2 or self.type == 5):
             # the end naked edge
             if (self.loc_index == 1):
                 self.t_locs_beam = [1, 0]
@@ -72,18 +72,22 @@ class JointHoles(object):
                 self.t_locs_beam = [1, 0]
                 self.dow_pts_i = [[0], [0, 1]]
 
-        if (self.type == 6):
+        elif (self.type == 6):
             # the foundation logic
             pass
 
-        if (self.type == 7):
+        elif (self.type == 7):
             # the top beams
             pass
 
-        if (self.type == 8):
-            # the seams - also construction !!!
+        elif (self.type == 8):
+            # the seams - flush condition
             pass
 
+        elif (self.type == 9):
+            # the seams with I Don't Know
+            pass
+            
     def __beam_linking(self):
         """ the actual dowel generation """
         if (self.type == 0 or self.type == 3):
@@ -135,9 +139,6 @@ class JointHoles(object):
             type = 8    -> Seam typology
                 I Don't Know
         """
-
-        # TO CONSIDER: for now the end and triple set are kept appart, maybe that is not necessary could change easily
-
         # normal triple dowel
         if (self.type == 0):
             type_input_count = 6
@@ -258,7 +259,7 @@ class JointHoles(object):
 
             return vec_0, vec_1, vec_2_a, vec_2_b
 
-    def type_hole_pt_transform(self, beam_index):
+    def __triple_dowel_function(self, beam_index):
         """ method that returns the joint points at a certain point on the beam
 
             :param beam_index:  The index of the beam to consider.
@@ -303,7 +304,25 @@ class JointHoles(object):
         """ Internal method that executes the joint_point_calculations """
         self.dowel_pts = []
         for i in range(self.beam_set_len):
-            loc_hole_pts = self.type_hole_pt_transform(i)
+            loc_hole_pts = self.__triple_dowel_function(i)
 
             loc_dowel_pt = loc_hole_pts[self.dow_pts_i[0][0]][self.dow_pts_i[1][i]]
             self.dowel_pts.append(loc_dowel_pt)
+
+    def __transform_geo_to_xyplane(self, geo, ref_plane, invert = False):
+        """
+            internal method that tranforms some geometry to the xy_plane
+
+            :param geo:             Input Geometry
+            :param ref_plane:       Plane used as a reference
+            :param invert:          To ref_plane = True, To xy_plane = False
+            :return new_geo:        Geometries that have been transformed
+        """
+        if (invert):
+            plane_0, plane_1 = rg.Plane.WorldXY, ref_plane
+        else:
+            plane_1, plane_0 = rg.Plane.WorldXY, ref_plane
+        trans_matrix = rg.Transform.PlaneToPlane(plane_0, plane_1)
+        new_geo = [temp_geo.Transform(trans_matrix) for temp_geo in geo]
+
+        return new_geo

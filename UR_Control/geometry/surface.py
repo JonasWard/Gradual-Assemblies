@@ -38,7 +38,7 @@ class Surface(object):
         surface = self.surface
 
         if will_flip:
-            
+
             # flip
             domain = rg.Interval(0, 1)
             surface.Reverse(0, True)
@@ -76,7 +76,7 @@ class Surface(object):
             self.beams.append(inner_arr)
 
         if will_flip:
-            
+
             # flip back
             domain = rg.Interval(0, 1)
             surface.Reverse(0, True)
@@ -84,14 +84,30 @@ class Surface(object):
             self.beams = list(reversed(self.beams))
 
 
-    def __offset_sides_surface(self ,surface, offset_dis=20, sides = 2, sampling_count = 25):
+    def __offset_sides_surface(self ,surface, offset_dis=20, rel_or_abs = False, sides = 2, sampling_count = 25):
         """ method that returns a slightly shrunk version of the surface along the v direction
-            :param offset_dis:      Offset Distance (default 20)
+
+            :param surface:         Input surface
+            :param offset_dis:      Offset Distance (if int input -> distance, if float input relative)
+            :param rel_or_abs:      Flag that states whether you offset the surface absolute or relative - if relative u domain has to be set correctly!!! (rel = True, abs = False, default = False)
             :param sides:           Which sides should be offseted (0 = left, 1 = right, 2 = both, default)
             :param sampling_count:  Precision at which the surface should be rebuild
             :return temp_srf:       The trimmed surface
         """
         temp_surface = copy.deepcopy(surface)
+
+        # case that surface offset is relative
+        if rel_or_abs:
+            u_div = surface.Domain(0)
+            if (sides == 0):
+                offsets = 1
+            elif (sides == 1):
+                offsets = 1
+            elif (sides == 2):
+                offsets = 2
+            # making sure you don't make the surface dissappear
+            if offset_dis * offsets > .9 * u_div:
+                offset_dis = .9 * u_div / offsets
 
         temp_surface.SetDomain(1, rg.Interval(0, sampling_count - 1))
         temp_isocurves = [temp_surface.IsoCurve(0, v_val) for v_val in range(sampling_count)]
@@ -100,23 +116,27 @@ class Surface(object):
 
         for isocurve in temp_isocurves:
             # getting the length and the domain of every isocurve
-            length = isocurve.GetLength()
             start_t, end_t = isocurve.Domain[0], isocurve.Domain[1]
             t_delta = end_t - start_t
-            t_differential = t_delta / length
             # calculating how much the offset_dis result in t_val change
-            t_shift = t_differential * offset_dis
+            if rel_or_abs:
+                t_shift = t_delta * offset_dis
+            else:
+                length = isocurve.GetLength()
+                t_differential = t_delta / length
+                t_shift = t_differential * offset_dis
+
             # creating variations for the different offset options
             start_t_new, end_t_new = start_t, end_t
             if (sides == 0):
                 start_t_new = start_t + t_shift
                 splits = [start_t_new]
                 data_to_consider = 1
-            if (sides == 1):
+            elif (sides == 1):
                 end_t_new = end_t - t_shift
                 splits = [end_t_new]
                 data_to_consider = 0
-            if (sides == 2):
+            elif (sides == 2):
                 start_t_new = start_t + t_shift
                 end_t_new = end_t - t_shift
                 splits = [start_t_new, end_t_new]
