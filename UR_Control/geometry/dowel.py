@@ -278,15 +278,15 @@ class Dowel(object):
             spacing_constraints = []
             temp_t_list = []
             for beam in self.beam_list:
-                succeeded, t = rg.Intersection.LinePlane(dowel_line, beam.base_plane)
+                succeeded, t = rg.Intersect.Intersection.LinePlane(dowel_line, beam.base_plane)
                 temp_t_list.append(t)
             temp_t_list.sort()
             for i in range(beam_count - 1):
-                pt_0, pt_1 = dowel_line(temp_t_list[i]), dowel_line(temp_t_list[i + 1])
+                pt_0, pt_1 = dowel_line.PointAt(temp_t_list[i]), dowel_line.PointAt(temp_t_list[i + 1])
                 distance = pt_0.DistanceTo(pt_1)
                 if (distance > max_spacing):
                     local_line = rg.Line(pt_0, pt_1)
-                    spacing_constraints.append(rg.Brep.CreatePipe(local_line, self.dowel_radius * 4, True, rg.PipeCapMode.Round, False, 0.01, 0.01))
+                    spacing_constraints.extend(rg.Brep.CreatePipe(local_line.ToNurbsCurve(), self.dowel_radius * 4, False, rg.PipeCapMode.Flat, True, 0.01, 0.1))
             return spacing_constraints
         else:
             print "nothing to check here ..."
