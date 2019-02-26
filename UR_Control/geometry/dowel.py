@@ -266,6 +266,31 @@ class Dowel(object):
 
         return self.__get_pipe(self.dowel_radius)
 
+    def check_spacing_constraints(self, max_spacing = 300):
+        """ method that checks the dowel length constraints between multiple beams
+
+        :param max_spacing:             The amount of distance for this one to trigger (default = 300)
+        :return spacing_constraints:    Brep list representing where you have issues
+        """
+        beam_count = len(self.beam_list)
+        if (beam_count > 1):
+            dowel_line = self.get_line()
+            spacing_constraints = []
+            temp_t_list = []
+            for beam in self.beam_list:
+                succeeded, t = rg.Intersection.LinePlane(dowel_line, beam.base_plane)
+                temp_t_list.append(t)
+            temp_t_list.sort()
+            for i in range(beam_count - 1):
+                pt_0, pt_1 = dowel_line(temp_t_list[i]), dowel_line(temp_t_list[i + 1])
+                distance = pt_0.DistanceTo(pt_1)
+                if (distance > max_spacing):
+                    local_line = rg.Line(pt_0, pt_1)
+                    spacing_constraints.append(rg.Brep.CreatePipe(local_line, self.dowel_radius * 4, True, rg.PipeCapMode.Round, False, 0.01, 0.01))
+            return spacing_constraints
+        else:
+            print "nothing to check here ..."
+
     def __get_pipe(self, radius, line = None):
         """
         private method to create a cylinder
