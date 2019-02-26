@@ -9,7 +9,9 @@ class LocalNetwork(object):
         self.has_loop = has_loop
         self.u_div = surface_network[0][0].u_div
         self.v_div = surface_network[0][0].v_div
-        self.top_priority_v_index = top_priority_v_index
+        self.flipped = top_priority_v_index % 2
+        self.u_dimension = len(surface_network)
+        self.v_dimension = len(surface_network[0])
 
         for v_index, v_sequence in enumerate(surface_network):
 
@@ -56,7 +58,9 @@ class LocalNetwork(object):
             middle_beams = beams[i + 1]
             right_beams  = beams[i + 2]
 
-            if i % 2 == 0:
+            case_1 = (not self.flipped and i % 2 == 0) or (self.flipped and i % 2 == 1)
+
+            if case_1:
 
                 for j in range(len(left_beams)):
 
@@ -116,35 +120,44 @@ class LocalNetwork(object):
         left_beams  = beams[0]
         right_beams = beams[1]
 
-        ###
-        # TODO: optimized!!!
-        ###
+        for i in range(max(len(left_beams), len(right_beams))):
 
-        for i in range(len(right_beams)):
+            #   |
+            # |-|
+            # |
 
-            left  = left_beams[i]
-            right = right_beams[i]
+            if not self.flipped and len(left_beams) > i and  len(right_beams) > i:
+                left  = left_beams[i]
+                right = right_beams[i]
 
-            location_index = (self.top_priority_v_index + 1) % 2
-            joint_holes = JointHoles([left, right], location_index, 1)
-            dowels.append(joint_holes.dowel)
+                joint_holes = JointHoles([left, right], 1, 1)
+                dowels.append(joint_holes.dowel)
 
-            if self.top_priority_v_index % 2 == 0:
+            if self.flipped and len(right_beams) > i + 1:
 
-                if len(left_beams) > i + 1:
+                    left  = left_beams[i]
+                    right = right_beams[i+1]
+
+                    joint_holes = JointHoles([left, right], 1, 1)
+                    dowels.append(joint_holes.dowel)
+
+            # |
+            # |-|
+            #   |
+            if not self.flipped and len(left_beams) > i + 1:
+
                     left  = left_beams[i+1]
                     right = right_beams[i]
 
                     joint_holes = JointHoles([left, right], 0, 1)
                     dowels.append(joint_holes.dowel)
 
-            else:
+            if self.flipped and len(left_beams) > i and  len(right_beams) > i:
 
-                if len(right_beams) > i + 1:
                     left  = left_beams[i]
-                    right = right_beams[i+1]
+                    right = right_beams[i]
 
-                    joint_holes = JointHoles([left, right], 1, 1)
+                    joint_holes = JointHoles([left, right], 0, 1)
                     dowels.append(joint_holes.dowel)
 
         # ending side
@@ -152,36 +165,51 @@ class LocalNetwork(object):
         right_beams = beams[-1]
         left_beams  = beams[-2]
 
-        is_odd_division = bool(self.u_div % 2)
+        flipped = ((self.u_div + 1) * self.u_dimension) % 2 == 1
 
-        for i in range(len(right_beams)):
+        if not flipped and self.flipped:
+            flipped = True
 
-            left  = left_beams[i]
-            right = right_beams[i]
+        for i in range(max(len(left_beams), len(right_beams))):
 
-            location_index = self.top_priority_v_index % 2 if is_odd_division else (self.top_priority_v_index + 1) % 2
+            #   |
+            # |-|
+            # |
 
-            joint_holes = JointHoles([left, right], location_index, 2)
-            dowels.append(joint_holes.dowel)
+            if not flipped and len(left_beams) > i and  len(right_beams) > i:
+                print(1)
+                left  = left_beams[i]
+                right = right_beams[i]
+        
+                joint_holes = JointHoles([left, right], 0, 2)
+                dowels.append(joint_holes.dowel)
 
-            if self.top_priority_v_index % 2 == 0:
+            if flipped and len(right_beams) > i + 1:
+                    print(2)
 
-                if len(left_beams) > i + 1:
-                    left  = left_beams[i+1]
-                    right = right_beams[i]
-
-                    location_index = 1 if is_odd_division else 0
-                    joint_holes = JointHoles([left, right], location_index, 2)
-                    dowels.append(joint_holes.dowel)
-
-            else:
-
-                if len(right_beams) > i + 1:
                     left  = left_beams[i]
                     right = right_beams[i+1]
 
-                    location_index = 0 if is_odd_division else 1
-                    joint_holes = JointHoles([left, right], location_index, 2)
+                    joint_holes = JointHoles([left, right], 0, 2)
+                    dowels.append(joint_holes.dowel)
+
+            # |
+            # |-|
+            #   |
+            if not flipped and len(left_beams) > i + 1:
+
+                    left  = left_beams[i+1]
+                    right = right_beams[i]
+
+                    joint_holes = JointHoles([left, right], 1, 2)
+                    dowels.append(joint_holes.dowel)
+
+            if flipped and len(left_beams) > i and  len(right_beams) > i:
+
+                    left  = left_beams[i]
+                    right = right_beams[i]
+
+                    joint_holes = JointHoles([left, right], 1, 2)
                     dowels.append(joint_holes.dowel)
 
         return dowels
