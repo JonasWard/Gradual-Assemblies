@@ -201,29 +201,7 @@ class Keystone(object):
         else:
             self.blend_overlap = blend_overlap
 
-<<<<<<< HEAD
-    def construct_srfs(self, avg_spacing = 200, rebuild = False):
-        """ method that constructs, based on one surface_set, a set of keystone surface_set
-            all the methods called in this function don't spit out any variables but rather (over)write properties of the class instance
-
-            :param avg_spacing:         Value that is used to decide at which length +- the isocurves of the surface should be split
-            :param rebuild:             Whether to rebuild the blend_crvs or not
-            :return self.keystone_srfs: The resulting set of keystone_srfs
-        """
-
-        self.isocurves()
-        self.curve_blending(200, rebuild)
-        self.blend_curve_split_function()
-        self.curve_blend_splicing()
-        self.invert_uv_isocurves()
-        self.lofting_crvs()
-
-        return self.keystone_srfs
-
-    def isocurves(self):
-=======
     def isocurves(self, dir = 0):
->>>>>>> f1b5d11... keystone hack
         """ method that calculates the isocurves """
         self.isocurve_vis = []
         self.isocurve_set = []
