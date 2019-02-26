@@ -286,7 +286,7 @@ class Dowel(object):
                 distance = pt_0.DistanceTo(pt_1)
                 if (distance > max_spacing):
                     local_line = rg.Line(pt_0, pt_1)
-                    spacing_constraints.extend(rg.Brep.CreatePipe(local_line.ToNurbsCurve(), self.dowel_radius * 4, False, rg.PipeCapMode.Flat, True, 0.01, 0.1))
+                    spacing_constraints.extend(rg.Brep.CreatePipe(local_line.ToNurbsCurve(), self.dowel_radius * 4, False, rg.PipeCapMode.Round, True, 0.01, 0.1))
             return spacing_constraints
         else:
             print "nothing to check here ..."
