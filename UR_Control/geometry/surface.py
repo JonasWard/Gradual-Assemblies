@@ -90,7 +90,7 @@ class Surface(object):
         # single - flush condition
         if self.seam_type == 0:
             # simple even condition
-            self.__offset_sides_surface(offset_dis = .5 * self.beam_t, rel_or_abs = False, sides = 2, sampling_count = 25)
+            self.__offset_sides_surface(offset_dis = .5 * self.beam_t, sides = 2, sampling_count = 25)
             self.__warp_surface()
             self.__instantiate_main_beams(start_beams = True, end_beams = True)
 
@@ -100,7 +100,7 @@ class Surface(object):
             # initializing the flush beams
             self.__multi_flush_seams(location = 0)
             if self.warp_type == 1 or self.warp_type == 3:
-                self.__offset_sides_surface(offset_dis = (self.flush_beam_count - .5) * self.beam_t, rel_or_abs = False, sides = 1, sampling_count = 25)
+                self.__offset_sides_surface(offset_dis = (self.flush_beam_count - .5) * self.beam_t, sides = 1, sampling_count = 25)
                 self.__warp_sides_surface()
                 self.__instantiate_main_beams(start_beams = False, end_beams = True)
             else:
@@ -270,96 +270,103 @@ class Surface(object):
         """ method that returns a slightly shrunk version of the surface along the v direction
 
             :param offset_dis:      Offset Distance (abs or relative)
-            :param rel_or_abs:      Flag that states whether you offset the surface absolute or relative - if relative u domain has to be set correctly!!! (rel = True, abs = False, default = False)
-            :param sides:           Which sides should be offseted (0 = noting - default, 1 = left, 2 = right, 3 = both)
+            :param rel_or_abs:      Flag that states whether you offset the surface absolutely or relative - if relative u domain has to be set correctly!!! (rel = True, abs = False, default = False)
+            :param sides:           Which sides should be offseted (0 = nothing - default, 1 = left, 2 = right, 3 = both)
             :param sampling_count:  Precision at which the surface should be rebuild
         """
-        local_srf = self.warped_srf
 
-        # case that surface offset is relative
-        if rel_or_abs:
-            u_div = local_srf.Domain(0)
-            if (sides == 1):
-                offsets = 1
-            elif (sides == 2):
-                offsets = 1
-            elif (sides == 3):
-                offsets = 2
-            # making sure you don't make the surface dissappear
-            if offset_dis * offsets > .9 * u_div:
-                offset_dis = .9 * u_div / offsets
+        # first of all checking whether you have to do anything at all
+        if not (sides == 0):
+            local_srf = self.warped_srf
 
-        local_srf.SetDomain(1, rg.Interval(0, sampling_count - 1))
-        temp_isocurves = [local_srf.IsoCurve(0, v_val) for v_val in range(sampling_count)]
-
-        temp_isocurves_shortened = []
-
-        for isocurve in temp_isocurves:
-            # getting the length and the domain of every isocurve
-            start_t, end_t = isocurve.Domain[0], isocurve.Domain[1]
-            t_delta = end_t - start_t
-            # calculating how much the offset_dis result in t_val change
+            # case that surface offset is relative
             if rel_or_abs:
-                t_shift = t_delta * offset_dis
-            else:
-                length = isocurve.GetLength()
-                t_differential = t_delta / length
-                t_shift = t_differential * offset_dis
+                u_div = local_srf.Domain(0)
+                if (sides == 1):
+                    offsets = 1
+                elif (sides == 2):
+                    offsets = 1
+                elif (sides == 3):
+                    offsets = 2
+                # making sure you don't make the surface dissappear
+                if offset_dis * offsets > .9 * u_div:
+                    offset_dis = .9 * u_div / offsets
 
-            # creating variations for the different offset options
-            start_t_new, end_t_new = start_t, end_t
-            if (sides == 0):
-                start_t_new = start_t + t_shift
-                splits = [start_t_new]
-                data_to_consider = 1
-            elif (sides == 1):
-                end_t_new = end_t - t_shift
-                splits = [end_t_new]
-                data_to_consider = 0
-            elif (sides == 2):
-                start_t_new = start_t + t_shift
-                end_t_new = end_t - t_shift
-                splits = [start_t_new, end_t_new]
-                data_to_consider = 1
+            local_srf.SetDomain(1, rg.Interval(0, sampling_count - 1))
+            temp_isocurves = [local_srf.IsoCurve(0, v_val) for v_val in range(sampling_count)]
 
-            # splitting the curve at the values in the split list, picking the curve based on the split type
-            new_isocurve = isocurve.Split(splits)[data_to_consider]
-            temp_isocurves_shortened.append(new_isocurve)
+            temp_isocurves_shortened = []
 
-        # switching the uv direction back to where it should be! -> rebuilding the surface
-        point_list = [[] for i in range(sampling_count)]
-        for temp_curve in temp_isocurves_shortened:
-            length = temp_curve.GetLength()
-            start_t, end_t = temp_curve.Domain[0], temp_curve.Domain[1]
-            t_delta = end_t - start_t
-            t_differential = t_delta / (sampling_count - 1)
-            # calculating how much the offset_dis result in t_val change
-            point_set = [temp_curve.PointAt(t_val * t_differential + start_t) for t_val in range(0, sampling_count, 1)]
-            for i, point in enumerate(point_set):
-                point_list[i].append(rg.Point3d(point))
+            for isocurve in temp_isocurves:
+                # getting the length and the domain of every isocurve
+                start_t, end_t = isocurve.Domain[0], isocurve.Domain[1]
+                t_delta = end_t - start_t
+                # calculating how much the offset_dis result in t_val change
+                if rel_or_abs:
+                    t_shift = t_delta * offset_dis
+                else:
+                    length = isocurve.GetLength()
+                    t_differential = t_delta / length
+                    t_shift = t_differential * offset_dis
 
-        uv_switched_curves = []
-        for point_set in point_list:
-            local_isocurve = rg.NurbsCurve.Create(False, 3, point_set)
-            uv_switched_curves.append(local_isocurve)
+                # creating variations for the different offset options
+                start_t_new, end_t_new = start_t, end_t
+                if (sides == 1):
+                    start_t_new = start_t + t_shift
+                    splits = [start_t_new]
+                    data_to_consider = 1
+                elif (sides == 2):
+                    end_t_new = end_t - t_shift
+                    splits = [end_t_new]
+                    data_to_consider = 0
+                elif (sides == 3):
+                    start_t_new = start_t + t_shift
+                    end_t_new = end_t - t_shift
+                    splits = [start_t_new, end_t_new]
+                    data_to_consider = 1
 
-        # lofting those isocurves
-        loft_type = rg.LoftType.Tight
-        local_srf = rg.Brep.CreateFromLoftRebuild(uv_switched_curves, rg.Point3d.Unset, rg.Point3d.Unset, loft_type, False, 50)[0]
-        # getting the loft as a nurbssurface out of the resulting brep
-        local_srf = local_srf.Faces.Item[0].ToNurbsSurface()
+                # splitting the curve at the values in the split list, picking the curve based on the split type
+                new_isocurve = isocurve.Split(splits)[data_to_consider]
+                temp_isocurves_shortened.append(new_isocurve)
 
-        domain = rg.Interval(0, 1)
-        local_srf.SetDomain(0, domain)
-        local_srf.SetDomain(1, domain)
+            # switching the uv direction back to where it should be! -> rebuilding the surface
+            point_list = [[] for i in range(sampling_count)]
+            for temp_curve in temp_isocurves_shortened:
+                length = temp_curve.GetLength()
+                start_t, end_t = temp_curve.Domain[0], temp_curve.Domain[1]
+                t_delta = end_t - start_t
+                t_differential = t_delta / (sampling_count - 1)
+                # calculating how much the offset_dis result in t_val change
+                point_set = [temp_curve.PointAt(t_val * t_differential + start_t) for t_val in range(0, sampling_count, 1)]
+                for i, point in enumerate(point_set):
+                    point_list[i].append(rg.Point3d(point))
 
-        self.warped_srf = local_srf
+            uv_switched_curves = []
+            for point_set in point_list:
+                local_isocurve = rg.NurbsCurve.Create(False, 3, point_set)
+                uv_switched_curves.append(local_isocurve)
+
+            # lofting those isocurves
+            loft_type = rg.LoftType.Tight
+            local_srf = rg.Brep.CreateFromLoftRebuild(uv_switched_curves, rg.Point3d.Unset, rg.Point3d.Unset, loft_type, False, 50)[0]
+            # getting the loft as a nurbssurface out of the resulting brep
+            local_srf = local_srf.Faces.Item[0].ToNurbsSurface()
+
+            domain = rg.Interval(0, 1)
+            local_srf.SetDomain(0, domain)
+            local_srf.SetDomain(1, domain)
+
+            self.warped_srf = local_srf
+        else:
+            # in case you don't have to do anything at all you do nothing at all !?
+            pass
 
     def __warp_sides_surface(self, grading_percentage = .5, precision = 25):
         """ method that makes the beams move closer to each other at the seams
             :param grading_percentage:  Percent of the surface that is being regraded (default .5)
         """
 
+        # first of all checking whether you have to do anything at all
         if not(self.warp_type == 0):
             local_srf = self.warped_srf
             u_extra_precision = int(math.ceil(25 / grading_percentage)) - precision
@@ -427,4 +434,5 @@ class Surface(object):
             new_srf.SetDomain(1, domain)
             self.warped_srf = local_srf
         else:
+            # in case you don't have to do anything at all you do nothing at all !?
             pass
