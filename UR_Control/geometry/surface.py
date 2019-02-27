@@ -84,13 +84,17 @@ class Surface(object):
         # setting up how and what needs to be run in order
         # does flipping matter here ???
 
+        o_half_t = .5 * self.beam_t
+        o_flush_seam = (self.flush_beam_count - .5) * self.beam_t
+
         # starting condition of the beam instantiation
         self.div_counter = 0
 
         # single - flush condition
         if self.seam_type == 0:
             # simple even condition
-            self.__offset_sides_surface(offset_dis = .5 * self.beam_t, sides = 2, sampling_count = 25)
+            # absolute offset of half the beam_t
+            self.__offset_sides_surface(offset_dis = o_half_t, sides = 3)
             self.__warp_surface()
             self.__instantiate_main_beams(start_beams = True, end_beams = True)
 
@@ -99,28 +103,21 @@ class Surface(object):
             # flush condition on the left
             # initializing the flush beams
             self.__multi_flush_seams(location = 0)
-            if self.warp_type == 1 or self.warp_type == 3:
-                self.__offset_sides_surface(offset_dis = (self.flush_beam_count - .5) * self.beam_t, sides = 1, sampling_count = 25)
-                self.__warp_sides_surface()
-                self.__instantiate_main_beams(start_beams = False, end_beams = True)
-            else:
-                # ToDo = fix
-                self.__offset_sides_surface(offset_dis = (self.flush_beam_count - .5) * self.beam_t, rel_or_abs = True, sides = 1, sampling_count = 25)
-                self.__warp_sides_surface()
-                self.__instantiate_main_beams(start_beams = False, end_beams = True)
+
+            self.__offset_sides_surface(offset_dis = o_flush_seam, sides = 1)
+            self.__offset_sides_surface(offset_dis = o_half_t, sides = 2)
+            self.__warp_sides_surface()
+            self.__instantiate_main_beams(start_beams = False, end_beams = True)
+
 
         # multi - flush condition on the right
         elif self.seam_type == 2:
             # flush condition on the right
-            if self.warp_type == 2 or self.warp_type == 3:
-                self.__offset_sides_surface(offset_dis = (self.flush_beam_count - .5) * self.beam_t, rel_or_abs = False, sides = 2, sampling_count = 25)
-                self.__warp_sides_surface()
-                self.__instantiate_main_beams(start_beams = True, end_beams = False)
-            else:
-                # ToDo = fix rel offset value here
-                self.__offset_sides_surface(offset_dis = (self.flush_beam_count - .5) * self.beam_t, rel_or_abs = True, sides = 2, sampling_count = 25)
-                self.__warp_sides_surface()
-                self.__instantiate_main_beams(start_beams = True, end_beams = False)
+            self.__offset_sides_surface(offset_dis = o_flush_seam, sides = 2)
+            self.__offset_sides_surface(offset_dis = o_half_t, sides = 1)
+            self.__warp_sides_surface()
+            self.__instantiate_main_beams(start_beams = True, end_beams = False)
+
             # initializing the flush beams
             self.__multi_flush_seams(location = 1)
 
@@ -129,27 +126,14 @@ class Surface(object):
             # flush condition on both sides
             # initializing the first set of flush conditions
             self.__multi_flush_seams(location = 0)
-            if self.warp_type == 1:
-                # means it has to first warp relative on one side, than absolute on the other
-                self.__offset_sides_surface(offset_dis = that_val, rel_or_abs = True, sides = 2, sampling_count = 25)
-                self.__offset_sides_surface(offset_dis = (self.flush_beam_count - .5) * self.beam_t, rel_or_abs = False, sides = 1, sampling_count = 25)
-                self.__warp_sides_surface()
-                self.__instantiate_main_beams(start_beams = False, end_beams = False)
-            if self.warp_type == 2:
-                # means it has to first warp relative on one side, than absolute on the other
-                self.__offset_sides_surface(offset_dis = that_val, rel_or_abs = True, sides = 1, sampling_count = 25)
-                self.__offset_sides_surface(offset_dis = (self.flush_beam_count - .5) * self.beam_t, rel_or_abs = False, sides = 2, sampling_count = 25)
-                self.__warp_sides_surface()
-                self.__instantiate_main_beams(start_beams = False, end_beams = False)
-            if self.warp_type == 3:
-                # means you offset absolutely on both sides
-                self.__offset_sides_surface(offset_dis = (self.flush_beam_count - .5) * self.beam_t, rel_or_abs = False, sides = 3, sampling_count = 25)
-                self.__warp_sides_surface()
-                self.__instantiate_main_beams(start_beams = False, end_beams = False)
+
+            self.__offset_sides_surface(offset_dis = o_flush_seam, sides = 3)
+            self.__warp_sides_surface()
+
             # initializing the second set of flush conditions
             self.__multi_flush_seams(location = 1)
 
-        if will_flip:
+        if self.will_flip:
 
             # flip back
             domain = rg.Interval(0, 1)
