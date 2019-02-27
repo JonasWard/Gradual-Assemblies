@@ -30,7 +30,7 @@ class LocalNetwork(object):
 
                 will_flip = True if (top_priority_v_index - u_index) % 2 == 1 else False
 
-                surface.instantiate_beams(will_flip)
+                surface.instantiate_beams(will_flip = False)
 
                 beams = list(surface.beams)
 

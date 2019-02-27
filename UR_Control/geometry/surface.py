@@ -5,7 +5,7 @@ import math
 
 class Surface(object):
 
-    def __init__(self, surface, u_div=5, v_div=3, beam_width = 160, beam_thickness = 40):
+    def __init__(self, surface, u_div=5, v_div=4, beam_width = 160, beam_thickness = 40):
         """ Initialization
 
         :param surface:         Base rg.geometry object that will be edited
@@ -38,7 +38,7 @@ class Surface(object):
         self.beam_w = beam_width
         self.beam_t = beam_thickness
 
-    def instantiate_beams(self, mapping_type = 0, seam_type = 0, warp_type = 3, will_flip = False, flush_beam_count = 2):
+    def instantiate_beams(self, mapping_type = 1, seam_type = 4, warp_type = 0, will_flip = False, flush_beam_count = 2):
         """ Function that instatiates the beam generation
 
         :param mapping_type:    Some default types of surface logics applied ([1] = even - default, [2/3, 1] = seaming type)
@@ -47,7 +47,10 @@ class Surface(object):
         :param will_flip:       Whether the surface will flip or not (default = False)
         """
 
-        self.mapping_type = [[1], [2/3, 1]][mapping_type]
+        print "input u_val: ", self.u_div
+        self.mapping_type = [[1], [2.0/3, 1]][mapping_type]
+
+        print "mapping_type: ", self.mapping_type
         self.seam_type = seam_type
         self.warp_type = warp_type
         self.will_flip = will_flip
@@ -56,7 +59,7 @@ class Surface(object):
         self.warped_srf = copy.deepcopy(self.surface)
 
         # changing the u_div count in relation to the mapping_type
-        total_flush_beam_count = math.round(self.seam_type / 2.0) * self.flush_beam_count
+        total_flush_beam_count = round(self.seam_type / 2.0) * self.flush_beam_count
         self.mapping_pattern_length = len(self.mapping_type)
 
         # checking whether there are enough u_div to map out a surface in the middle
@@ -66,9 +69,13 @@ class Surface(object):
 
         # checking whether the amount of splits in the middle is a multiple of it's mapping_pattern_len
         elif not(int(self.u_div - total_flush_beam_count) % self.mapping_pattern_length == 0):
-            self.main_srf_div = math.ceil((self.u_div - total_flush_beam_count) / self.mapping_pattern_length)
+            self.main_srf_div = int(math.ceil((self.u_div - total_flush_beam_count) / self.mapping_pattern_length))
             self.u_div = self.main_srf_div * self.mapping_pattern_length + total_flush_beam_count
 
+        else:
+            self.main_srf_div = int((self.u_div - total_flush_beam_count) / self.mapping_pattern_length)
+
+        print "corrected u_val: ", self.u_div
         # initializing the beam set
         self.beams = []
 
@@ -79,7 +86,7 @@ class Surface(object):
             self.surface.Reverse(0, True)
             self.surface.SetDomain(0, domain)
 
-        self.end_isocrvs = [self.surface.GetIsocurve(0, 0), self.surface.GetIsocurve(0, 1)]
+        self.end_isocrvs = [self.surface.IsoCurve(0, 0), self.surface.IsoCurve(0, 1)]
 
         # setting up how and what needs to be run in order
         # does flipping matter here ???
@@ -96,7 +103,7 @@ class Surface(object):
             # absolute offset of half the beam_t
             self.__offset_sides_surface(offset_dis = o_half_t, sides = 3)
             self.__warp_surface()
-            self.__instantiate_main_beams(start_beams = True, end_beams = True)
+            self.__instantiate_main_beams(start_beams = False, end_beams = False)
 
         # multi - flush condition on the left
         elif self.seam_type == 1:
@@ -106,8 +113,8 @@ class Surface(object):
 
             self.__offset_sides_surface(offset_dis = o_flush_seam, sides = 1)
             self.__offset_sides_surface(offset_dis = o_half_t, sides = 2)
-            self.__warp_sides_surface()
-            self.__instantiate_main_beams(start_beams = False, end_beams = True)
+            self.__warp_surface()
+            self.__instantiate_main_beams(start_beams = True, end_beams = False)
 
 
         # multi - flush condition on the right
@@ -115,8 +122,8 @@ class Surface(object):
             # flush condition on the right
             self.__offset_sides_surface(offset_dis = o_flush_seam, sides = 2)
             self.__offset_sides_surface(offset_dis = o_half_t, sides = 1)
-            self.__warp_sides_surface()
-            self.__instantiate_main_beams(start_beams = True, end_beams = False)
+            self.__warp_surface()
+            self.__instantiate_main_beams(start_beams = False, end_beams = True)
 
             # initializing the flush beams
             self.__multi_flush_seams(location = 1)
@@ -128,7 +135,8 @@ class Surface(object):
             self.__multi_flush_seams(location = 0)
 
             self.__offset_sides_surface(offset_dis = o_flush_seam, sides = 3)
-            self.__warp_sides_surface()
+            self.__warp_surface()
+            self.__instantiate_main_beams(start_beams = True, end_beams = True)
 
             # initializing the second set of flush conditions
             self.__multi_flush_seams(location = 1)
@@ -151,7 +159,22 @@ class Surface(object):
 
         division_range = (int(start_beams) + self.main_srf_div - 1 + int(end_beams))
         u_val_list = []
-        [u_val_list.extend([(u_map_set_val + u_val / division_range) for u_map_set_val in self.mapping_type]) for u_val in range(int(start_beams), int(start_beams) + self.main_srf_div, 1)]
+        print self.main_srf_div
+        [u_val_list.extend([(u_map_set_val + u_val) for u_map_set_val in self.mapping_type]) for u_val in range(self.main_srf_div)]
+        print "u_val : ", u_val
+
+        if (start_beams):
+            u_val_list = [0] + u_val_list
+
+        print u_val_list
+
+        if (end_beams):
+            u_val_list.extend([u_val_list[-1] + self.mapping_type[0]])
+
+        print u_val_list
+        self.warped_srf.SetDomain(0, rg.Interval(u_val_list[0], u_val_list[-1]))
+
+        print u_val_list
 
         for u in u_val_list:
 
@@ -345,14 +368,14 @@ class Surface(object):
             # in case you don't have to do anything at all you do nothing at all !?
             pass
 
-    def __warp_sides_surface(self, grading_percentage = .5, precision = 25):
+    def __warp_surface(self, grading_percentage = .5, precision = 25):
         """ method that makes the beams move closer to each other at the seams
             :param grading_percentage:  Percent of the surface that is being regraded (default .5)
         """
 
         # first of all checking whether you have to do anything at all
         if not(self.warp_type == 0):
-            local_srf = self.warped_srf
+            local_srf = copy.deepcopy(self.warped_srf)
             u_extra_precision = int(math.ceil(25 / grading_percentage)) - precision
             half_pi = math.pi / 2.0
             half_pi_over_precision = half_pi / (precision - 1)
@@ -416,7 +439,7 @@ class Surface(object):
             domain = rg.Interval(0, 1)
             new_srf.SetDomain(0, domain)
             new_srf.SetDomain(1, domain)
-            self.warped_srf = local_srf
+            self.warped_srf = new_srf
         else:
             # in case you don't have to do anything at all you do nothing at all !?
             pass

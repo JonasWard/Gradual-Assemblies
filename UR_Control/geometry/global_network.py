@@ -8,6 +8,8 @@ class GlobalNetwork(object):
 
         self.surfaces = [Surface(s, u_div, v_div, offset_value) for s in surfaces]
 
+        print [srf.beams for srf in self.surfaces]
+
         u_shared_edges, v_shared_edges = SharedEdge.generate(self.surfaces)
         self.u_shared_edges = u_shared_edges
         self.v_shared_edges = v_shared_edges
