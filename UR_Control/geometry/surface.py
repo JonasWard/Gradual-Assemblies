@@ -5,7 +5,7 @@ import math
 
 class Surface(object):
 
-    def __init__(self, surface, u_div=5, v_div=4, beam_width = 160, beam_thickness = 40):
+    def __init__(self, surface, u_div=8, v_div=10, beam_width = 160, beam_thickness = 40):
         """ Initialization
 
         :param surface:         Base rg.geometry object that will be edited
@@ -38,7 +38,7 @@ class Surface(object):
         self.beam_w = beam_width
         self.beam_t = beam_thickness
 
-    def instantiate_beams(self, mapping_type = 1, seam_type = 4, warp_type = 0, will_flip = False, flush_beam_count = 2):
+    def instantiate_beams(self, mapping_type = 1, seam_type = 0, warp_type = 4, will_flip = False, flush_beam_count = 2):
         """ Function that instatiates the beam generation
 
         :param mapping_type:    Some default types of surface logics applied ([1] = even - default, [2/3, 1] = seaming type)
@@ -157,28 +157,21 @@ class Surface(object):
         :param end_beams:       Whether the main surface is mapped until the end on the right or the last one is ignored
         """
 
-        division_range = (int(start_beams) + self.main_srf_div - 1 + int(end_beams))
         u_val_list = []
-        print self.main_srf_div
         [u_val_list.extend([(u_map_set_val + u_val) for u_map_set_val in self.mapping_type]) for u_val in range(self.main_srf_div)]
         print "u_val : ", u_val
 
         if (start_beams):
             u_val_list = [0] + u_val_list
 
-        print u_val_list
-
         if (end_beams):
             u_val_list.extend([u_val_list[-1] + self.mapping_type[0]])
 
-        print u_val_list
         self.warped_srf.SetDomain(0, rg.Interval(u_val_list[0], u_val_list[-1]))
-
-        print u_val_list
 
         for u in u_val_list:
 
-            inner_arr = []
+            v_list = []
 
             for v in range(self.v_div):
 
@@ -203,9 +196,9 @@ class Surface(object):
 
                 beam = Beam(plane, length, self.beam_w, self.beam_t)
 
-                inner_arr.append(beam)
+                v_list.append(beam)
 
-            self.beams.append(inner_arr)
+            self.beams.append(v_list)
             self.div_counter += 1
 
     def __multi_flush_seams(self, location = 0, will_flip = False):
@@ -245,11 +238,11 @@ class Surface(object):
             temp_curve = copy.deepcopy(local_curve)
             temp_curve.Translate(mv_vector)
 
-            inner_arr = []
+            v_list = []
 
             for v in range(self.v_div):
 
-                if (self.div_counter % 2 == 0 and v % 2 == 1) or (self.div_counter % 2 == 1 and v % 2 == 0):
+                if (self.div_counter % 2 == 1 and v % 2 == 1) or (self.div_counter % 2 == 0 and v % 2 == 0):
                     continue
 
                 p1 = temp_curve.PointAt(t_vals[v])
@@ -268,9 +261,9 @@ class Surface(object):
 
                 beam = Beam(plane, length, self.beam_w, self.beam_t)
 
-                inner_arr.append(beam)
+                v_list.append(beam)
 
-            self.beams.append(inner_arr)
+            self.beams.append(v_list)
             self.div_counter += 1
 
     def __offset_sides_surface(self , offset_dis=20, rel_or_abs = False, sides = 0, sampling_count = 25):
