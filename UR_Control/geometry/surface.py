@@ -6,6 +6,14 @@ import math
 class Surface(object):
 
     def __init__(self, surface, u_div=5, v_div=3, beam_width = 160, beam_thickness = 40):
+        """ Initialization
+
+        :param surface:         Base rg.geometry object that will be edited
+        :param u_div:           How many divisions this surface will have in the u_direction (default = 5)
+        :param v_div:           How many divisions this surface will have in the v_direction (default = 3)
+        :param beam_width:      The initial width of the beams (default = 160)
+        :param beam_thickness:  The initial thickness of the different beams (default = 40)
+        """
 
         domain = rg.Interval(0, 1)
         surface.SetDomain(0, domain)
@@ -30,43 +38,156 @@ class Surface(object):
         self.beam_w = beam_width
         self.beam_t = beam_thickness
 
-    def instantiate_beams_even(self, will_flip=False):
-        """ Method that instantiates the beams
-        :param will_flip:       Whether the beam grid start with a or no beam
+    def instantiate_beams(self, mapping_type = 0, seam_type = 0, warp_type = 3, will_flip = False, flush_beam_count = 2):
+        """ Function that instatiates the beam generation
+
+        :param mapping_type:    Some default types of surface logics applied ([1] = even - default, [2/3, 1] = seaming type)
+        :param seam_type:       Which type of seam this object has (0 = single flush - default, 1 = multi flush left, 2 = multi flush right, 3 = multi flush both sides)
+        :param warp_type:       How the surface is being warped (0 = no warping - default, 1 = left, 2 = right, 3 = both sides)
+        :param will_flip:       Whether the surface will flip or not (default = False)
         """
+
+        self.mapping_type = [[1], [2/3, 1]][mapping_type]
+        self.seam_type = seam_type
+        self.warp_type = warp_type
+        self.will_flip = will_flip
+        self.flush_beam_count = flush_beam_count
+
+        self.warped_srf = copy.deepcopy(self.surface)
+
+        # changing the u_div count in relation to the mapping_type
+        total_flush_beam_count = math.round(self.seam_type / 2.0) * self.flush_beam_count
+        self.mapping_pattern_length = len(self.mapping_type)
+
+        # checking whether there are enough u_div to map out a surface in the middle
+        if self.u_div < total_flush_beam_count:
+            self.main_srf_div = 2
+            self.u_div = self.main_srf_div * self.mapping_pattern_length + total_flush_beam_count
+
+        # checking whether the amount of splits in the middle is a multiple of it's mapping_pattern_len
+        elif not(int(self.u_div - total_flush_beam_count) % self.mapping_pattern_length == 0):
+            self.main_srf_div = math.ceil((self.u_div - total_flush_beam_count) / self.mapping_pattern_length)
+            self.u_div = self.main_srf_div * self.mapping_pattern_length + total_flush_beam_count
+
+        # initializing the beam set
         self.beams = []
 
-        surface = self.__offset_sides_surface(self.surface, self.beam_t  / 2)
-        self.surface = self.__seam_regrades(surface)
-
-        surface = self.surface
-
-        if will_flip:
+        if self.will_flip:
 
             # flip
             domain = rg.Interval(0, 1)
-            surface.Reverse(0, True)
-            surface.SetDomain(0, domain)
+            self.surface.Reverse(0, True)
+            self.surface.SetDomain(0, domain)
 
-        for u in range(self.u_div + 1):
+        self.end_isocrvs = [self.surface.GetIsocurve(0, 0), self.surface.GetIsocurve(0, 1)]
+
+        # setting up how and what needs to be run in order
+        # does flipping matter here ???
+
+        # starting condition of the beam instantiation
+        self.div_counter = 0
+
+        # single - flush condition
+        if self.seam_type == 0:
+            # simple even condition
+            self.__offset_sides_surface(offset_dis = .5 * self.beam_t, rel_or_abs = False, sides = 2, sampling_count = 25)
+            self.__warp_surface()
+            self.__instantiate_main_beams(start_beams = True, end_beams = True)
+
+        # multi - flush condition on the left
+        elif self.seam_type == 1:
+            # flush condition on the left
+            # initializing the flush beams
+            self.__multi_flush_seams(location = 0)
+            if self.warp_type == 1 or self.warp_type == 3:
+                self.__offset_sides_surface(offset_dis = (self.flush_beam_count - .5) * self.beam_t, rel_or_abs = False, sides = 1, sampling_count = 25)
+                self.__warp_sides_surface()
+                self.__instantiate_main_beams(start_beams = False, end_beams = True)
+            else:
+                # ToDo = fix
+                self.__offset_sides_surface(offset_dis = (self.flush_beam_count - .5) * self.beam_t, rel_or_abs = True, sides = 1, sampling_count = 25)
+                self.__warp_sides_surface()
+                self.__instantiate_main_beams(start_beams = False, end_beams = True)
+
+        # multi - flush condition on the right
+        elif self.seam_type == 2:
+            # flush condition on the right
+            if self.warp_type == 2 or self.warp_type == 3:
+                self.__offset_sides_surface(offset_dis = (self.flush_beam_count - .5) * self.beam_t, rel_or_abs = False, sides = 2, sampling_count = 25)
+                self.__warp_sides_surface()
+                self.__instantiate_main_beams(start_beams = True, end_beams = False)
+            else:
+                # ToDo = fix rel offset value here
+                self.__offset_sides_surface(offset_dis = (self.flush_beam_count - .5) * self.beam_t, rel_or_abs = True, sides = 2, sampling_count = 25)
+                self.__warp_sides_surface()
+                self.__instantiate_main_beams(start_beams = True, end_beams = False)
+            # initializing the flush beams
+            self.__multi_flush_seams(location = 1)
+
+        # multi - flush conditon on both sides
+        elif self.seam_type == 3:
+            # flush condition on both sides
+            # initializing the first set of flush conditions
+            self.__multi_flush_seams(location = 0)
+            if self.warp_type == 1:
+                # means it has to first warp relative on one side, than absolute on the other
+                self.__offset_sides_surface(offset_dis = that_val, rel_or_abs = True, sides = 2, sampling_count = 25)
+                self.__offset_sides_surface(offset_dis = (self.flush_beam_count - .5) * self.beam_t, rel_or_abs = False, sides = 1, sampling_count = 25)
+                self.__warp_sides_surface()
+                self.__instantiate_main_beams(start_beams = False, end_beams = False)
+            if self.warp_type == 2:
+                # means it has to first warp relative on one side, than absolute on the other
+                self.__offset_sides_surface(offset_dis = that_val, rel_or_abs = True, sides = 1, sampling_count = 25)
+                self.__offset_sides_surface(offset_dis = (self.flush_beam_count - .5) * self.beam_t, rel_or_abs = False, sides = 2, sampling_count = 25)
+                self.__warp_sides_surface()
+                self.__instantiate_main_beams(start_beams = False, end_beams = False)
+            if self.warp_type == 3:
+                # means you offset absolutely on both sides
+                self.__offset_sides_surface(offset_dis = (self.flush_beam_count - .5) * self.beam_t, rel_or_abs = False, sides = 3, sampling_count = 25)
+                self.__warp_sides_surface()
+                self.__instantiate_main_beams(start_beams = False, end_beams = False)
+            # initializing the second set of flush conditions
+            self.__multi_flush_seams(location = 1)
+
+        if will_flip:
+
+            # flip back
+            domain = rg.Interval(0, 1)
+            self.surface.Reverse(0, True)
+            self.surface.SetDomain(0, domain)
+            # reversing the direction of the base_plane of the beam
+            self.beams = list(reversed(self.beams))
+
+    def __instantiate_main_beams(self, start_beams = False, end_beams = False):
+        """ internal method that sets out the beams on the main surface
+
+        :param start_beams:     Whether the main surface is mapped from the left edge of the surface or skips over the first one
+        :param end_beams:       Whether the main surface is mapped until the end on the right or the last one is ignored
+        """
+
+        division_range = (int(start_beams) + self.main_srf_div - 1 + int(end_beams))
+        u_val_list = []
+        [u_val_list.extend([(u_map_set_val + u_val / division_range) for u_map_set_val in self.mapping_type]) for u_val in range(int(start_beams), int(start_beams) + self.main_srf_div, 1)]
+
+        for u in u_val_list:
 
             inner_arr = []
 
             for v in range(self.v_div):
 
-                if (u % 2 == 0 and v % 2 == 1) or (u % 2 == 1 and v % 2 == 0):
+                if (self.div_counter % 2 == 0 and v % 2 == 1) or (self.div_counter % 2 == 1 and v % 2 == 0):
                     continue
 
-                p1 = surface.PointAt(float(u)/self.u_div, float(v)/self.v_div)
-                p2 = surface.PointAt(float(u)/self.u_div, float(v+1)/self.v_div)
+                p1 = self.warped_srf.PointAt(u, float(v)/self.v_div)
+                p2 = self.warped_srf.PointAt(u, float(v+1)/self.v_div)
 
                 length = p1.DistanceTo(p2)
 
                 center = rg.Point3d((p1 + p2) / 2)
 
-                _, uu, vv = surface.ClosestPoint(center)
+                _, uu, vv = self.warped_srf.ClosestPoint(center)
 
-                normal = surface.NormalAt(uu, vv)
+                normal = self.warped_srf.NormalAt(uu, vv)
                 x_axis = rg.Vector3d(p1) - rg.Vector3d(p2)
                 x_axis.Unitize()
                 y_axis = rg.Vector3d.CrossProduct(normal, x_axis)
@@ -78,141 +199,98 @@ class Surface(object):
                 inner_arr.append(beam)
 
             self.beams.append(inner_arr)
+            self.div_counter += 1
 
-        if will_flip:
+    def __multi_flush_seams(self, location = 0, will_flip = False):
+        """ method to create a flush seam with n amount of beams
 
-            # flip back
-            domain = rg.Interval(0, 1)
-            surface.Reverse(0, True)
-            surface.SetDomain(0, domain)
-            self.beams = list(reversed(self.beams))
+        :param location:    Whether you're considering the end or the start of the system (defualt = 0)
+        :param will_flip:   What the start condition is (default = False)
+        """
 
-    def instantiate_beams_u_shift_pattern(self, will_flip=False, u_split_pattern = [1/3, 2/3]):
+        # getting the correct isocurve of the surface
+        local_curve = self.end_isocrvs[location]
 
-        self.beams = []
+        # getting the domain of the curve
+        t_start, t_end = local_curve.Domain[0], local_curve.Domain[1]
+        t_delta = t_end - t_start
+        t_set = [t_start, (t_end + t_start) / 2, t_end]
+        pt_set = [local_curve.PointAt(t_val) for t_val in t_set]
+        curve_plane = rg.Plane(pt_set[0], pt_set[1], pt_set[2])
 
-        self.multi_flush_seams(0, False, count = len(u_split_pattern))
-        surface = self.__offset_sides_surface(self.surface, self.offset_value)
-        self.surface = self.__seam_regrades(surface)
+        # getting the t_values on that curve to describe the beam lines
+        t_vals = [t_start + t_delta * v / (self.v_div + 1) for v in range (self.v_div + 1)]
 
-        surface = self.surface
+        # generating the move vectors for the curves
+        # to check whether you're at the start or the end of the surface
+        if (location == 0):
+            switch_flag = 0
+        else:
+            switch_flag = - self.flush_beam_count
 
-        if will_flip:
+        mv_vectors = [curve_plane.ZAxis * self.beam_t * (switch_flag + .5 + i) for i in range(self.flush_beam_count )]
 
-            # flip
-            domain = rg.Interval(0, 1)
-            surface.Reverse(0, True)
-            surface.SetDomain(0, domain)
+        # # getting the lines
+        # if (will_flip):
 
-        for u in range(self.u_div + 1):
+        for mv_vector in mv_vectors:
+
+            temp_curve = copy.deepcopy(local_curve)
+            temp_curve.Translate(mv_vector)
 
             inner_arr = []
 
             for v in range(self.v_div):
 
-                if (u % 2 == 0 and v % 2 == 1) or (u % 2 == 1 and v % 2 == 0):
+                if (self.div_counter % 2 == 0 and v % 2 == 1) or (self.div_counter % 2 == 1 and v % 2 == 0):
                     continue
 
-                p1 = surface.PointAt(float(u)/self.u_div, float(v)/self.v_div)
-                p2 = surface.PointAt(float(u)/self.u_div, float(v+1)/self.v_div)
+                p1 = temp_curve.PointAt(t_vals[v])
+                p2 = temp_curve.PointAt(t_vals[v + 1])
 
                 length = p1.DistanceTo(p2)
 
                 center = rg.Point3d((p1 + p2) / 2)
 
-                _, uu, vv = surface.ClosestPoint(center)
-
-                normal = surface.NormalAt(uu, vv)
+                z_axis = curve_plane.ZAxis
                 x_axis = rg.Vector3d(p1) - rg.Vector3d(p2)
                 x_axis.Unitize()
-                y_axis = rg.Vector3d.CrossProduct(normal, x_axis)
+                y_axis = rg.Vector3d.CrossProduct(z_axis, x_axis)
 
-                plane = rg.Plane(center, x_axis, normal)
+                plane = rg.Plane(center, x_axis, y_axis)
 
-                beam = Beam(plane, length, 160, 40)
+                beam = Beam(plane, length, self.beam_w, self.beam_t)
 
                 inner_arr.append(beam)
 
             self.beams.append(inner_arr)
+            self.div_counter += 1
 
-        if will_flip:
-
-            # flip back
-            domain = rg.Interval(0, 1)
-            surface.Reverse(0, True)
-            surface.SetDomain(0, domain)
-            self.beams = list(reversed(self.beams))
-
-    def double_flush_seams(self, location = 0, will_flip = False, count = 2):
-        """ method to create a flush seam with n amount of beams
-
-        :param location:    Whether you're considering the end or the start of the system (defualt = 0)
-        :param will_flip:   What the start condition is (default = False)
-        :param count:       How many beams (default 2)
-        """
-
-        # remapping the domain of the surface
-        self.Surface.SetDomain(0, rg.Interval(0, 1))
-        # getting the isocurve of the surface at the given location
-        curve = self.surface.GetIsocurve(0, location)
-        # getting the domain of the curve
-        t_start, t_end = curve.Domain[0], curve.Domain[1]
-        t_set = [t_start, (t_end + t_start) / 2, t_end]
-        pt_set = [curve.PointAt(t_val) for t_val in t_set]
-        curve_plane = rg.Plane(pt_set[0], pt_set[1], pt_set[2])
-
-        # to check whether you're at the start or the end of the surface
-        if (location == 0):
-            switch_flag = 0
-        else:
-            switch_flag = -count
-        mv_vectors = [curve_plane.ZAxis * self.beam_t * (switch_flag + .5 + i) for i in range(count)]
-
-        # getting the lines
-        if (will_flip):
-            
-        for i, mv_vector in enumerate(mv_vectors):
-            local_curve = c.deepcopy(curve)
-            pt_0 = []
-            line = rg.Line()
-
-
-
-
-
-
-
-
-
-
-
-    def __offset_sides_surface(self ,surface, offset_dis=20, rel_or_abs = False, sides = 2, sampling_count = 25):
+    def __offset_sides_surface(self , offset_dis=20, rel_or_abs = False, sides = 0, sampling_count = 25):
         """ method that returns a slightly shrunk version of the surface along the v direction
 
-            :param surface:         Input surface
-            :param offset_dis:      Offset Distance (if int input -> distance, if float input relative)
+            :param offset_dis:      Offset Distance (abs or relative)
             :param rel_or_abs:      Flag that states whether you offset the surface absolute or relative - if relative u domain has to be set correctly!!! (rel = True, abs = False, default = False)
-            :param sides:           Which sides should be offseted (0 = left, 1 = right, 2 = both, default)
+            :param sides:           Which sides should be offseted (0 = noting - default, 1 = left, 2 = right, 3 = both)
             :param sampling_count:  Precision at which the surface should be rebuild
-            :return temp_srf:       The trimmed surface
         """
-        temp_surface = copy.deepcopy(surface)
+        local_srf = self.warped_srf
 
         # case that surface offset is relative
         if rel_or_abs:
-            u_div = surface.Domain(0)
-            if (sides == 0):
-                offsets = 1
-            elif (sides == 1):
+            u_div = local_srf.Domain(0)
+            if (sides == 1):
                 offsets = 1
             elif (sides == 2):
+                offsets = 1
+            elif (sides == 3):
                 offsets = 2
             # making sure you don't make the surface dissappear
             if offset_dis * offsets > .9 * u_div:
                 offset_dis = .9 * u_div / offsets
 
-        temp_surface.SetDomain(1, rg.Interval(0, sampling_count - 1))
-        temp_isocurves = [temp_surface.IsoCurve(0, v_val) for v_val in range(sampling_count)]
+        local_srf.SetDomain(1, rg.Interval(0, sampling_count - 1))
+        temp_isocurves = [local_srf.IsoCurve(0, v_val) for v_val in range(sampling_count)]
 
         temp_isocurves_shortened = []
 
@@ -267,86 +345,86 @@ class Surface(object):
 
         # lofting those isocurves
         loft_type = rg.LoftType.Tight
-        srf = rg.Brep.CreateFromLoftRebuild(uv_switched_curves, rg.Point3d.Unset, rg.Point3d.Unset, loft_type, False, 50)[0]
+        local_srf = rg.Brep.CreateFromLoftRebuild(uv_switched_curves, rg.Point3d.Unset, rg.Point3d.Unset, loft_type, False, 50)[0]
         # getting the loft as a nurbssurface out of the resulting brep
-        srf = srf.Faces.Item[0].ToNurbsSurface()
+        local_srf = local_srf.Faces.Item[0].ToNurbsSurface()
 
         domain = rg.Interval(0, 1)
-        srf.SetDomain(0, domain)
-        srf.SetDomain(1, domain)
+        local_srf.SetDomain(0, domain)
+        local_srf.SetDomain(1, domain)
 
-        return srf
+        self.warped_srf = local_srf
 
-    def __seam_regrades(self, surface, grading_percentage = .5, grading_side = 2, precision = 25):
+    def __warp_sides_surface(self, grading_percentage = .5, precision = 25):
         """ method that makes the beams move closer to each other at the seams
             :param grading_percentage:  Percent of the surface that is being regraded (default .5)
-            :param grading_sides:       Which sides of the surface have to be regraded (0 = left, 1 = right, 2 = both, default)
-            :return regraded_srf:       The uv_regraded_srf
         """
 
-        local_srf = copy.deepcopy(surface)
-        u_extra_precision = int(math.ceil(25 / grading_percentage)) - precision
-        half_pi = math.pi / 2.0
-        half_pi_over_precision = half_pi / (precision - 1)
+        if not(self.warp_type == 0):
+            local_srf = self.warped_srf
+            u_extra_precision = int(math.ceil(25 / grading_percentage)) - precision
+            half_pi = math.pi / 2.0
+            half_pi_over_precision = half_pi / (precision - 1)
 
-        # setting up the base grading t_vals
-        ini_t_vals = []
-        total_t_vals = u_extra_precision
-        for i in range(precision):
-            alfa = half_pi_over_precision * i
-            local_t_val = math.sin(alfa)
-            ini_t_vals.append(local_t_val)
-            total_t_vals += local_t_val
+            # setting up the base grading t_vals
+            ini_t_vals = []
+            total_t_vals = u_extra_precision
+            for i in range(precision):
+                alfa = half_pi_over_precision * i
+                local_t_val = math.sin(alfa)
+                ini_t_vals.append(local_t_val)
+                total_t_vals += local_t_val
 
-        [ini_t_vals.append(1) for i in range(u_extra_precision)]
+            [ini_t_vals.append(1) for i in range(u_extra_precision)]
 
-        # setting up the grading list for the amount of sides
-        local_t_val = 0
-        if (grading_side == 0):
-            # only on the left side
-            t_vals = []
-            for t_val in ini_t_vals:
-                local_t_val += t_val
-                t_vals.append(local_t_val)
-        elif (grading_side == 1):
-            # only on the right side
-            t_vals = []
-            ini_t_vals.reverse()
-            local_ini_t_vals = [0]
-            local_ini_t_vals.extend(ini_t_vals[:-1])
-            for t_val in local_ini_t_vals:
-                local_t_val += t_val
-                t_vals.append(local_t_val)
-        elif (grading_side == 2):
-            # on both sides
-            t_vals = []
-            local_ini_t_vals = ini_t_vals[:]
-            ini_t_vals.reverse()
-            local_ini_t_vals.extend(ini_t_vals[:-1])
-            for t_val in local_ini_t_vals:
-                local_t_val += t_val
-                t_vals.append(local_t_val)
+            # setting up the grading list for the amount of sides
+            local_t_val = 0
+            if (self.warp_type == 1):
+                # only on the left side
+                t_vals = []
+                for t_val in ini_t_vals:
+                    local_t_val += t_val
+                    t_vals.append(local_t_val)
+            elif (self.warp_type == 2):
+                # only on the right side
+                t_vals = []
+                ini_t_vals.reverse()
+                local_ini_t_vals = [0]
+                local_ini_t_vals.extend(ini_t_vals[:-1])
+                for t_val in local_ini_t_vals:
+                    local_t_val += t_val
+                    t_vals.append(local_t_val)
+            elif (self.warp_type == 3):
+                # on both sides
+                t_vals = []
+                local_ini_t_vals = ini_t_vals[:]
+                ini_t_vals.reverse()
+                local_ini_t_vals.extend(ini_t_vals[:-1])
+                for t_val in local_ini_t_vals:
+                    local_t_val += t_val
+                    t_vals.append(local_t_val)
 
-        # getting the v isocurves
-        val_0, val_1 = t_vals[0], t_vals[-1]
-        local_srf.SetDomain(1, rg.Interval(0, precision - 1))
-        temp_srf_iscrv_set = [local_srf.IsoCurve(0, v_val) for v_val in range(precision)]
-        pt_list = [[] for i in range(len(t_vals))]
-        for isocrv in temp_srf_iscrv_set:
-            t_start, t_end = isocrv.Domain[0], isocrv.Domain[1]
-            t_delta = t_end - t_start
-            t_differential = t_delta / val_1
-            [pt_list[i].append(isocrv.PointAt(t_start + t_val * t_differential)) for i, t_val in enumerate(t_vals)]
+            # getting the v isocurves
+            val_0, val_1 = t_vals[0], t_vals[-1]
+            local_srf.SetDomain(1, rg.Interval(0, precision - 1))
+            temp_srf_iscrv_set = [local_srf.IsoCurve(0, v_val) for v_val in range(precision)]
+            pt_list = [[] for i in range(len(t_vals))]
+            for isocrv in temp_srf_iscrv_set:
+                t_start, t_end = isocrv.Domain[0], isocrv.Domain[1]
+                t_delta = t_end - t_start
+                t_differential = t_delta / val_1
+                [pt_list[i].append(isocrv.PointAt(t_start + t_val * t_differential)) for i, t_val in enumerate(t_vals)]
 
-        # constructing new isocurves
-        loft_curves = [rg.NurbsCurve.Create(False, 3, pt_set) for pt_set in pt_list]
-        loft_type = rg.LoftType.Tight
-        local_srf = rg.Brep.CreateFromLoftRebuild(loft_curves, rg.Point3d.Unset, rg.Point3d.Unset, loft_type, False, 50)[0]
-        # getting the loft as a nurbssurface out of the resulting brep
-        new_srf = local_srf.Faces.Item[0].ToNurbsSurface()
+            # constructing new isocurves
+            loft_curves = [rg.NurbsCurve.Create(False, 3, pt_set) for pt_set in pt_list]
+            loft_type = rg.LoftType.Tight
+            local_srf = rg.Brep.CreateFromLoftRebuild(loft_curves, rg.Point3d.Unset, rg.Point3d.Unset, loft_type, False, 50)[0]
+            # getting the loft as a nurbssurface out of the resulting brep
+            new_srf = local_srf.Faces.Item[0].ToNurbsSurface()
 
-        domain = rg.Interval(0, 1)
-        new_srf.SetDomain(0, domain)
-        new_srf.SetDomain(1, domain)
-
-        return new_srf
+            domain = rg.Interval(0, 1)
+            new_srf.SetDomain(0, domain)
+            new_srf.SetDomain(1, domain)
+            self.warped_srf = local_srf
+        else:
+            pass
