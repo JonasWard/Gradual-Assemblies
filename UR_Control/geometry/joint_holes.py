@@ -1,14 +1,6 @@
 # class that generates connections between beams
 
-import sys
-
 import copy as c
-
-if os.name == 'posix':
-    print "you're a Mac!"
-    path_to_append = os.path.join("/Users/jonas/Dropbox/0.dfab/Trimester 2/Project I - Gradual Assemblies/Gradual-Assemblies/UR_Control")
-    sys.path.append(path_to_append)
-
 import geometry.beam as beam
 import geometry.dowel as dowel
 

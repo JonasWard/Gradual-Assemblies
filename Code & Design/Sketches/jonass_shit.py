@@ -12,29 +12,34 @@ import os
 import sys
 import Rhino.Geometry as rg
 
-geometry_lib_path = os.path.join("/Users/jonas/Dropbox/0.dfab/Trimester 2/Project I - Gradual Assemblies/Gradual-Assemblies/UR_Control")
+geometry_lib_path = "/Users/jonas/Dropbox/0.dfab/Trimester 2/Project I - Gradual Assemblies/Gradual-Assemblies/UR_Control"
 print geometry_lib_path
 sys.path.append(geometry_lib_path)
 
-import geometry.beam as B
-import geometry.dowel as D
-import geometry.hole as H
-import geometry.joint_holes as JH
-import geometry.local_network as LN
-import geometry.global_network as GN
-import geometry.surface as SrfC
-import geometry.shared_edge as SE
-import geometry.surface_keystone as Key
+print '/n'.join(sys.path)
 
-reload(B)
-reload(D)
-reload(H)
-reload(JH)
-reload(LN)
-reload(SrfC)
-reload(GN)
-reload(SE)
-reload(Key)
+# import geometry.beam as beam
+# import geometry.dowel as dowel
+# import geometry.hole as hole
+# import geometry.joint_holes as joint_holes
+# import geometry.local_network as local_network
+# import geometry.global_network as global_network
+import geometry.surface as surface
+# import geometry.shared_edge as shared_edge
+# import geometry.surface_keystone as keystone
+
+# print beam
+# print dowel
+#
+# reload(beam)
+# reload(dowel)
+# reload(hole)
+# reload(joint_holes)
+# reload(local_network)
+# reload(surface)
+# reload(global_network)
+# reload(shared_edge)
+# reload(keystone)
 
 dowels = []
 beams = []
@@ -68,7 +73,7 @@ for string, priority_index in zip(surface_network_index, top_priority_index):
 
                 priority_index_v = v
 
-            surface = SrfC.Surface(surfaces[index])
+            surface = surface.Surface(surfaces[index])
             surface_network_subset.append(surface)
 
         surface_network.append(surface_network_subset)
@@ -79,7 +84,7 @@ for string, priority_index in zip(surface_network_index, top_priority_index):
 
 for surface_network, has_loop, top_priority_v_index in zip(surface_network_sets, has_loops, priorities):
 
-    local_network = LN.LocalNetwork(surface_network, has_loop, top_priority_v_index, type_args=[[40, 20, 20, True, False, False], long_list])
+    local_network = local_network.LocalNetwork(surface_network, has_loop, top_priority_v_index, type_args=[[40, 20, 20, True, False, False], long_list])
 
     local_dowels = local_network.add_three_beams_connection()
     dowels.extend([d.brep_representation() for d in local_dowels])

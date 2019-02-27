@@ -11,16 +11,34 @@ __version__ = "2019.02.23"
 
 import Rhino.Geometry as rg
 
-from geometry import GlobalNetwork, LocalNetwork
-
 import os
 
 if os.name == 'posix':
-    print "you're a Mac!"
-    path_to_append = single_parent
-    sys.path.append(path_to_append)
+    geometry_lib_path = "/Users/jonas/Dropbox/0.dfab/Trimester 2/Project I - Gradual Assemblies/Gradual-Assemblies/UR_Control"
+    print geometry_lib_path
+    sys.path.append(geometry_lib_path)
 
-    print path_to_append
+    import geometry.beam as beam
+    import geometry.dowel as dowel
+    import geometry.hole as hole
+    import geometry.joint_holes as joint_holes
+    import geometry.local_network as local_network
+    import geometry.global_network as global_network
+    import geometry.surface as surface
+    import geometry.shared_edge as shared_edge
+    import geometry.surface_keystone as keystone
+
+    reload(beam)
+    reload(dowel)
+    reload(hole)
+    reload(joint_holes)
+    reload(local_network)
+    reload(surface)
+    reload(global_network)
+    reload(shared_edge)
+    reload(keystone)
+
+from geometry import GlobalNetwork, LocalNetwork
 
 dowels = []
 beams = []

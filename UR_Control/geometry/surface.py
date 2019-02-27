@@ -5,7 +5,7 @@ import math
 
 class Surface(object):
 
-    def __init__(self, surface, u_div=30, v_div= 10, beam_width = 160, beam_thickness = 40):
+    def __init__(self, surface, u_div=5, v_div=3, beam_width = 160, beam_thickness = 40):
 
         domain = rg.Interval(0, 1)
         surface.SetDomain(0, domain)
@@ -144,15 +144,43 @@ class Surface(object):
             self.beams = list(reversed(self.beams))
 
     def double_flush_seams(self, location = 0, will_flip = False, count = 2):
+        """ method to create a flush seam with n amount of beams
 
-        self.beams = []
+        :param location:    Whether you're considering the end or the start of the system (defualt = 0)
+        :param will_flip:   What the start condition is (default = False)
+        :param count:       How many beams (default 2)
+        """
+
+        # remapping the domain of the surface
         self.Surface.SetDomain(0, rg.Interval(0, 1))
+        # getting the isocurve of the surface at the given location
         curve = self.surface.GetIsocurve(0, location)
+        # getting the domain of the curve
         t_start, t_end = curve.Domain[0], curve.Domain[1]
         t_set = [t_start, (t_end + t_start) / 2, t_end]
         pt_set = [curve.PointAt(t_val) for t_val in t_set]
         curve_plane = rg.Plane(pt_set[0], pt_set[1], pt_set[2])
-        mv_vector_a, mv_vector_b = curve_plane.ZAxis * self
+
+        # to check whether you're at the start or the end of the surface
+        if (location == 0):
+            switch_flag = 0
+        else:
+            switch_flag = -count
+        mv_vectors = [curve_plane.ZAxis * self.beam_t * (switch_flag + .5 + i) for i in range(count)]
+
+        # getting the lines
+        if (will_flip):
+            
+        for i, mv_vector in enumerate(mv_vectors):
+            local_curve = c.deepcopy(curve)
+            pt_0 = []
+            line = rg.Line()
+
+
+
+
+
+
 
 
 
