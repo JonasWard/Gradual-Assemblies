@@ -149,6 +149,12 @@ class Hole(object):
         if self.beam_brep:
             self.beam_brep.Transform(transform)
 
+    # def get_drill_line(self, drill_station_plane, safety_length = 20):
+    #     self.orient_to_drilling_station(drill_station_plane)
+    #
+    #
+    #
+
     def get_tool_planes(self, safe_plane_diff=100):
         """
         get planes to be sent to the robotic arm

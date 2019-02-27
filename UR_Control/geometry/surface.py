@@ -5,7 +5,7 @@ import math
 
 class Surface(object):
 
-    def __init__(self, surface, u_div=5, v_div=3, offset_value=20):
+    def __init__(self, surface, u_div=5, v_div=3, beam_width = 160, beam_thickness = 40):
 
         domain = rg.Interval(0, 1)
         surface.SetDomain(0, domain)
@@ -26,12 +26,72 @@ class Surface(object):
 
         self.u_div = u_div
         self.v_div = v_div
-        self.offset_value = offset_value
 
-    def instantiate_beams(self, will_flip=False):
+        self.beam_w = beam_width
+        self.beam_t = beam_thickness
+
+    def instantiate_beams_even(self, will_flip=False):
+        """ Method that instantiates the beams
+        :param will_flip:       Whether the beam grid start with a or no beam
+        """
+        self.beams = []
+
+        surface = self.__offset_sides_surface(self.surface, self.beam_t  / 2)
+        self.surface = self.__seam_regrades(surface)
+
+        surface = self.surface
+
+        if will_flip:
+
+            # flip
+            domain = rg.Interval(0, 1)
+            surface.Reverse(0, True)
+            surface.SetDomain(0, domain)
+
+        for u in range(self.u_div + 1):
+
+            inner_arr = []
+
+            for v in range(self.v_div):
+
+                if (u % 2 == 0 and v % 2 == 1) or (u % 2 == 1 and v % 2 == 0):
+                    continue
+
+                p1 = surface.PointAt(float(u)/self.u_div, float(v)/self.v_div)
+                p2 = surface.PointAt(float(u)/self.u_div, float(v+1)/self.v_div)
+
+                length = p1.DistanceTo(p2)
+
+                center = rg.Point3d((p1 + p2) / 2)
+
+                _, uu, vv = surface.ClosestPoint(center)
+
+                normal = surface.NormalAt(uu, vv)
+                x_axis = rg.Vector3d(p1) - rg.Vector3d(p2)
+                x_axis.Unitize()
+                y_axis = rg.Vector3d.CrossProduct(normal, x_axis)
+
+                plane = rg.Plane(center, x_axis, normal)
+
+                beam = Beam(plane, length, self.beam_w, self.beam_t)
+
+                inner_arr.append(beam)
+
+            self.beams.append(inner_arr)
+
+        if will_flip:
+
+            # flip back
+            domain = rg.Interval(0, 1)
+            surface.Reverse(0, True)
+            surface.SetDomain(0, domain)
+            self.beams = list(reversed(self.beams))
+
+    def instantiate_beams_u_shift_pattern(self, will_flip=False, u_split_pattern = [1/3, 2/3]):
 
         self.beams = []
 
+        self.multi_flush_seams(0, False, count = len(u_split_pattern))
         surface = self.__offset_sides_surface(self.surface, self.offset_value)
         self.surface = self.__seam_regrades(surface)
 
@@ -82,6 +142,20 @@ class Surface(object):
             surface.Reverse(0, True)
             surface.SetDomain(0, domain)
             self.beams = list(reversed(self.beams))
+
+    def double_flush_seams(self, location = 0, will_flip = False, count = 2):
+
+        self.beams = []
+        self.Surface.SetDomain(0, rg.Interval(0, 1))
+        curve = self.surface.GetIsocurve(0, location)
+        t_start, t_end = curve.Domain[0], curve.Domain[1]
+        t_set = [t_start, (t_end + t_start) / 2, t_end]
+        pt_set = [curve.PointAt(t_val) for t_val in t_set]
+        curve_plane = rg.Plane(pt_set[0], pt_set[1], pt_set[2])
+        mv_vector_a, mv_vector_b = curve_plane.ZAxis * self
+
+
+
 
 
     def __offset_sides_surface(self ,surface, offset_dis=20, rel_or_abs = False, sides = 2, sampling_count = 25):
