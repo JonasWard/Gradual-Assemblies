@@ -5,7 +5,7 @@ import math
 
 class Surface(object):
 
-    def __init__(self, surface, u_div=5, v_div=3, beam_width = 160, beam_thickness = 40):
+    def __init__(self, surface, u_div=30, v_div= 10, beam_width = 160, beam_thickness = 40):
 
         domain = rg.Interval(0, 1)
         surface.SetDomain(0, domain)

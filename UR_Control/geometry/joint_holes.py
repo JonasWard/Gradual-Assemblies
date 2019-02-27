@@ -3,6 +3,12 @@
 import sys
 
 import copy as c
+
+if os.name == 'posix':
+    print "you're a Mac!"
+    path_to_append = os.path.join("/Users/jonas/Dropbox/0.dfab/Trimester 2/Project I - Gradual Assemblies/Gradual-Assemblies/UR_Control")
+    sys.path.append(path_to_append)
+
 import geometry.beam as beam
 import geometry.dowel as dowel
 
@@ -351,7 +357,19 @@ class JointHoles(object):
             cover_h = self.cover_h_set[0] + (self.cover_h_set[1] - self.cover_h_set[0]) * self.cover_h_set[2] / distance_0
             x1_ext = self.x1_ext_set[0] + distance_1 * distance_0 * (self.x1_ext_set[1] - self.x1_ext_set[0]) / self.x1_ext_set[2]
 
-            x0_ext, cover_h, x1_ext = self.x0_ext_set[1], self.cover_h_set[0], self.x1_ext_set[0]
+            if x0_ext > 1000:
+                x0_ext = 1000
+            elif x0_ext < 100:
+                x0_ext = 100
+            if cover_h < 30:
+                cover_h = 30
+            elif cover_h > 100:
+                cover_h = 100
+            if x1_ext > 250:
+                x1_ext = 250
+            elif x1_ext < -50:
+                x1_ext < -50
+
             self.translation_variables = [x0_ext, cover_h, x1_ext]
 
     def __transform_geo_to_xyplane(self, geo, ref_plane, invert = False):

@@ -92,9 +92,9 @@ for surface_network, has_loop, top_priority_v_index in zip(surface_network_sets,
 
     local_networks.append(local_network)
 
-beam_0 = local_networks[0].beams[0][0]
-beam_1 = local_networks[0].beams[1][0]
-beam_2 = local_networks[0].beams[2][0]
+# beam_0 = local_networks[0].beams[0][0]
+# beam_1 = local_networks[0].beams[1][0]
+# beam_2 = local_networks[0].beams[2][0]
 
 # middle_beam = beam_0
 # other_beams = [beam_0, beam_1, beam_2]
