@@ -304,22 +304,28 @@ class JointHoles(object):
         v_angle = rg.Vector3d.VectorAngle(v_0, v_1)
 
         # making sure that the beams are not parallel
-        if (v_angle > 1.53 or v_angle < 0.03):
+        if (v_angle > 3.11 or v_angle < 0.03):
             print "your angle is too small", v_angle
 
+            # otherwise you set it to some static values
             x0_ext, cover_h, x1_ext = self.x0_ext_set[1], self.cover_h_set[0], self.x1_ext_set[0]
             self.translation_variables = x0_ext, cover_h, x1_ext
 
+        # so it's not parallel
         else:
+            # rotating the beams to be checked to the xy-plane for easy use
             reference_plane = rg.Plane(middle_beam.base_plane)
 
             world_xy = rg.Plane.WorldXY
             middle_beam.transform_instance_from_frame_to_frame(reference_plane, world_xy)
             [other_beam.transform_instance_from_frame_to_frame(reference_plane, world_xy) for other_beam in other_beams]
 
+            # joint point
+            self.ref_pt = rg.Point3d(middle_beam.dx * .5, 0, 0)
+
+            # creating an empty list of pts that define will be used to define the corner pts of the overlap diamond
             top_pt, left_pt, right_pt, bot_pt = [rg.Point3d(0, 0, 0) for i in range(4)]
 
-            ref_pt = rg.Point3d(middle_beam.dx * .5, 0, 0)
             for other_beam in other_beams:
                 ignore, a, b = rg.Intersect.Intersection.LineLine(middle_beam.top_line, other_beam.top_line)
                 top_pt += middle_beam.top_line.PointAt(a)
@@ -330,26 +336,28 @@ class JointHoles(object):
                 ignore, a, b = rg.Intersect.Intersection.LineLine(middle_beam.bot_line, other_beam.bot_line)
                 bot_pt += middle_beam.bot_line.PointAt(a)
 
+            # diamond pt list
             self.pts_set = [top_pt / pt_count, left_pt / pt_count, bot_pt / pt_count, right_pt / pt_count]
             self.pts_set.append(rg.Point3d(self.pts_set[0]))
 
-            self.ref_pt = ref_pt
+            # mid_pt of the diamond
             self.avg_pt = rg.Point3d((top_pt + left_pt + bot_pt + right_pt) / 4)
 
+            # diamond reference
             self.diamond = rg.PolylineCurve(self.pts_set)
             self.diamond_offset = self.diamond.Offset(world_xy, -35, .1, rg.CurveOffsetCornerStyle.Sharp)[0]
             self.new_pt_set = [self.diamond_offset.PointAt(self.diamond_offset.ClosestPoint(self.pts_set[i], 1000)[1]) for i in range(4)]
 
-            distance_0 = self.new_pt_set[0].DistanceTo(self.new_pt_set[1])
-            distance_1 = self.new_pt_set[2].DistanceTo(self.new_pt_set[3])
+            # diagonal distances of the corner points
+            distance_0 = self.new_pt_set[0].DistanceTo(self.new_pt_set[1])  # top - bottom
+            distance_1 = self.new_pt_set[2].DistanceTo(self.new_pt_set[3])  # left - right
 
-            self.transformed_middle_beam = middle_beam
-            self.transformed_other_beam = other_beam
-
+            # informing the parameters
             x0_ext = self.x0_ext_set[0] + distance_1 * (self.x0_ext_set[1] - self.x0_ext_set[0]) / self.x0_ext_set[2]
             cover_h = self.cover_h_set[0] + (self.cover_h_set[1] - self.cover_h_set[0]) * self.cover_h_set[2] / distance_0
             x1_ext = self.x1_ext_set[0] + distance_1 * distance_0 * (self.x1_ext_set[1] - self.x1_ext_set[0]) / self.x1_ext_set[2]
 
+            # setting back_up constraints
             if x0_ext > 1000:
                 x0_ext = 1000
             elif x0_ext < 100:
@@ -363,6 +371,7 @@ class JointHoles(object):
             elif x1_ext < -50:
                 x1_ext < -50
 
+            # outputting the translation variables
             self.translation_variables = [x0_ext, cover_h, x1_ext]
 
     def __transform_geo_to_xyplane(self, geo, ref_plane, invert = False):
