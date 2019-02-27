@@ -303,6 +303,7 @@ class JointHoles(object):
         v_1 = rg.Vector3d(middle_beam.get_baseline().PointAt(1) - middle_beam.get_baseline().PointAt(0))
         v_angle = rg.Vector3d.VectorAngle(v_0, v_1)
 
+        # making sure that the beams are not parallel
         if (v_angle > 1.53 or v_angle < 0.03):
             print "your angle is too small", v_angle
 
