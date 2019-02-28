@@ -201,6 +201,7 @@ class Keystone(object):
         else:
             self.blend_overlap = blend_overlap
 
+
     def isocurves(self, dir = 0):
         """ method that calculates the isocurves """
         self.isocurve_vis = []
@@ -279,6 +280,7 @@ class Keystone(object):
                 shift_max = max_t_shift + max_t_shift_diff
 
         # shared by all functions
+        print self.blend_crv_count
         split_difference = self.blend_crv_count - start_split_index
         split_differential = shift_max / (split_difference)
         shift_variation = (1 - (1 - shift_max) ** 2) / split_difference ** 2

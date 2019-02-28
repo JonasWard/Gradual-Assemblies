@@ -20,6 +20,7 @@ import math
 class FabricatableBeam(object):
 
     def __init__(self, base_plane, dx, dy, dz, holes):
+
         """
         initialization
 
@@ -29,8 +30,6 @@ class FabricatableBeam(object):
         :param dz:          the length along the local z-axis
         :param holes:       the planes that define dowels
         """
-
-        # create holes
         
         self.base_plane = base_plane
         self.dx = dx
@@ -38,6 +37,18 @@ class FabricatableBeam(object):
         self.dz = dz
         
         self.holes = holes
+    
+    def copy(self):
+
+        holes = []
+
+        for h in self.holes:
+
+            holes.append(rg.Plane(h))
+        
+        base_plane = rg.Plane(self.base_plane)
+
+        return FabricatableBeam(base_plane, self.dx, self.dy, self.dz, holes)
     
     def transform(self, transform):
         
@@ -106,8 +117,8 @@ class FabricatableBeam(object):
             succeeded, v1 = rg.Intersect.Intersection.LinePlane(dowel_line, plane_1)
             succeeded, v2 = rg.Intersect.Intersection.LinePlane(dowel_line, plane_2)
             
-            p1 = dowel_line.PointAt(v1)
-            p2 = dowel_line.PointAt(v2)
+            p1 = dowel_line.PointAt(v2 if v1 > v2 else v1)
+            p2 = dowel_line.PointAt(v1 if v1 > v2 else v2)
             
             line = rg.Line(p1, p2)
 
@@ -120,6 +131,50 @@ class FabricatableBeam(object):
             lines.append(line)
         
         return lines
+    
+    @staticmethod
+    def flip_whole_structure(beams):
+
+        new_beams = []
+
+        for b in beams:
+            
+            new_beam = b.copy()
+
+            new_beam.base_plane = rg.Plane(b.base_plane.Origin, b.base_plane.XAxis, -b.base_plane.YAxis)
+
+            for h in new_beam.holes:
+                h.Flip()
+            
+            new_beams.append(new_beam)
+        
+        return new_beams
+
+    @staticmethod
+    def direct_all_beams(beams, base_plane):
+
+        new_beams = []
+
+        for b in beams:
+
+            new_beam = b.copy()
+
+            angle = rg.Vector3d.VectorAngle(new_beam.base_plane.Normal, base_plane.Normal)
+
+            flip = False
+            if math.pi * 0.5 < angle and angle < math.pi * 1.5:
+                flip = True
+            
+            if flip:
+
+                new_beam.base_plane = rg.Plane(b.base_plane.Origin, b.base_plane.XAxis, -b.base_plane.YAxis)
+
+                for h in new_beam.holes:
+                    h.Flip()
+                
+            new_beams.append(new_beam)
+        
+        return new_beams
     
     @staticmethod
     def instantiate_from_beam(beam):
@@ -138,6 +193,13 @@ class FabricatableBeam(object):
             
             hole = rg.Plane(d.get_plane())
             hole.Origin = p
+
+            # not to direct the normal of the hole to that of its beam base plane
+            angle = rg.Vector3d.VectorAngle(beam.base_plane.Normal, hole.Normal)
+            if math.pi * 0.5 < angle and angle < math.pi * 1.5:
+                pass
+            else:
+                hole.Flip()
             
             holes.append(hole)
         
@@ -145,13 +207,12 @@ class FabricatableBeam(object):
             beam.dx + (beam.extension + beam.end_cover) * 2, beam.dy, beam.dz, holes)
             
     @staticmethod
-    def write_as_json(beams, name='name', to='data'):
+    def write_as_json(beams, name='name', to='./data'):
         
-        dir = os.sep.join([root_dir, to])
-        if not os.path.exists(dir):
-            os.makedirs(dir)
+        if not os.path.exists(to):
+            os.makedirs(to)
         
-        path = os.sep.join([root_dir, to, str(name) + '.json'])
+        path = os.sep.join([to, str(name) + '.json'])
         
         data = []
         
