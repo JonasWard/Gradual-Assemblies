@@ -6,15 +6,17 @@ default_f_args_set = [[100, 50, 40, True, False, False], [100, 500, .2, 30, 70, 
 
 class LocalNetwork(object):
 
-    def __init__(self, surfaces, v_div, u_div, has_loop=False, top_priority_v_index=0, parametric = True, type_args = default_f_args_set, start_even = True, flip = False):
+    def __init__(self, surfaces, v_div, u_div, has_u_loop=False, has_v_loop=False, top_priority_v_index=0, parametric = True, type_args = default_f_args_set, start_even = True, flip = False):
 
-        self.has_loop = has_loop
+        self.has_u_loop = has_u_loop
+        self.has_v_loop = has_v_loop
         self.u_div = u_div
         self.v_div = v_div
         self.flipped = top_priority_v_index % 2
         self.u_dimension = 1
         self.v_dimension = len(surfaces)
         self.type_args_hole_class = type_args
+        self.start_even = start_even
 
         if parametric:
             self.joint_f_type_add = 3
@@ -23,8 +25,6 @@ class LocalNetwork(object):
 
         curve_count = int(start_even)
 
-        print curve_count
-
         surfaces[0].instantiate_beams(uneven_start = curve_count % 2)
         self.beams = surfaces[0].beams
 
@@ -32,8 +32,6 @@ class LocalNetwork(object):
 
             for v_index in range(1, self.v_dimension - 1):
                 curve_count += v_div
-
-                print curve_count
 
                 surfaces[v_index].instantiate_beams(uneven_start = curve_count % 2)
 
@@ -54,11 +52,17 @@ class LocalNetwork(object):
 
     def add_three_beams_connection(self):
 
-        beams = self.beams
+        beams = []
+        for tmp in self.beams:
+                beams.append(list(tmp))
 
         # looping
-        if self.has_loop:
+        if self.has_u_loop:
             beams.append(beams[0])
+
+        if self.has_v_loop:
+            for tmp in beams:
+                tmp.append(tmp[0])
 
         for i in range(len(beams) - 2):
 
@@ -66,7 +70,7 @@ class LocalNetwork(object):
             middle_beams = beams[i + 1]
             right_beams  = beams[i + 2]
 
-            case_1 = (not self.flipped and i % 2 == 0) or (self.flipped and i % 2 == 1)
+            case_1 = (not self.start_even and i % 2 == 0) or (self.start_even and i % 2 == 1)
 
             if case_1:
 
@@ -111,12 +115,17 @@ class LocalNetwork(object):
 
     def add_two_beams_connection(self):
 
-        beams = self.beams
+        beams = []
+        for tmp in self.beams:
+            beams.append(list(tmp))
 
         # looping
-        if self.has_loop:
-
+        if self.has_u_loop:
             return self.dowels
+
+        if self.has_v_loop:
+            for tmp in beams:
+                tmp.append(tmp[0])
 
         # starting side
 

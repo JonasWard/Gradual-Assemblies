@@ -52,7 +52,7 @@ class Surface(object):
         :param flush_beam_count:    Amount of beams that are flush on the side (default = 2)
         """
 
-        self.div_counter = int(uneven_start)
+        self.div_counter = int(not(uneven_start))
 
         print "input u_val: ", self.u_div # BUGTESTING
         self.mapping_type = mapping_type
@@ -167,9 +167,6 @@ class Surface(object):
         :param end_beams:       Whether the main surface is mapped until the end on the right or the last one is ignored
         """
 
-        v_beam_condition_a = 1 # (self.v_div + 1) % 2
-        v_beam_condition_b = 0 # (self.v_div) % 2
-
         u_val_list = []
         [u_val_list.extend([(u_map_set_val + u_val) for u_map_set_val in self.mapping_type]) for u_val in range(self.main_srf_div)]
 
@@ -190,7 +187,7 @@ class Surface(object):
 
             for v in range(self.v_div):
 
-                if (self.div_counter % 2 == 0 and v % 2 == v_beam_condition_a) or (self.div_counter % 2 == 1 and v % 2 == v_beam_condition_b):
+                if (self.div_counter % 2 == 0 and v % 2 == 1) or (self.div_counter % 2 == 1 and v % 2 == 0):
                     continue
 
                 p1 = self.warped_srf.PointAt(u, float(v)/self.v_div)
