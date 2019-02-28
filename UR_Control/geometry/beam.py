@@ -69,7 +69,7 @@ class Beam(object):
 
         self.dowel_list = removed_dowel_list
 
-    def brep_representation(self, make_holes=True, box = None):
+    def brep_representation(self, make_holes=False, box = None):
         """ make a brep of this beam with holes
 
             :param make_holes:  boolean value to make holes in the beam (making holes requires some computation time)

@@ -2,19 +2,18 @@ from geometry.joint_holes import JointHoles
 import itertools
 
 global default_f_args_set
-default_f_args_set = [[40, 20, 20, True, False, False], [100, 500, .2, 30, 70, .5, 50, 150, .3, False, True, False]]
+default_f_args_set = [[100, 50, 40, True, False, False], [100, 500, .2, 30, 70, .5, 50, 150, .3, False, True, False]]
 
 class LocalNetwork(object):
 
-    def __init__(self, surface_network, has_loop=False, top_priority_v_index=0, parametric = True, type_args = default_f_args_set):
+    def __init__(self, surfaces, v_div, u_div, has_loop=False, top_priority_v_index=0, parametric = True, type_args = default_f_args_set, start_even = True, flip = False):
 
-        self.beams = []
         self.has_loop = has_loop
-        self.u_div = surface_network[0][0].u_div
-        self.v_div = surface_network[0][0].v_div
+        self.u_div = u_div
+        self.v_div = v_div
         self.flipped = top_priority_v_index % 2
-        self.u_dimension = len(surface_network)
-        self.v_dimension = len(surface_network[0])
+        self.u_dimension = 1
+        self.v_dimension = len(surfaces)
         self.type_args_hole_class = type_args
 
         if parametric:
@@ -22,38 +21,38 @@ class LocalNetwork(object):
         else:
             self.joint_f_type_add = 0
 
-        for v_index, v_sequence in enumerate(surface_network):
+        curve_count = int(start_even)
 
-            beams_2d = []
+        print curve_count
 
-            for u_index, surface in enumerate(v_sequence):
+        surfaces[0].instantiate_beams(uneven_start = curve_count % 2)
+        self.beams = surfaces[0].beams
 
-                will_flip = True if (top_priority_v_index - u_index) % 2 == 1 else False
+        if (self.v_dimension > 1):
 
-                surface.instantiate_beams(will_flip = False)
+            for v_index in range(1, self.v_dimension - 1):
+                curve_count += v_div
 
-                beams = list(surface.beams)
+                print curve_count
 
-                if len(beams_2d) == 0:
+                surfaces[v_index].instantiate_beams(uneven_start = curve_count % 2)
 
-                    beams_2d = list(beams)
+                beams = list(surfaces[v_index].beams)
 
-                else:
+                for i, beam_list in enumerate(beams):
 
-                    for src_beams, new_beams in zip(beams_2d, beams):
+                    self.beams[i].extend(beam_list)
 
-                        src_beams.extend(new_beams)
+        if flip:
+            self.beams.reverse()
 
-            self.beams.extend(beams_2d)
-
+        self.dowels = []
 
     def get_flatten_beams(self):
 
         return list(itertools.chain.from_iterable(self.beams))
 
     def add_three_beams_connection(self):
-
-        dowels = []
 
         beams = self.beams
 
@@ -79,7 +78,7 @@ class LocalNetwork(object):
                         right  = right_beams[j]     #    _____
 
                         joint_holes = JointHoles([left, middle, right], 0, self.joint_f_type_add, type_args = self.type_args_hole_class)
-                        dowels.append(joint_holes.dowel)
+                        self.dowels.append(joint_holes.dowel)
 
                     if j > 0:
                         left   = left_beams[j]      # _____
@@ -87,7 +86,7 @@ class LocalNetwork(object):
                         right  = right_beams[j]     # _____
 
                         joint_holes = JointHoles([left, middle, right], 1, self.joint_f_type_add, type_args = self.type_args_hole_class)
-                        dowels.append(joint_holes.dowel)
+                        self.dowels.append(joint_holes.dowel)
 
             else:
 
@@ -98,7 +97,7 @@ class LocalNetwork(object):
                     right  = right_beams[j]     #    _____
 
                     joint_holes = JointHoles([left, middle, right], 1, self.joint_f_type_add, type_args = self.type_args_hole_class)
-                    dowels.append(joint_holes.dowel)
+                    self.dowels.append(joint_holes.dowel)
 
                     if j < len(middle_beams) - 1:
 
@@ -108,20 +107,16 @@ class LocalNetwork(object):
 
 
                         joint_holes = JointHoles([left, middle, right], 0, self.joint_f_type_add, type_args = self.type_args_hole_class)
-                        dowels.append(joint_holes.dowel)
-
-        return dowels
+                        self.dowels.append(joint_holes.dowel)
 
     def add_two_beams_connection(self):
-
-        dowels = []
 
         beams = self.beams
 
         # looping
         if self.has_loop:
 
-            return dowels
+            return self.dowels
 
         # starting side
 
@@ -135,7 +130,7 @@ class LocalNetwork(object):
                 right = right_beams[i]          #    _____
 
                 joint_holes = JointHoles([left, right], 1, 1 + self.joint_f_type_add, type_args = self.type_args_hole_class)
-                dowels.append(joint_holes.dowel)
+                self.dowels.append(joint_holes.dowel)
 
             if self.flipped and len(right_beams) > i + 1:
 
@@ -143,7 +138,7 @@ class LocalNetwork(object):
                     right = right_beams[i+1]
 
                     joint_holes = JointHoles([left, right], 1, 1 + self.joint_f_type_add, type_args = self.type_args_hole_class)
-                    dowels.append(joint_holes.dowel)
+                    self.dowels.append(joint_holes.dowel)
 
             if not self.flipped and len(left_beams) > i + 1:
 
@@ -151,7 +146,7 @@ class LocalNetwork(object):
                     right = right_beams[i]      # _____
 
                     joint_holes = JointHoles([left, right], 0, 1 + self.joint_f_type_add, type_args = self.type_args_hole_class)
-                    dowels.append(joint_holes.dowel)
+                    self.dowels.append(joint_holes.dowel)
 
             if self.flipped and len(left_beams) > i and  len(right_beams) > i:
 
@@ -159,7 +154,7 @@ class LocalNetwork(object):
                     right = right_beams[i]
 
                     joint_holes = JointHoles([left, right], 0, 1 + self.joint_f_type_add, type_args = self.type_args_hole_class)
-                    dowels.append(joint_holes.dowel)
+                    self.dowels.append(joint_holes.dowel)
 
         # ending side
 
@@ -179,7 +174,7 @@ class LocalNetwork(object):
                 right = right_beams[i]          #    _____
 
                 joint_holes = JointHoles([left, right], 0, 2 + self.joint_f_type_add, type_args = self.type_args_hole_class)
-                dowels.append(joint_holes.dowel)
+                self.dowels.append(joint_holes.dowel)
 
             if flipped and len(right_beams) > i + 1:
                     print(2)
@@ -188,7 +183,7 @@ class LocalNetwork(object):
                     right = right_beams[i+1]
 
                     joint_holes = JointHoles([left, right], 0, 2 + self.joint_f_type_add, type_args = self.type_args_hole_class)
-                    dowels.append(joint_holes.dowel)
+                    self.dowels.append(joint_holes.dowel)
 
             if not flipped and len(left_beams) > i + 1:
 
@@ -196,7 +191,7 @@ class LocalNetwork(object):
                     right = right_beams[i]      # _____
 
                     joint_holes = JointHoles([left, right], 1, 2 + self.joint_f_type_add, type_args = self.type_args_hole_class)
-                    dowels.append(joint_holes.dowel)
+                    self.dowels.append(joint_holes.dowel)
 
             if flipped and len(left_beams) > i and  len(right_beams) > i:
 
@@ -204,6 +199,4 @@ class LocalNetwork(object):
                     right = right_beams[i]
 
                     joint_holes = JointHoles([left, right], 1, 2 + self.joint_f_type_add, type_args = self.type_args_hole_class)
-                    dowels.append(joint_holes.dowel)
-
-        return dowels
+                    self.dowels.append(joint_holes.dowel)
