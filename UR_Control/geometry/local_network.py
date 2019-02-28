@@ -12,7 +12,6 @@ class LocalNetwork(object):
         self.has_v_loop = has_v_loop
         self.u_div = u_div
         self.v_div = v_div
-        self.flipped = top_priority_v_index % 2
         self.u_dimension = 1
         self.v_dimension = len(surfaces)
         self.type_args_hole_class = type_args
@@ -134,14 +133,14 @@ class LocalNetwork(object):
 
         for i in range(max(len(left_beams), len(right_beams))):
 
-            if not self.flipped and len(left_beams) > i and  len(right_beams) > i:
+            if  self.start_even and len(left_beams) > i and  len(right_beams) > i:
                 left  = left_beams[i]           # _____
                 right = right_beams[i]          #    _____
 
                 joint_holes = JointHoles([left, right], 1, 1 + self.joint_f_type_add, type_args = self.type_args_hole_class)
                 self.dowels.append(joint_holes.dowel)
 
-            if self.flipped and len(right_beams) > i + 1:
+            if not self.start_even and len(right_beams) > i + 1:
 
                     left  = left_beams[i]
                     right = right_beams[i+1]
@@ -149,7 +148,7 @@ class LocalNetwork(object):
                     joint_holes = JointHoles([left, right], 1, 1 + self.joint_f_type_add, type_args = self.type_args_hole_class)
                     self.dowels.append(joint_holes.dowel)
 
-            if not self.flipped and len(left_beams) > i + 1:
+            if self.start_even and len(left_beams) > i + 1:
 
                     left  = left_beams[i+1]     #    _____
                     right = right_beams[i]      # _____
@@ -157,7 +156,7 @@ class LocalNetwork(object):
                     joint_holes = JointHoles([left, right], 0, 1 + self.joint_f_type_add, type_args = self.type_args_hole_class)
                     self.dowels.append(joint_holes.dowel)
 
-            if self.flipped and len(left_beams) > i and  len(right_beams) > i:
+            if not self.start_even and len(left_beams) > i and  len(right_beams) > i:
 
                     left  = left_beams[i]
                     right = right_beams[i]
@@ -170,9 +169,9 @@ class LocalNetwork(object):
         right_beams = beams[-1]
         left_beams  = beams[-2]
 
-        flipped = ((self.u_div + 1) * self.u_dimension) % 2 == 1
+        flipped = (self.u_div * self.u_dimension) % 2 == 1
 
-        if not flipped and self.flipped:
+        if not flipped and not self.start_even:
             flipped = True
 
         for i in range(max(len(left_beams), len(right_beams))):
