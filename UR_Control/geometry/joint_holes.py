@@ -211,7 +211,7 @@ class JointHoles(object):
             return vec_0, vec_1, vec_2_a, vec_2_b
 
 
-    def __foundation_function(self, beam, location = 0, ref_pl = rg.Plane.WorldXY, length = 200, overlap = 250):
+    def __foundation_function(self, beam, location = 0, ref_pl = rg.Plane.WorldXY, length = 250, overlap = 250):
         """ foundation connection
 
         :param beam:        Which beam to consider
@@ -222,12 +222,11 @@ class JointHoles(object):
         """
 
         # finding 3 points defining the new plane
-        self.foundation_beams = []
         local_plane = rg.Plane(beam.base_plane)
-        local_line = beam.get_line()
+        local_line = beam.get_baseline()
         end_pt_beam = local_line.PointAt(location)
-        t_val = rg.Intersect.LinePlane(local_line, ref_pl)[1]
-        extended_pt_on_ref_pl = local_line(t_val)
+        t_val = rg.Intersect.Intersection.LinePlane(local_line, ref_pl)[1]
+        extended_pt_on_ref_pl = local_line.PointAt(t_val)
         projected_pt_on_ref_pl = ref_pl.ClosestPoint(end_pt_beam)
 
         # constructing axises
@@ -236,8 +235,8 @@ class JointHoles(object):
 
         # checking angles with original beam_plane
         x_axis_o, y_axis_o = local_plane.XAxis, local_plane.YAxis
-        x_angle = rg.Vector3d.Angle(x_axis, x_axis_o)
-        y_angle = rg.Vector3d.Angle(y_axis, y_axis_o)
+        x_angle = rg.Vector3d.VectorAngle(x_axis, x_axis_o)
+        y_angle = rg.Vector3d.VectorAngle(y_axis, y_axis_o)
 
         # flipping if need be
         if (x_angle > 1.6):
@@ -247,8 +246,8 @@ class JointHoles(object):
 
         # constructing the origin point of the new plane
         new_line_beam = rg.Line(extended_pt_on_ref_pl, end_pt_beam)
-        start_pt_line = new_line_beam.PointAt(length / new_line_beam.GetLength())
-        dx = rg.Line(start_pt_line, end_pt_beam).GetLength()
+        start_pt_line = new_line_beam.PointAt(length / new_line_beam.Length)
+        dx = rg.Line(start_pt_line, end_pt_beam).Length
         origin = rg.Point3d((start_pt_line + end_pt_beam) / 2)
 
         # defining the new plane
@@ -256,18 +255,22 @@ class JointHoles(object):
         beam.base_plane = rg.Plane(origin, x_axis, y_axis)
 
         # defining the footing beams
-        mv = rg.Vector3d(beam.base_plane.ZAxis * beam.dz) + (origin - start_pt_line)
-        foundation_pls = [rg.Plane(beam.base_plane).Translate(mv), rg.Plane(beam.base_plane).Translate( - mv)]
+        mv = rg.Vector3d(beam.base_plane.ZAxis * beam.dz)
+        f_pls = [rg.Plane(beam.base_plane) for i in range(2)]
+        f_pls[0].Translate(rg.Vector3d( - mv + (start_pt_line - origin))), f_pls[1].Translate(rg.Vector3d(mv + (start_pt_line - origin)))
 
         dy_foundation, dz_foundation = rg.Interval(-.5 * beam.dy, .5 * beam.dy), rg.Interval(-.5 * beam.dz, .5 * beam.dz)
         if x_axis.X > 0:
-            dx_foundation = rg.Interval(overlap, 1000)
+            dx_foundation = rg.Interval(- overlap, 1000)
         else:
-            dx_foundation = rg.Interval(1000, overlap)
+            dx_foundation = rg.Interval(- 1000, overlap)
+            
         # creating brep representation
-        bounding_box = rg.Box(rg.Plane.WorldXY.Translate(rg.Vector(start_pt_line.X, start_pt_line.Y, 0)), rg.Interval(1000, 1000), rg.Interval(1000, 1000), rg.Interval(0, 1000))
-        raw_f_breps = [rg.Box(pl, dx_foundation, dy_foundation, dz_foundation) for pl in foundation_pls]
-        foundation_breps = [rg.Brep.CreateBooleanIntersection(r_f_brep, bounding_box)[0] for r_f_brep in raw_f_breps]
+        trimming_plane = rg.Plane.WorldXY
+        trimming_plane.Translate(rg.Vector3d(start_pt_line.X, start_pt_line.Y, 0))
+        bounding_box = rg.Box(rg.Plane(trimming_plane), rg.Interval(-1000.0, 1000.0), rg.Interval(-1000.0, 1000.0), rg.Interval(0.0, 1000.0)) 
+        raw_f_breps = [rg.Box(pl, dx_foundation, dy_foundation, dz_foundation) for pl in f_pls]
+        foundation_breps = [rg.Brep.CreateBooleanIntersection(r_f_brep.ToBrep(), bounding_box.ToBrep(), 1)[0] for r_f_brep in raw_f_breps]
 
         return foundation_breps
 
