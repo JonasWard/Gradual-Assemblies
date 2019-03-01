@@ -5,13 +5,13 @@ import math as m
 
 class Surface(object):
 
-    def __init__(self, surface, u_div=8, v_div=5, beam_width = 160, beam_thickness = 40, flip_u = False, flip_v = False):
+    def __init__(self, surface, u_div=8, v_div=5, beam_width = 180, beam_thickness = 40, flip_u = False, flip_v = False):
         """ Initialization
 
         :param surface:         Base rg.geometry object that will be edited
         :param u_div:           How many divisions this surface will have in the u_direction (default = 5)
         :param v_div:           How many divisions this surface will have in the v_direction (default = 3)
-        :param beam_width:      The initial width of the beams (default = 160)
+        :param beam_width:      The initial width of the beams (default = 180)
         :param beam_thickness:  The initial thickness of the different beams (default = 40)
         """
 
