@@ -25,6 +25,8 @@ y_dim = 120
 z_dim = 40
 angle /= 180
 
+a, b, c, d, e = variables
+
 world_origin = rg.Point3d(0, 0, 0)
 
 world_x = rg.Vector3d(1, 0, 0)
@@ -60,7 +62,7 @@ beams = [beam_1, beam_2]
 
 for beam_obj in beams:
     [beam_obj.add_dowel(dowel) for dowel in dowels]
-    local_spheres_boundary = beam_obj.check_boundary_constraints(a, b, c, d, e)
+    local_spheres_boundary = beam_obj.check_boundary_constraints()
     local_spheres_angles = beam_obj.check_angle_constraints(constraint_angle)
     [spheres_boundary.append(local_sphere) for local_sphere in local_spheres_boundary]
     [sphere_angles.append(local_angle) for local_angle in local_spheres_angles]

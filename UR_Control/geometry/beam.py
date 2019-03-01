@@ -69,7 +69,7 @@ class Beam(object):
 
         self.dowel_list = removed_dowel_list
 
-    def brep_representation(self, make_holes=True, box = None):
+    def brep_representation(self, make_holes=False, box = None):
         """ make a brep of this beam with holes
 
             :param make_holes:  boolean value to make holes in the beam (making holes requires some computation time)
@@ -321,10 +321,14 @@ class Beam(object):
 
     def __move_to_frame(beam, source_frame, target_frame=None):
         """ private method to transform
+
+            :param source_frame:    Frame to transform from
+            :param target_frame:    Frame to transform to
+            :return beam:           Returns the transformed beam object
         """
 
         if not target_frame:
-            target_frame = beam.base_plane
+            target_frame = rg.Plane(beam.base_plane)
 
         transform = rg.Transform.PlaneToPlane(source_frame, target_frame)
 
@@ -338,7 +342,46 @@ class Beam(object):
             if dowel.line:
                 dowel.line.Transform(transform)
 
+        if beam.top_bot_line:
+            beam.top_line.Transform(transform)
+            beam.bot_line.Transform(transform)
+
         return beam
+
+    def top_bot_line(self):
+        """ method that add a line a the top and bottom of the beam plane """
+
+        # self.top_bot_line = True
+        # x_ax = self.base_plane.XAxis
+        # y_ax = self.base_plane.YAxis
+        # x_ax = rg.Point3d(x_ax * .5 * self.dx)
+        # y_ax = rg.Point3d(y_ax * .5 * self.dy)
+        # o_pt = rg.Point3d(self.base_plane.Origin)
+        # x_val, y_val = x_ax + o_pt, y_ax + o_pt
+        # pt_0, pt_1 = rg.Point3d(- x_val + y_val), rg.Point3d(x_val + y_val)
+        # pt_2, pt_3 = rg.Point3d(- x_val - y_val), rg.Point3d(x_val - y_val)
+        # self.top_line = rg.Line(pt_0, pt_1)
+        # self.bot_line = rg.Line(pt_2, pt_3)
+
+        # STUPID FFING RHINO POITN LISTS >>>>>
+        x_ax_0, y_ax_0, z_ax_0 = self.base_plane.XAxis.X, self.base_plane.XAxis.Y, self.base_plane.XAxis.Z
+        x_ax_1, y_ax_1, z_ax_1 = self.base_plane.YAxis.X, self.base_plane.YAxis.Y, self.base_plane.YAxis.Z
+        x_ax_2, y_ax_2, z_ax_2 = self.base_plane.Origin.X, self.base_plane.Origin.Y, self.base_plane.Origin.Z
+        l_0 = math.sqrt(x_ax_0 ** 2 + y_ax_0 ** 2 + z_ax_0 ** 2)
+        l_1 = math.sqrt(x_ax_1 ** 2 + y_ax_1 ** 2 + z_ax_1 ** 2)
+        pt_0_list = [x_ax_0, y_ax_0, z_ax_0]
+        pt_1_list = [x_ax_1, y_ax_1, z_ax_1]
+        pt_0_list = [val * .5 * self.dx for val in pt_0_list]
+        pt_1_list = [val * .5 * self.dy for val in pt_1_list]
+        pt_2_list = [x_ax_2, y_ax_2, z_ax_2]
+        pt_0 = [(-pt_0_list[i] + pt_1_list[i] + pt_2_list[i]) for i in range(3)]
+        pt_1 = [(+pt_0_list[i] + pt_1_list[i] + pt_2_list[i]) for i in range(3)]
+        pt_2 = [(-pt_0_list[i] - pt_1_list[i] + pt_2_list[i]) for i in range(3)]
+        pt_3 = [(+pt_0_list[i] - pt_1_list[i] + pt_2_list[i]) for i in range(3)]
+        pt_0, pt_1 = rg.Point3d(pt_0[0], pt_0[1], pt_0[2]), rg.Point3d(pt_1[0], pt_1[1], pt_1[2])
+        pt_2, pt_3 = rg.Point3d(pt_2[0], pt_2[1], pt_2[2]), rg.Point3d(pt_3[0], pt_3[1], pt_3[2])
+        self.top_line = rg.Line(pt_0, pt_1)
+        self.bot_line = rg.Line(pt_2, pt_3)
 
     def end_frames(self):
         """ method that returns the start and end frame of the beam """
