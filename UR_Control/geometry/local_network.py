@@ -68,7 +68,7 @@ class LocalNetwork(object):
             middle_beams = beams[i + 1]
             right_beams  = beams[i + 2]
 
-            case_1 = (not self.start_even and i % 2 == 0) or (self.start_even and i % 2 == 1)
+            case_1 = (not self.start_even and i % 2 == 1) or (self.start_even and i % 2 == 0)
 
             if case_1:
 

@@ -150,6 +150,15 @@ class Beam(object):
         if x_change > self.extension:
             self.extension = x_change
 
+    def reset_length(self, new_length):
+        """
+        internal method that changes the length of the beam
+
+        :param new_length:  The new length of the beam
+        """
+        
+        self.dx = new_length
+
     def check_angle_constraints(self, angle = 55):
         """
         checks where the beam | dowel intersection events are problematic based on the angle between beam and dowel
@@ -300,7 +309,6 @@ class Beam(object):
         source_plane.Translate(rg.Vector3d(0, 0, -self.dz * 0.5))
 
         Beam.__move_to_frame(self, source_plane, rg.Plane.WorldXY)
-
 
     def transform_instance_to_frame(self, target_frame=None):
         """ in-place transform
