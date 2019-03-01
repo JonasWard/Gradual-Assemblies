@@ -272,8 +272,9 @@ class Dowel(object):
         :param max_spacing:             The amount of distance for this one to trigger (default = 300)
         :return spacing_constraints:    Brep list representing where you have issues
         """
-        beam_count = len(self.beam_list)
-        if (beam_count > 1):
+        self.beam_count = len(self.beam_list)
+        if (self.beam_count > 1):
+            print "I have an extra beam! "
             dowel_line = self.get_line()
             spacing_constraints = []
             temp_t_list = []
@@ -281,7 +282,7 @@ class Dowel(object):
                 succeeded, t = rg.Intersect.Intersection.LinePlane(dowel_line, beam.base_plane)
                 temp_t_list.append(t)
             temp_t_list.sort()
-            for i in range(beam_count - 1):
+            for i in range(self.beam_count - 1):
                 pt_0, pt_1 = dowel_line.PointAt(temp_t_list[i]), dowel_line.PointAt(temp_t_list[i + 1])
                 distance = pt_0.DistanceTo(pt_1)
                 if (distance > max_spacing):
@@ -290,6 +291,7 @@ class Dowel(object):
             return spacing_constraints
         else:
             print "nothing to check here ..."
+            return None
 
     def __get_pipe(self, radius, line = None):
         """

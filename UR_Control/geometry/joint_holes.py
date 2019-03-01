@@ -3,7 +3,6 @@
 import copy as c
 import geometry.beam as beam
 import geometry.dowel as dowel
-
 import Rhino.Geometry as rg
 
 class JointHoles(object):
@@ -60,7 +59,7 @@ class JointHoles(object):
                 fit_line_flag   - whether you consider the middle beam as well or not (default = False)
 
             type = 6    -> Foundation type
-                I Don't Know
+                height          - length of the beams away from the floor
 
             type = 7    -> End type
                 I Don't Know
@@ -110,6 +109,8 @@ class JointHoles(object):
                 self.v2_sw = -1
             else:
                 self.v2_sw = 1
+
+        # settings
 
         # general error message on type generation
         if not(self.type_completed_flag):
@@ -182,8 +183,9 @@ class JointHoles(object):
             # the naked edges
             self.dowel_line = rg.Line(self.dowel_pts[0], self.dowel_pts[1])
 
+        local_dowel = dowel.Dowel(None, self.dowel_line)
+
         for local_beam in self.beam_set:
-            local_dowel = dowel.Dowel(None, self.dowel_line)
             local_beam.add_dowel(local_dowel)
             self.dowel = local_dowel
 
@@ -206,6 +208,70 @@ class JointHoles(object):
             local_beam.extend(beam_extension_l)
 
             return vec_0, vec_1, vec_2_a, vec_2_b
+
+
+    def __foundation_function(self, beam, location = 0, ref_pl = rg.Plane.WorldXY, length = 250, overlap = 250):
+        """ foundation connection
+
+        :param beam:        Which beam to consider
+        :param loc:         Location of the t-val on the line representation of the beam to use as your reference point
+        :param ref_pl:      The plane that will be used as the baseplane of the structure
+        :param length:      Length away from the floor
+        :param overlap:     How much overlap between the feet of the beam and the beam itself
+        """
+
+        # finding 3 points defining the new plane
+        local_plane = rg.Plane(beam.base_plane)
+        local_line = beam.get_baseline()
+        end_pt_beam = local_line.PointAt(location)
+        t_val = rg.Intersect.Intersection.LinePlane(local_line, ref_pl)[1]
+        extended_pt_on_ref_pl = local_line.PointAt(t_val)
+        projected_pt_on_ref_pl = ref_pl.ClosestPoint(end_pt_beam)
+
+        # constructing axises
+        x_axis = rg.Vector3d(extended_pt_on_ref_pl - end_pt_beam)
+        y_axis = rg.Vector3d(projected_pt_on_ref_pl - end_pt_beam)
+
+        # checking angles with original beam_plane
+        x_axis_o, y_axis_o = local_plane.XAxis, local_plane.YAxis
+        x_angle = rg.Vector3d.VectorAngle(x_axis, x_axis_o)
+        y_angle = rg.Vector3d.VectorAngle(y_axis, y_axis_o)
+
+        # flipping if need be
+        if (x_angle > 1.6):
+            x_axis = - x_axis
+        if (y_angle > 1.6):
+            y_axis = - y_axis
+
+        # constructing the origin point of the new plane
+        new_line_beam = rg.Line(extended_pt_on_ref_pl, end_pt_beam)
+        start_pt_line = new_line_beam.PointAt(length / new_line_beam.Length)
+        dx = rg.Line(start_pt_line, end_pt_beam).Length
+        origin = rg.Point3d((start_pt_line + end_pt_beam) / 2)
+
+        # defining the new plane
+        beam.dx = dx
+        beam.base_plane = rg.Plane(origin, x_axis, y_axis)
+
+        # defining the footing beams
+        mv = rg.Vector3d(beam.base_plane.ZAxis * beam.dz)
+        f_pls = [rg.Plane(beam.base_plane) for i in range(2)]
+        f_pls[0].Translate(rg.Vector3d( - mv + (start_pt_line - origin))), f_pls[1].Translate(rg.Vector3d(mv + (start_pt_line - origin)))
+
+        dy_foundation, dz_foundation = rg.Interval(-.5 * beam.dy, .5 * beam.dy), rg.Interval(-.5 * beam.dz, .5 * beam.dz)
+        if x_axis.X > 0:
+            dx_foundation = rg.Interval(- overlap, 1000)
+        else:
+            dx_foundation = rg.Interval(- 1000, overlap)
+
+        # creating brep representation
+        trimming_plane = rg.Plane.WorldXY
+        trimming_plane.Translate(rg.Vector3d(start_pt_line.X, start_pt_line.Y, 0))
+        bounding_box = rg.Box(rg.Plane(trimming_plane), rg.Interval(-1000.0, 1000.0), rg.Interval(-1000.0, 1000.0), rg.Interval(0.0, 1000.0))
+        raw_f_breps = [rg.Box(pl, dx_foundation, dy_foundation, dz_foundation) for pl in f_pls]
+        foundation_breps = [rg.Brep.CreateBooleanIntersection(r_f_brep.ToBrep(), bounding_box.ToBrep(), 1)[0] for r_f_brep in raw_f_breps]
+
+        return foundation_breps
 
     def __triple_dowel_function(self, beam_index):
         """ method that returns the joint points at a certain point on the beam
@@ -374,20 +440,20 @@ class JointHoles(object):
             # outputting the translation variables
             self.translation_variables = [x0_ext, cover_h, x1_ext]
 
-    def __transform_geo_to_xyplane(self, geo, ref_plane, invert = False):
-        """
-            internal method that tranforms some geometry to the xy_plane
-
-            :param geo:             Input Geometry
-            :param ref_plane:       Plane used as a reference
-            :param invert:          To ref_plane = True, To xy_plane = False
-            :return new_geo:        Geometries that have been transformed
-        """
-        if (invert):
-            plane_0, plane_1 = rg.Plane.WorldXY, ref_plane
-        else:
-            plane_1, plane_0 = rg.Plane.WorldXY, ref_plane
-        trans_matrix = rg.Transform.PlaneToPlane(plane_0, plane_1)
-        new_geo = [temp_geo.Transform(trans_matrix) for temp_geo in geo]
-
-        return new_geo
+    # def __transform_geo_to_xyplane(self, geo, ref_plane, invert = False):
+    #     """
+    #         internal method that tranforms some geometry to the xy_plane
+    #
+    #         :param geo:             Input Geometry
+    #         :param ref_plane:       Plane used as a reference
+    #         :param invert:          To ref_plane = True, To xy_plane = False
+    #         :return new_geo:        Geometries that have been transformed
+    #     """
+    #     if (invert):
+    #         plane_0, plane_1 = rg.Plane.WorldXY, ref_plane
+    #     else:
+    #         plane_1, plane_0 = rg.Plane.WorldXY, ref_plane
+    #     trans_matrix = rg.Transform.PlaneToPlane(plane_0, plane_1)
+    #     new_geo = [temp_geo.Transform(trans_matrix) for temp_geo in geo]
+    #
+    #     return new_geo
