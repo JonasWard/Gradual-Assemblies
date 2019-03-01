@@ -94,7 +94,7 @@ class FabricatableBeam(object):
         
         return compas_beam
     
-    def get_dowel_lines(self, extension=0, dowel_radius=50):
+    def get_dowel_lines(self, extension=0):
 
         plane_1 = rg.Plane(self.base_plane)
         plane_1.Translate(self.base_plane.Normal * self.dz * 0.5)
@@ -117,15 +117,12 @@ class FabricatableBeam(object):
             succeeded, v1 = rg.Intersect.Intersection.LinePlane(dowel_line, plane_1)
             succeeded, v2 = rg.Intersect.Intersection.LinePlane(dowel_line, plane_2)
             
-            p1 = dowel_line.PointAt(v2 if v1 > v2 else v1)
-            p2 = dowel_line.PointAt(v1 if v1 > v2 else v2)
+            p1 = dowel_line.PointAt(v1)
+            p2 = dowel_line.PointAt(v2)
             
             line = rg.Line(p1, p2)
 
-            angle = rg.Vector3d.VectorAngle(self.base_plane.Normal, hole.Normal)
-            diff = self.dz * 0.5 / math.sin(angle) + abs(dowel_radius / math.tan(angle))
-            
-            diff = (diff + extension) * 0.5
+            diff = extension * 0.5
             
             line.Extend(diff, diff)
             lines.append(line)
