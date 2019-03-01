@@ -5,7 +5,7 @@ import math as m
 
 class Surface(object):
 
-    def __init__(self, surface, u_div=8, v_div=5, beam_width = 180, beam_thickness = 40, flip_u = False, flip_v = False):
+    def __init__(self, surface, u_div=8, v_div=4, beam_width = 180, beam_thickness = 40, flip_u = False, flip_v = False):
         """ Initialization
 
         :param surface:         Base rg.geometry object that will be edited
@@ -42,17 +42,19 @@ class Surface(object):
         self.flip_v = flip_v
         self.__check_flush_flipping()
 
-    def instantiate_beams(self, mapping_type = [1], seam_type = 3, warp_type = 2, flush_beam_count = 2, uneven_start = False, will_flip = False):
+    def instantiate_beams(self, mapping_type = [.67, 1], seam_type = 3, warp_type = 0, flush_beam_count = 2, uneven_start = False, will_flip = False, extra_item = False):
         """ Function that instatiates the beam generation
 
         :param mapping_type:        Some list of values that describe the mappign type of the surface logics applied ([1] = even - default, [2/3, 1] = seaming type)
-        :param seam_type:           Which type of seam this object has (0 = single flush - default, 1 = multi flush left, 2 = multi flush right, 3 = multi flush both sides)
+        :param seam_type:           Which type of seam this object has (4 = single flush - default, 1 = multi flush left, 2 = multi flush right, 3 = multi flush both sides)
         :param warp_type:           How the surface is being warped (0 = no warping - default, 1 = left, 2 = right, 3 = both sides)
         :param will_flip:           Whether the surface will flip or not (default = False)
         :param flush_beam_count:    Amount of beams that are flush on the side (default = 2)
+        :param extra_item:          Add an extra item at the end of the list (default = False)
         """
 
         self.div_counter = int(not(uneven_start))
+        self.extra_item = extra_item
 
         print "input u_val: ", self.u_div # BUGTESTING
         self.mapping_type = mapping_type
@@ -84,6 +86,8 @@ class Surface(object):
 
         else:
             self.main_srf_div = int((self.u_div - total_flush_beam_count) / self.mapping_pattern_length)
+
+        self.u_div += int(self.extra_item)
 
         # initializing the beam set
         self.beams = []
@@ -170,6 +174,9 @@ class Surface(object):
         u_val_list = []
         [u_val_list.extend([(u_map_set_val + u_val) for u_map_set_val in self.mapping_type]) for u_val in range(self.main_srf_div)]
 
+        if self.extra_item:
+            u_val_list.append(u_val_list[-1] + self.mapping_type[-1])
+
         warped_srf_domain_start = 0
         warped_srf_domain_end = u_val_list[-1] + self.mapping_type[0]
 
@@ -177,7 +184,7 @@ class Surface(object):
             warped_srf_domain_start = u_val_list[0]
 
         if (end_beams):
-            warped_srf_domain_end = u_val_list[-1]
+            warped_srf_domain_end = u_val_list[0]
 
         self.warped_srf.SetDomain(0, rg.Interval(warped_srf_domain_start, warped_srf_domain_end))
 

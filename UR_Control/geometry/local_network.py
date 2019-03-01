@@ -1,5 +1,7 @@
 import itertools
 import copy as c
+import geometry.joint_holes
+reload (geometry.joint_holes)
 from geometry.joint_holes import JointHoles
 
 global default_f_args_set
@@ -7,11 +9,9 @@ default_f_args_set = [[100, 50, 40, True, False, False], [100, 500, .2, 30, 70, 
 
 class LocalNetwork(object):
 
-    def __init__(self, surfaces, has_v_loop=False, top_priority_v_index=0, parametric = True, type_args = default_f_args_set, start_even = True, flip = False):
+    def __init__(self, surfaces, has_v_loop=False, top_priority_v_index=0, parametric = False, type_args = default_f_args_set, start_even = True, flip = False):
 
         self.has_v_loop = has_v_loop
-        self.u_div = surfaces[0].u_div
-        self.v_div = surfaces[0].v_div
         self.u_dimension = 1
         self.v_dimension = len(surfaces)
         self.type_args_hole_class = type_args
@@ -26,6 +26,10 @@ class LocalNetwork(object):
 
         surfaces[0].instantiate_beams(uneven_start = curve_count % 2)
         self.beams = surfaces[0].beams
+
+        self.u_div = surfaces[0].u_div
+        self.v_div = surfaces[0].v_div
+        self.global_v_div = self.v_div * self.v_dimension
 
         if (self.v_dimension > 1):
 
@@ -51,6 +55,93 @@ class LocalNetwork(object):
     def get_flatten_beams(self):
 
         return list(itertools.chain.from_iterable(self.beams))
+
+    def add_end_seams_connection(self):
+
+        # initzializing which beams to connect
+        even_swap = int(self.start_even)
+
+        # v_indexes
+        bot_v_val = 0
+        top_v_val = int( (self.global_v_div - (self.u_div + 1) % 2) / 2 )
+
+        bot_u_vals = []
+        top_u_vals = []
+        for i in range(self.u_div):
+            # top row u indexes
+            if not((i + even_swap) % 2 == 0):
+                bot_u_vals.append((i + even_swap) % 2 * i)
+
+            # bot row u indexes
+            if not(((i + self.global_v_div - 1 + even_swap) % 2) % 2 == 0):
+                top_u_vals.append((i + self.global_v_div - 1 + even_swap) % 2 * i)
+
+        print bot_v_val, bot_u_vals
+        print top_v_val, top_u_vals
+
+        bot_beam_pairs = [[self.beams[bot_u_vals[i]][bot_v_val], self.beams[bot_u_vals[i + 1]][bot_v_val]] for i in range(len(bot_u_vals) - 1)]
+        top_beam_pairs = [[self.beams[top_u_vals[i]][top_v_val], self.beams[top_u_vals[i + 1]][top_v_val]] for i in range(len(top_u_vals) - 1)]
+
+        print bot_beam_pairs
+        print top_beam_pairs
+
+        print "I'm in end seams"
+
+        # the bot_beams:
+        for i in range(len(bot_beam_pairs)):
+            joint_holes = JointHoles(bot_beam_pairs[i], location_index = 0, type = 6, type_args = [[100, 70, 40, False, False, False], []])
+            self.dowels.append(joint_holes.dowel)
+            self.joints.append(c.deepcopy(joint_holes))
+
+            print "I did this!"
+
+            joint_holes = JointHoles(bot_beam_pairs[i], location_index = 1, type = 6, type_args = [[100, 70, 40, False, False, False], []])
+            self.dowels.append(joint_holes.dowel)
+            self.joints.append(c.deepcopy(joint_holes))
+
+            print "And then this!"
+
+        for i in range(len(top_beam_pairs)):
+            joint_holes = JointHoles(top_beam_pairs[i], location_index = 2, type = 6, type_args = [[100, 70, 40, False, False, False], []])
+            self.dowels.append(joint_holes.dowel)
+            self.joints.append(c.deepcopy(joint_holes))
+
+            print "And now also this!"
+
+            joint_holes = JointHoles(top_beam_pairs[i], location_index = 3, type = 6, type_args = [[100, 70, 40, False, False, False], []])
+            self.dowels.append(joint_holes.dowel)
+            self.joints.append(c.deepcopy(joint_holes))
+
+            print "And now I'm done!"
+
+    def add_foundation_connection(self):
+        # initzializing which beams to connect
+        even_swap = int(self.start_even)
+
+        # v_indexes
+        bot_v_val = 0
+        top_v_val = int( (self.global_v_div - (self.u_div + 1) % 2) / 2 )
+
+        bot_u_vals = []
+        top_u_vals = []
+        for i in range(self.u_div):
+            # top row u indexes
+            if not((i + even_swap) % 2 == 0):
+                bot_u_vals.append((i + even_swap) % 2 * i)
+
+            # bot row u indexes
+            if not(((i + self.global_v_div - 1 + even_swap) % 2) % 2 == 0):
+                top_u_vals.append((i + self.global_v_div - 1 + even_swap) % 2 * i)
+
+        print bot_v_val, bot_u_vals
+        print top_v_val, top_u_vals
+
+        top_beams = [self.beams[top_u_vals[i]][top_v_val] for i in range(len(top_u_vals))]
+
+        self.foundations = []
+        for beam in top_beams:
+            foundations = [JointHoles([beam], type = 7, type_args = [[], [], [], [250]]).foundations for beam in top_beams]
+            self.foundations.extend(foundations)
 
     def add_three_beams_connection(self):
 

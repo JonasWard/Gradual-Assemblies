@@ -1,0 +1,61 @@
+This is a library to use surface mapping in relationship to a GRAPH TYPOLOGY for
+----------------------- - -|TIMBER DOWEL CONNECTIONS|- - -----------------------
+
+Hierarchy
+
+                                Geometric inputs
+                              -------------------
+High Level                           Graph                               (Input)
+    |                        Global Surface Network                         |
+    |                         Local Surface Network                         |
+    |                  /----------Beam Network-------------\                |
+    |                 /                 |                   \               |
+    |     Organised Surfaces     Seam Relations           Joints            |
+    |               |                   |                     |             |
+    |             Types               Types                 Types           |
+    |        Internal Types             |                     |             |
+    |          rg.Surface               |                     |             |
+    V                \                  |                    /              V
+Low Level             \---------- Beams & Dowels -----------/           (Output)
+
+
+
+###################################  Graph  ####################################
+
+##########################  Global Surface Network  ############################
+
+###########################  Local Surface Network #############################
+
+############################    Beam Network   #################################
+
+##########################   Organised Surfaces  ###############################
+
+##############################  Surface Types  #################################
+
+############################  Surface rg.Surface  ##############################
+
+#############################  Seam Relations  #################################
+
+################################  Seam Types  ##################################
+
+#################################  Joints  #####################################
+
+##############################  Joint Types  ###################################
+
+#################################  Beams  ######################################
+
+################################  Dowels  ######################################
+
+
+
+
+
+
+
+
+
+                                      Graph
+- Global Surface Network
+- Local Surface Network
+- Beam Network
+- Organised Surface
