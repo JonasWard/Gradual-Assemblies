@@ -3,12 +3,11 @@
 import copy as c
 import geometry.beam as beam
 import geometry.dowel as dowel
-
 import Rhino.Geometry as rg
 
 class JointHoles(object):
     """ Hole class that defines some hole positions baded on a beam """
-    def __init__(self, beam_set, location_index = None, type = 0, type_args=[[40, 20, 20, True, False, False], [100, 500, .2, 30, 70, .5, 50, 150, .3, False, True, False][250]]):
+    def __init__(self, beam_set, location_index = None, type = 0, type_args=[[40, 20, 20, True, False, False], [100, 500, .2, 30, 70, .5, 50, 150, .3, False, True, False]]):
         """ initialization
 
             :param beam:            Beam that's being considered
@@ -264,11 +263,11 @@ class JointHoles(object):
             dx_foundation = rg.Interval(- overlap, 1000)
         else:
             dx_foundation = rg.Interval(- 1000, overlap)
-            
+
         # creating brep representation
         trimming_plane = rg.Plane.WorldXY
         trimming_plane.Translate(rg.Vector3d(start_pt_line.X, start_pt_line.Y, 0))
-        bounding_box = rg.Box(rg.Plane(trimming_plane), rg.Interval(-1000.0, 1000.0), rg.Interval(-1000.0, 1000.0), rg.Interval(0.0, 1000.0)) 
+        bounding_box = rg.Box(rg.Plane(trimming_plane), rg.Interval(-1000.0, 1000.0), rg.Interval(-1000.0, 1000.0), rg.Interval(0.0, 1000.0))
         raw_f_breps = [rg.Box(pl, dx_foundation, dy_foundation, dz_foundation) for pl in f_pls]
         foundation_breps = [rg.Brep.CreateBooleanIntersection(r_f_brep.ToBrep(), bounding_box.ToBrep(), 1)[0] for r_f_brep in raw_f_breps]
 
@@ -441,20 +440,20 @@ class JointHoles(object):
             # outputting the translation variables
             self.translation_variables = [x0_ext, cover_h, x1_ext]
 
-    def __transform_geo_to_xyplane(self, geo, ref_plane, invert = False):
-        """
-            internal method that tranforms some geometry to the xy_plane
-
-            :param geo:             Input Geometry
-            :param ref_plane:       Plane used as a reference
-            :param invert:          To ref_plane = True, To xy_plane = False
-            :return new_geo:        Geometries that have been transformed
-        """
-        if (invert):
-            plane_0, plane_1 = rg.Plane.WorldXY, ref_plane
-        else:
-            plane_1, plane_0 = rg.Plane.WorldXY, ref_plane
-        trans_matrix = rg.Transform.PlaneToPlane(plane_0, plane_1)
-        new_geo = [temp_geo.Transform(trans_matrix) for temp_geo in geo]
-
-        return new_geo
+    # def __transform_geo_to_xyplane(self, geo, ref_plane, invert = False):
+    #     """
+    #         internal method that tranforms some geometry to the xy_plane
+    #
+    #         :param geo:             Input Geometry
+    #         :param ref_plane:       Plane used as a reference
+    #         :param invert:          To ref_plane = True, To xy_plane = False
+    #         :return new_geo:        Geometries that have been transformed
+    #     """
+    #     if (invert):
+    #         plane_0, plane_1 = rg.Plane.WorldXY, ref_plane
+    #     else:
+    #         plane_1, plane_0 = rg.Plane.WorldXY, ref_plane
+    #     trans_matrix = rg.Transform.PlaneToPlane(plane_0, plane_1)
+    #     new_geo = [temp_geo.Transform(trans_matrix) for temp_geo in geo]
+    #
+    #     return new_geo

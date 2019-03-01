@@ -1,6 +1,6 @@
-from geometry.joint_holes import JointHoles
 import itertools
 import copy as c
+from geometry.joint_holes import JointHoles
 
 global default_f_args_set
 default_f_args_set = [[100, 50, 40, True, False, False], [100, 500, .2, 30, 70, .5, 50, 150, .3, False, True, False]]
