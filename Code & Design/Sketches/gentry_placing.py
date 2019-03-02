@@ -6,7 +6,7 @@ x0 = value
 r = 1700    # in mm
 alfa = 1.05
 
-delta_z = .5 * r
+delta_z = .86 * r       # cos 30 degree - could be slightly more or less if need be
 z0 = z1 - delta_z
 delta_x = x1 - x0
 y0 = (r ** 2 - delta_z ** 2 - delta_x ** 2) ** .5    # has to change depending on the location
