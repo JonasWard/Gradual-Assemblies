@@ -238,7 +238,7 @@ class JointHoles(object):
     #     # rotation in plane
     #     x,
 
-    def __foundation_function(self, beam, location = 0, ref_pl = rg.Plane.WorldXY, length = 250, overlap = 250):
+    def foundation_function(self, beam, ref_pl = rg.Plane.WorldXY, overlap = 250):
         """ foundation connection
 
         :param beam:        Which beam to consider
@@ -247,66 +247,94 @@ class JointHoles(object):
         :param length:      Length away from the floor
         :param overlap:     How much overlap between the feet of the beam and the beam itself
         """
-
-        # finding 3 points defining the new plane
-        local_plane = rg.Plane(beam.base_plane)
-        local_line = beam.get_baseline()
-        end_pt_beam = local_line.PointAt(location)
-        t_val = rg.Intersect.Intersection.LinePlane(local_line, ref_pl)[1]
-        extended_pt_on_ref_pl = local_line.PointAt(t_val)
-        projected_pt_on_ref_pl = ref_pl.ClosestPoint(end_pt_beam)
-
-        # constructing axises
-        x_axis = rg.Vector3d(extended_pt_on_ref_pl - end_pt_beam)
-        y_axis = rg.Vector3d(projected_pt_on_ref_pl - end_pt_beam)
-
-        # checking angles with original beam_plane
-        x_axis_o, y_axis_o = local_plane.XAxis, local_plane.YAxis
-        x_angle = rg.Vector3d.VectorAngle(x_axis, x_axis_o)
-        y_angle = rg.Vector3d.VectorAngle(y_axis, y_axis_o)
-
-        # flipping if need be
-        if (x_angle < 1.6):
-            x_axis = - x_axis
-        if (y_angle < 1.6):
-            y_axis = - y_axis
-
-        # calculating the angle between the ref_plane and the line
-        angle = rg.Vector3d.VectorAngle(x_axis, rg.Vector3d(0, 0, 1))
-        angle = m.pi / 4 - angle
-        if angle > 1.6:
-            angle = m.pi / 2 - angle
-        shift_length = m.tan(angle) * beam.dy / 2
-
-        # constructing the origin point of the new plane
-        new_line_beam = rg.Line(end_pt_beam, extended_pt_on_ref_pl)
-        start_pt_line = new_line_beam.PointAt(shift_length / new_line_beam.Length)
-        dx = rg.Line(start_pt_line, end_pt_beam).Length
-        origin = rg.Point3d((start_pt_line + end_pt_beam) / 2)
-
-        # defining the new plane
-        beam.dx = dx
-        beam.base_plane = rg.Plane(origin, x_axis, y_axis)
-
-        # defining the footing beams
-        mv = rg.Vector3d(beam.base_plane.ZAxis * beam.dz)
-        f_pls = [rg.Plane(beam.base_plane) for i in range(2)]
-        f_pls[0].Translate(rg.Vector3d( - mv + (start_pt_line - origin))), f_pls[1].Translate(rg.Vector3d(mv + (start_pt_line - origin)))
-
-        dy_foundation, dz_foundation = rg.Interval(-.5 * beam.dy, .5 * beam.dy), rg.Interval(-.5 * beam.dz, .5 * beam.dz)
-        if x_axis.X > 0:
-            dx_foundation = rg.Interval(- overlap, 1000)
+        
+        print "height of the beam: ", beam.dy
+        
+        # finding the orientation of the beam
+        beam_line = beam.get_baseline()
+        pt_0, pt_1 = beam_line.PointAt(0), beam_line.PointAt(1)
+        z_height_pl = ref_pl.Origin.Z
+        
+        # determining which side is closest to the floor
+        parallel_to_the_world_xy = False
+        if (pt_0.Z > pt_1.Z):
+            line_start_pt = pt_0
+            line_end_pt = pt_1
+            negative_direction = False
+        elif (pt_1.Z > pt_0.Z):
+            line_start_pt = pt_1
+            line_end_pt = pt_0
+            negative_direction = True
         else:
-            dx_foundation = rg.Interval(- 1000, overlap)
+            # none run condition
+            parallel_to_the_world_xy = True
+            print "This one can't have a foundation"
+            
+        if not(parallel_to_the_world_xy):
+            # finding the new end_pt of the beam
+            t_val = rg.Intersect.Intersection.LinePlane(beam_line, ref_pl)[1]
+            extended_line_end_pt_on_ref_pl = beam_line.PointAt(t_val)
+            
+            # how much the new_end_pt has to be moved upwards (beam.extension is value related to the overlap required in the joint designs)
+            print beam.extension
+            
+            angle = rg.Vector3d.VectorAngle(rg.Vector3d(line_start_pt - line_end_pt), ref_pl.Normal)
+            shift_length = m.tan(angle) * beam.dy + beam.extension + beam.end_cover
+            print "shift length : ", shift_length
 
-        # creating brep representation
-        trimming_plane = rg.Plane.WorldXY
-        trimming_plane.Translate(rg.Vector3d(start_pt_line.X, start_pt_line.Y, 0))
-        bounding_box = rg.Box(rg.Plane(trimming_plane), rg.Interval(-1000.0, 1000.0), rg.Interval(-1000.0, 1000.0), rg.Interval(0.0, 1000.0))
-        raw_f_breps = [rg.Box(pl, dx_foundation, dy_foundation, dz_foundation) for pl in f_pls]
-        foundation_breps = [rg.Brep.CreateBooleanIntersection(r_f_brep.ToBrep(), bounding_box.ToBrep(), 1)[0] for r_f_brep in raw_f_breps]
+            # constructing the new base_pt
+            mv = rg.Vector3d(line_start_pt - line_end_pt)
+            mv.Unitize()
+            new_line_end_pt = extended_line_end_pt_on_ref_pl + (mv * shift_length)
+            
+            # new beam origin & length
+            print "old beam length: ", beam.dx
+            print "new beam length: ", rg.Line(new_line_end_pt, line_start_pt).Length
+            beam.reset_length(rg.Line(new_line_end_pt, line_start_pt).Length)
+            new_beam_o = rg.Point3d((new_line_end_pt + line_start_pt) / 2)
+            
+            new_beam_line = rg.Line(new_line_end_pt, line_start_pt)
+            
+            # finding the 3th point defining the new plane
+            projected_pt_on_ref_pl = ref_pl.ClosestPoint(line_start_pt)
 
-        return foundation_breps
+            # constructing axises
+            x_axis = rg.Vector3d(new_line_end_pt - line_start_pt)
+            y_axis = rg.Vector3d(projected_pt_on_ref_pl - line_start_pt)
+
+            # checking angles with original beam_plane
+            x_axis_o, y_axis_o = beam.base_plane.XAxis, beam.base_plane.YAxis
+            x_angle = rg.Vector3d.VectorAngle(x_axis, x_axis_o)
+            y_angle = rg.Vector3d.VectorAngle(y_axis, y_axis_o)
+
+            # flipping if need be
+            if (x_angle > 1.6):
+                x_axis = - x_axis
+            if (y_angle > 1.6):
+                y_axis = - y_axis
+
+            # defining the new plane
+            beam.base_plane = rg.Plane(new_beam_o, x_axis, y_axis)
+    
+            # defining the footing beams
+            mv = rg.Vector3d(beam.base_plane.ZAxis * beam.dz)
+            f_pls = [rg.Plane(beam.base_plane) for i in range(2)]
+            [f_pl.Translate(rg.Vector3d( (i *2 - 1) * mv + (new_line_end_pt - new_beam_o))) for i, f_pl in enumerate(f_pls)]
+    
+            dy_foundation, dz_foundation = rg.Interval(-.5 * beam.dy, .5 * beam.dy), rg.Interval(-.5 * beam.dz, .5 * beam.dz)
+            if negative_direction:
+                dx_foundation = rg.Interval(- 1000, overlap - beam.extension)
+            else:
+                dx_foundation = rg.Interval(- overlap + beam.extension, 2000)
+                
+            # creating brep representation
+            trimming_plane = rg.Plane.WorldXY
+            trimming_plane.Translate(rg.Vector3d(projected_pt_on_ref_pl.X, projected_pt_on_ref_pl.Y, 0))
+            bounding_box = rg.Box(rg.Plane(trimming_plane), rg.Interval(-10000.0, 10000.0), rg.Interval(-10000.0, 10000.0), rg.Interval(ref_pl.Origin.Z, 10000.0)) 
+            raw_f_breps = [rg.Box(pl, dx_foundation, dy_foundation, dz_foundation) for pl in f_pls]
+            foundation_breps = [rg.Brep.CreateBooleanIntersection(r_f_brep.ToBrep(), bounding_box.ToBrep(), 1)[0] for r_f_brep in raw_f_breps]
+            
+            return foundation_breps
 
     def __triple_dowel_function(self, beam_index):
         """ method that returns the joint points at a certain point on the beam

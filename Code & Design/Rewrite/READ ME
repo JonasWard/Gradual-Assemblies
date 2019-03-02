@@ -19,43 +19,127 @@ High Level                           Graph                               (Input)
 Low Level             \---------- Beams & Dowels -----------/           (Output)
 
 
-
+--------------####################################################--------------
 ###################################  Graph  ####################################
+--------------####################################################--------------
 
+Geometrical representation of the elements that control the overall structure.
+
+--------------####################################################--------------
 ##########################  Global Surface Network  ############################
+--------------####################################################--------------
 
+Setting up the overall relations between the geometry, influenced by the graph.
+Organise and link the different Local Surfaces.
+
+--------------####################################################--------------
 ###########################  Local Surface Network #############################
+--------------####################################################--------------
 
-############################    Beam Network   #################################
+Setting up relations between the different surface patches. Setting up the para-
+meters for the Beam Network.
 
-##########################   Organised Surfaces  ###############################
+Type: Keystone
+      Continious
 
+--------------####################################################--------------
+##############################  Beam Network   #################################
+--------------####################################################--------------
+
+The relation between the beams as informed by the local surface network. Also in
+relationship to fabrication
+
+Type: BrickStack
+      Keystone
+      Patch
+
+--------------####################################################--------------
+###########################  Beam Network Types  ###############################
+--------------####################################################--------------
+
+Describing the internal logic of the Beam sets.
+
+Types : Brick Stack - simple 2d nested list
+        Keystone - more complex and integrated form that allows for branching
+
+--------------####################################################--------------
+##########################   Organised Surface  ################################
+--------------####################################################--------------
+
+Internal topological relation between the surface geometries and extra elements
+like seams. Contains most of the variables that control the surface type.
+
+Extension on the rg.Surface class.
+Types:  Seam
+        Warped
+        Trimmed
+        Flat
+        Branch
+
+--------------####################################################--------------
 ##############################  Surface Types  #################################
+--------------####################################################--------------
 
+Property class of the surfaces used in the Organised Surface class
+
+--------------####################################################--------------
 ############################  Surface rg.Surface  ##############################
+--------------####################################################--------------
 
+Speaks for itself, not edited, though manipulated
+
+--------------####################################################--------------
 #############################  Seam Relations  #################################
+--------------####################################################--------------
 
+Internal seam relations between the different local_surfaces.
+Types:  Continious
+        Flush
+        Multi-flush
+        Joint Seam
+
+--------------####################################################--------------
 ################################  Seam Types  ##################################
+--------------####################################################--------------
 
+How they are described.
+
+--------------####################################################--------------
 #################################  Joints  #####################################
+--------------####################################################--------------
 
+Joint elements.
+Types:  Double    - Static & Parametric
+        Triple    - Static & Parametric
+        End Seam
+        Foundation
+
+--------------####################################################--------------
 ##############################  Joint Types  ###################################
+--------------####################################################--------------
 
+Joint type Definitions.
+
+--------------####################################################--------------
 #################################  Beams  ######################################
+--------------####################################################--------------
 
+Beam definitions.
+
+Takes a plane, a length, a height and a width (a beam profile basically).
+Can be assigned Joints, which in their turn contain dowels, which assign holes.
+
+--------------####################################################--------------
 ################################  Dowels  ######################################
+--------------####################################################--------------
 
+Dowel definitions.
 
+Nothing more than a line and a radius. Always related to a joint, beams and
+holes.
 
+--------------####################################################--------------
+#################################  Holes  ######################################
+--------------####################################################--------------
 
-
-
-
-
-
-                                      Graph
-- Global Surface Network
-- Local Surface Network
-- Beam Network
-- Organised Surface
+Only relevant for the fabrication set-up.
