@@ -363,6 +363,8 @@ class FabricatableBeam(object):
                 'dx': b.dx,
                 'dy': b.dy,
                 'dz': b.dz,
+                'has_pockets': b.has_pockets,
+                'has_dowel_holes': b.has_dowel_holes
             }
             
             d['holes'] = [FabricatableBeam.plane_to_dic(h) for h in b.holes]
@@ -385,6 +387,8 @@ class FabricatableBeam(object):
                 dx = float(d['dx'])
                 dy = float(d['dy'])
                 dz = float(d['dz'])
+                has_pockets = bool(d['has_pockets'])
+                has_dowel_holes = bool(d['has_dowel_holes'])
                 base_plane = FabricatableBeam.dic_to_plane(d['plane'])
                 holes = [FabricatableBeam.dic_to_plane(dic) for dic in d['holes']]
                 
