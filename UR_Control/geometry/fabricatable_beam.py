@@ -19,22 +19,26 @@ import math
 
 class FabricatableBeam(object):
 
-    def __init__(self, base_plane, dx, dy, dz, holes):
+    def __init__(self, base_plane, dx, dy, dz, holes, has_pockets=False, has_dowel_holes=True):
 
         """
         initialization
 
-        :param base_plane:  base plane which the beam is along with
-        :param dx:          the length along the local x-axis (= the length of this beam)
-        :param dy:          the length along the local y-axis
-        :param dz:          the length along the local z-axis
-        :param holes:       the planes that define dowels
+        :param base_plane:      base plane which the beam is along with
+        :param dx:              the length along the local x-axis (= the length of this beam)
+        :param dy:              the length along the local y-axis
+        :param dz:              the length along the local z-axis
+        :param holes:           the planes that define dowels
+        :param has_pockets:     the planes that define dowels
+        :param has_dowel_holes: the planes that define dowels
         """
         
         self.base_plane = base_plane
         self.dx = dx
         self.dy = dy
         self.dz = dz
+        self.has_pockets = has_pockets
+        self.has_dowel_holes = has_dowel_holes
         
         self.holes = holes
     
@@ -48,7 +52,7 @@ class FabricatableBeam(object):
         
         base_plane = rg.Plane(self.base_plane)
 
-        return FabricatableBeam(base_plane, self.dx, self.dy, self.dz, holes)
+        return FabricatableBeam(base_plane, self.dx, self.dy, self.dz, holes, self.has_pockets, self.has_dowel_holes)
     
     def transform(self, transform):
         
@@ -64,7 +68,7 @@ class FabricatableBeam(object):
             holes.append(hole)
         
         return FabricatableBeam(base_plane, \
-                self.dx, self.dy, self.dz, holes)
+                self.dx, self.dy, self.dz, holes, self.has_pockets, self.has_dowel_holes)
     
     def create_brep(self):
         
@@ -128,7 +132,146 @@ class FabricatableBeam(object):
             lines.append(line)
         
         return lines
-    
+
+    def get_screw_holes(self):
+
+        beam = self
+
+        # drill parameters
+        drill_angle = 55            # in reference to the plain
+        drill_depth = 20            # length drill line in wood
+        drill_start_tolerance = 1   # extension drill line outside of the beam
+        x_spacing = 30              # how much x deviates from the average position
+        y_spacing = 30
+
+
+        # getting the average location of the start & end joint groups on the beam
+        dowel_pts = [dowel.Origin for dowel in beam.holes]
+        beam_origin = beam.base_plane.Origin
+        beam_origin_x = beam_origin.X
+
+        # getting the even spacing in between the dowel_lines
+        new_line_neg = 0.0
+        new_line_neg_count = 0
+        new_line_pos = 0.0
+        new_line_pos_count = 0
+
+        # seperating and tallying up the negative from the positive values
+        for dowel_pt in dowel_pts:
+            if dowel_pt.X - beam_origin_x > 0:
+                new_line_pos_count += 1
+                new_line_pos += dowel_pt.X - beam_origin_x
+            else:
+                new_line_neg_count += 1
+                new_line_neg += dowel_pt.X - beam_origin_x
+
+        # average x locations of the joints on the beam
+        start_x = new_line_neg / new_line_neg_count
+        end_x = new_line_pos / new_line_pos_count
+        delta_x = end_x - start_x
+
+        spacing_x = delta_x * .25
+        
+        print "spacing_x before correction", spacing_x
+        if spacing_x < 230.0:
+            spacing_x = 230
+            
+        print "spacing_x after correction", spacing_x
+
+        # setting the raw locations where the holes should be
+        neg_x_loc = start_x + spacing_x
+        pos_x_loc = end_x - spacing_x
+
+        y_delta = math.cos(math.radians(drill_angle))
+        z_delta = math.sin(math.radians(drill_angle))
+
+        # locations on the beam
+        int_y_coordinate = beam.dy * .5 - y_spacing
+        int_z_coordinate = beam.dz * .5
+
+        # locations in the beam
+        bot_y_coordinate = int_y_coordinate - y_delta * drill_depth
+        bot_z_coordinate = int_z_coordinate - z_delta * drill_depth
+        
+        print bot_z_coordinate, bot_y_coordinate
+
+        # locations outside of the beam
+        top_y_coordinate = int_y_coordinate + y_delta * drill_start_tolerance
+        top_z_coordinate = int_z_coordinate + z_delta * drill_start_tolerance
+
+        # setting up all the point_set
+        #    ---------------------------------------------------
+        #   |     o     ln_0 -> *          * <- ln_1      o     |
+        #   |  o    o       --------------------        o    o  |
+        #   |    o      * <- ln_2      -   ln_3 -> *       o    |
+        #    ---------------------------------------------------
+
+        # ln_0
+        # pt inside the beam
+        x0 = neg_x_loc + x_spacing
+        y0 = bot_y_coordinate
+        z0 = bot_z_coordinate
+        pt_0 = rg.Point3d(x0, y0, z0)
+        # pt outside the beam
+        x1 = neg_x_loc + x_spacing
+        y1 = top_y_coordinate
+        z1 = top_z_coordinate
+        pt_1 = rg.Point3d(x1, y1, z1)
+        ln_0 = rg.Line(pt_1, pt_0)
+        pl_0 = rg.Plane(pt_1, rg.Vector3d(pt_0 - pt_1))
+
+        # ln_1
+        # pt inside the beam
+        x0 = pos_x_loc - x_spacing
+        y0 = bot_y_coordinate
+        z0 = bot_z_coordinate
+        pt_0 = rg.Point3d(x0, y0, z0)
+        # pt outside the beam
+        x1 = pos_x_loc - x_spacing
+        y1 = top_y_coordinate
+        z1 = top_z_coordinate
+        pt_1 = rg.Point3d(x1, y1, z1)
+        ln_1 = rg.Line(pt_1, pt_0)
+        pl_1 = rg.Plane(pt_1, rg.Vector3d(pt_0 - pt_1))
+
+        # ln_2
+        # pt inside the beam
+        x0 = neg_x_loc - x_spacing
+        y0 = - bot_y_coordinate
+        z0 = bot_z_coordinate
+        pt_0 = rg.Point3d(x0, y0, z0)
+        # pt outside the beam
+        x1 = neg_x_loc - x_spacing
+        y1 = - top_y_coordinate
+        z1 = top_z_coordinate
+        pt_1 = rg.Point3d(x1, y1, z1)
+        ln_2 = rg.Line(pt_1, pt_0)
+        pl_2 = rg.Plane(pt_1, rg.Vector3d(pt_0 - pt_1))
+
+        # ln_3
+        # pt inside the beam
+        x0 = pos_x_loc + x_spacing
+        y0 = - bot_y_coordinate
+        z0 = bot_z_coordinate
+        pt_0 = rg.Point3d(x0, y0, z0)
+        # pt outside the beam
+        x1 = pos_x_loc + x_spacing
+        y1 = - top_y_coordinate
+        z1 = top_z_coordinate
+        pt_1 = rg.Point3d(x1, y1, z1)
+        ln_3 = rg.Line(pt_1, pt_0)
+        pl_3 = rg.Plane(pt_1, rg.Vector3d(pt_0 - pt_1))
+        
+        line_set = [ln_0, ln_1, ln_2, ln_3]
+        pln_set = [pl_0, pl_1, pl_2, pl_3]
+        
+        translate_to_origin_beam = rg.Transform.Translation(rg.Vector3d(beam_origin))
+        
+        [line.Transform(translate_to_origin_beam) for line in line_set]
+        [pln.Transform(translate_to_origin_beam) for pln in pln_set]
+        
+        return line_set, pln_set
+
     @staticmethod
     def flip_whole_structure(beams):
 
@@ -174,7 +317,7 @@ class FabricatableBeam(object):
         return new_beams
     
     @staticmethod
-    def instantiate_from_beam(beam):
+    def instantiate_from_beam(beam, has_pockets=False, has_dowel_holes=True):
 
         holes = []
         for d in beam.dowel_list:
@@ -201,7 +344,7 @@ class FabricatableBeam(object):
             holes.append(hole)
         
         return FabricatableBeam(beam.base_plane, \
-            beam.dx + (beam.extension + beam.end_cover) * 2, beam.dy, beam.dz, holes)
+            beam.dx + (beam.extension + beam.end_cover) * 2, beam.dy, beam.dz, holes, has_pockets, has_dowel_holes)
             
     @staticmethod
     def write_as_json(beams, name='name', to='./data'):
@@ -277,6 +420,11 @@ class FabricatableBeam(object):
     @staticmethod
     def orient_structure(beams, src, target=rg.Plane.WorldXY):
         
+        is_list = True
+        if not type(beams) == list:
+            is_list = False
+            beams = [beams]
+        
         transform = rg.Transform.PlaneToPlane(src, target)
         
         transformed_beams = []
@@ -286,4 +434,7 @@ class FabricatableBeam(object):
             beam = b.transform(transform)
             transformed_beams.append(beam)
         
-        return transformed_beams
+        if is_list:
+            return transformed_beams
+        else:
+            return transformed_beams[0]
