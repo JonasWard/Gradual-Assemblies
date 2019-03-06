@@ -23,7 +23,6 @@ class FabricatableBeam(object):
 
         """
         initialization
-
         :param base_plane:      base plane which the beam is along with
         :param dx:              the length along the local x-axis (= the length of this beam)
         :param dy:              the length along the local y-axis
@@ -387,12 +386,13 @@ class FabricatableBeam(object):
                 dx = float(d['dx'])
                 dy = float(d['dy'])
                 dz = float(d['dz'])
-                has_pockets = bool(int(d['has_pockets']))
-                has_dowel_holes = bool(int(d['has_dowel_holes']))
+                has_pockets = True if int(d['has_pockets']) == 1 else False
+                has_dowel_holes = True if int(d['has_dowel_holes']) == 1 else False
+
                 base_plane = FabricatableBeam.dic_to_plane(d['plane'])
                 holes = [FabricatableBeam.dic_to_plane(dic) for dic in d['holes']]
                 
-                beam = FabricatableBeam(base_plane, dx, dy, dz, holes)
+                beam = FabricatableBeam(base_plane, dx, dy, dz, holes, has_pockets, has_dowel_holes)
                 beams.append(beam)
                 
         return beams
