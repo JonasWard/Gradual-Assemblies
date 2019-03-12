@@ -19,18 +19,19 @@ import math
 
 class FabricatableBeam(object):
 
-    def __init__(self, base_plane, dx, dy, dz, holes, has_pockets=False, has_dowel_holes=True, has_annoying_pockets=False):
+    def __init__(self, base_plane, dx, dy, dz, holes, has_pockets=False, has_dowel_holes=True, has_annoying_pockets=False, is_shitty_beam=False):
 
         """
         initialization
-        :param base_plane:      base plane which the beam is along with
-        :param dx:              the length along the local x-axis (= the length of this beam)
-        :param dy:              the length along the local y-axis
-        :param dz:              the length along the local z-axis
-        :param holes:           the planes that define dowels
-        :param has_pockets:     the planes that define dowels
-        :param has_dowel_holes: the planes that define dowels
-        :param has_annoying_pockets: the planes that define dowels
+        :param base_plane:              base plane which the beam is along with
+        :param dx:                      the length along the local x-axis (= the length of this beam)
+        :param dy:                      the length along the local y-axis
+        :param dz:                      the length along the local z-axis
+        :param holes:                   the planes that define dowels
+        :param has_pockets:             the planes that define dowels
+        :param has_dowel_holes:         the planes that define dowels
+        :param has_annoying_pockets:    the planes that define dowels
+        :param is_shitty_beam:          beam has to be cut under an angle (default = False)
         """
         
         self.base_plane = base_plane
@@ -40,6 +41,7 @@ class FabricatableBeam(object):
         self.has_pockets = has_pockets
         self.has_dowel_holes = has_dowel_holes
         self.has_annoying_pockets = has_annoying_pockets
+        self.is_shitty_beam = is_shitty_beam 
 
         self.holes = holes
     
@@ -53,7 +55,7 @@ class FabricatableBeam(object):
         
         base_plane = rg.Plane(self.base_plane)
 
-        return FabricatableBeam(base_plane, self.dx, self.dy, self.dz, holes, self.has_pockets, self.has_dowel_holes, self.has_annoying_pockets)
+        return FabricatableBeam(base_plane, self.dx, self.dy, self.dz, holes, self.has_pockets, self.has_dowel_holes, self.has_annoying_pockets, self.is_shitty_beam)
     
     def transform(self, transform):
         
@@ -69,7 +71,7 @@ class FabricatableBeam(object):
             holes.append(hole)
         
         return FabricatableBeam(base_plane, \
-                self.dx, self.dy, self.dz, holes, self.has_pockets, self.has_dowel_holes, self.has_annoying_pockets)
+                self.dx, self.dy, self.dz, holes, self.has_pockets, self.has_dowel_holes, self.has_annoying_pockets, self.is_shitty_beam)
     
     def create_brep(self):
         
@@ -134,7 +136,13 @@ class FabricatableBeam(object):
         
         return lines
 
-    def get_screw_holes(self):
+    def get_screw_holes(self, flip = False):
+        """ Annoying hole class
+
+        :param flip:        Whether the beam is flipped around it's z-axis or not
+        :return line_set:   Dowel line representation set
+        :return pln_set:    Dowel plane set
+        """
 
         beam = self
 
@@ -265,6 +273,12 @@ class FabricatableBeam(object):
         
         line_set = [ln_0, ln_1, ln_2, ln_3]
         pln_set = [pl_0, pl_1, pl_2, pl_3]
+
+        # flip around world xy plane
+        if flip:
+            mirror_transform = rg.Transform.Mirror(rg.Plane.WorldXY)
+            [line.Transform(mirror_transform) for line in line_set]
+            [plane.Transform(mirror_transform) for plane in pln_set]
         
         translate_to_origin_beam = rg.Transform.Translation(rg.Vector3d(beam_origin))
         
@@ -318,7 +332,7 @@ class FabricatableBeam(object):
         return new_beams
     
     @staticmethod
-    def instantiate_from_beam(beam, has_pockets=False, has_dowel_holes=True, has_annoying_pockets=False):
+    def instantiate_from_beam(beam, has_pockets=False, has_dowel_holes=True, has_annoying_pockets=False, is_shitty_beam=False):
 
         holes = []
         for d in beam.dowel_list:
@@ -345,7 +359,7 @@ class FabricatableBeam(object):
             holes.append(hole)
         
         return FabricatableBeam(beam.base_plane, \
-            beam.dx + (beam.extension + beam.end_cover) * 2, beam.dy, beam.dz, holes, has_pockets, has_dowel_holes, has_annoying_pockets)
+            beam.dx + (beam.extension + beam.end_cover) * 2, beam.dy, beam.dz, holes, has_pockets, has_dowel_holes, has_annoying_pockets, is_shitty_beam)
             
     @staticmethod
     def write_as_json(beams, name='name', to='./data'):
@@ -367,6 +381,7 @@ class FabricatableBeam(object):
                 'has_pockets': 1 if b.has_pockets else 0,
                 'has_dowel_holes': 1 if b.has_dowel_holes else 0,
                 'has_annoying_pockets': 1 if b.has_annoying_pockets else 0,
+                'is_shitty_beam': 1 if b.is_shitty_beam else 0
             }
             
             d['holes'] = [FabricatableBeam.plane_to_dic(h) for h in b.holes]
@@ -392,6 +407,7 @@ class FabricatableBeam(object):
                 has_pockets = True if int(d['has_pockets']) == 1 else False
                 has_dowel_holes = True if int(d['has_dowel_holes']) == 1 else False
                 has_annoying_pockets = True if 'has_annoying_pockets' in d and int(d['has_annoying_pockets']) == 1 else False
+                is_shitty_beam = True if 'is_shitty_beam' in d and int(d['is_shitty_beam']) == 1 else False
                 base_plane = FabricatableBeam.dic_to_plane(d['plane'])
                 holes = [FabricatableBeam.dic_to_plane(dic) for dic in d['holes']]
 
@@ -405,7 +421,7 @@ class FabricatableBeam(object):
                     for hole in holes:
                         hole.Origin *= scale
                 
-                beam = FabricatableBeam(base_plane, dx, dy, dz, holes, has_pockets, has_dowel_holes, has_annoying_pockets)
+                beam = FabricatableBeam(base_plane, dx, dy, dz, holes, has_pockets, has_dowel_holes, has_annoying_pockets, is_shitty_beam)
                 beams.append(beam)
                 
         return beams
