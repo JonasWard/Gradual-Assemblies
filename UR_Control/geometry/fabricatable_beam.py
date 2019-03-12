@@ -374,7 +374,7 @@ class FabricatableBeam(object):
             json.dump(data, f)
 
     @staticmethod
-    def read_from_json(path):
+    def read_from_json(path, scale=1.0):
         
         beams = []
         
@@ -391,6 +391,16 @@ class FabricatableBeam(object):
 
                 base_plane = FabricatableBeam.dic_to_plane(d['plane'])
                 holes = [FabricatableBeam.dic_to_plane(dic) for dic in d['holes']]
+
+                if scale != 1.0:
+                    
+                    dx *= scale
+                    dy *= scale
+                    dz *= scale
+
+                    base_plane.Origin *= scale
+                    for hole in holes:
+                        hole.Origin *= scale
                 
                 beam = FabricatableBeam(base_plane, dx, dy, dz, holes, has_pockets, has_dowel_holes)
                 beams.append(beam)
