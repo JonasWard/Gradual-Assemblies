@@ -114,8 +114,8 @@ class Beam(object):
         """
 
         diff = self.base_plane.XAxis * self.dx_base_line * 0.5
-        self.beam_start_pt = rg.Point3d.Subtract(self.base_plane.Origin, diff)
-        self.beam_end_pt = rg.Point3d.Subtract(self.base_plane.Origin, -diff)
+        self.beam_start_pt = rg.Point3d.Subtract(self.base_plane.Origin, -diff)
+        self.beam_end_pt = rg.Point3d.Subtract(self.base_plane.Origin, diff)
 
         return rg.Line(self.beam_start_pt, self.beam_end_pt)
 
@@ -139,7 +139,7 @@ class Beam(object):
 
         return angles
 
-    def extend(self, x_change):
+    def extends(self, x_change):
         """
         extends the brep representation of your beam b a certain value
 
@@ -156,7 +156,7 @@ class Beam(object):
 
         :param new_length:  The new length of the beam
         """
-        
+
         self.dx = new_length
 
     def check_angle_constraints(self, angle = 55):
@@ -358,18 +358,6 @@ class Beam(object):
 
     def top_bot_line(self):
         """ method that add a line a the top and bottom of the beam plane """
-
-        # self.top_bot_line = True
-        # x_ax = self.base_plane.XAxis
-        # y_ax = self.base_plane.YAxis
-        # x_ax = rg.Point3d(x_ax * .5 * self.dx)
-        # y_ax = rg.Point3d(y_ax * .5 * self.dy)
-        # o_pt = rg.Point3d(self.base_plane.Origin)
-        # x_val, y_val = x_ax + o_pt, y_ax + o_pt
-        # pt_0, pt_1 = rg.Point3d(- x_val + y_val), rg.Point3d(x_val + y_val)
-        # pt_2, pt_3 = rg.Point3d(- x_val - y_val), rg.Point3d(x_val - y_val)
-        # self.top_line = rg.Line(pt_0, pt_1)
-        # self.bot_line = rg.Line(pt_2, pt_3)
 
         # STUPID FFING RHINO POITN LISTS >>>>>
         x_ax_0, y_ax_0, z_ax_0 = self.base_plane.XAxis.X, self.base_plane.XAxis.Y, self.base_plane.XAxis.Z
