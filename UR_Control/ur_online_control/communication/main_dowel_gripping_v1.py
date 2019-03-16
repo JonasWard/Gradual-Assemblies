@@ -8,6 +8,8 @@ from __future__ import print_function
 # import time
 import sys
 import os
+import math
+
 
 # set the paths to find library
 file_dir = os.path.dirname(__file__)
@@ -90,7 +92,7 @@ def main():
         # drilling movements
         used_plane_count = 0
         print ("\nstarting with the main loop")
-        
+
         beam_count = 0
 
         for number_of_holes in number_of_holes_list:
@@ -130,7 +132,7 @@ def main():
 
             ur.send_command_wait(0.5)
 
-            
+
             """
             gripper on"""
             ur.send_command_digital_out(0, True)
@@ -211,7 +213,13 @@ def main():
             """
             moving to safe placing plane"""
 
-            ur.send_command_movel([x5, y5, z5 + safety_z_height, ax5, ay5, az5], v=speed_set, r=radius)
+            nx, ny, nz = ax5, ay5, az5
+
+            n_length = math.sqrt(nx ** 2 + ny ** 2 + nz ** 2)
+            distance = 50
+            nx, ny, nz = -nx / n_length * distance, -ny / n_length * distance, -nz / n_length * distance
+
+            ur.send_command_movel([x5 + nx, y5 + ny, z5 + nz, ax5, ay5, az5], v=speed_set, r=radius)
 
 
             beam_count += 1
