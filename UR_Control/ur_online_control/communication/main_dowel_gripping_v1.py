@@ -217,7 +217,7 @@ def main():
 
             n_length = math.sqrt(nx ** 2 + ny ** 2 + nz ** 2)
             distance = 50
-            nx, ny, nz = -nx / n_length * distance, -ny / n_length * distance, -nz / n_length * distance
+            nx, ny, nz = nx / n_length * distance, ny / n_length * distance, nz / n_length * distance
 
             ur.send_command_movel([x5 + nx, y5 + ny, z5 + nz, ax5, ay5, az5], v=speed_set, r=radius)
 
