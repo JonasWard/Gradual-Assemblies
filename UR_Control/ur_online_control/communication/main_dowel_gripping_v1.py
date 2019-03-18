@@ -175,12 +175,13 @@ def main():
                 ur.send_command_movel([x2, y2, z2, ax2, ay2, az2], v=drill_speed_out, r=radius)
 
 
-            x5, y5, z5, ax5, ay5, az5, speed, radius = commands_drilling[used_plane_count + number_of_holes * 3 + 1] #placing plane
+            x5, y5, z5, ax5, ay5, az5, speed, radius = commands_drilling[used_plane_count + number_of_holes * 3 + 1] # placing plane
+            x6, y6, z6, ax6, ay6, az6, speed, radius = commands_drilling[used_plane_count + number_of_holes * 3 + 2] # safety placing plane
 
             """
             moving to safe placing plane"""
 
-            ur.send_command_movel([x5, y5, z5 + safety_z_height, ax5, ay5, az5], v=speed_set, r=radius)
+            ur.send_command_movel([x6, y6, z6, ax6, ay6, az6], v=speed_set, r=radius)
 
             """"
             rotate wrist 3"""
@@ -192,7 +193,7 @@ def main():
             """
             moving to safe placing plane"""
 
-            ur.send_command_movel([x5, y5, z5 + safety_z_height, ax5, ay5, az5], v=speed_set, r=radius)
+            ur.send_command_movel([x6, y6, z6, ax6, ay6, az6], v=speed_set, r=radius)
 
 
             """
@@ -213,14 +214,7 @@ def main():
             """
             moving to safe placing plane"""
 
-            nx, ny, nz = ax5, ay5, az5
-
-            n_length = math.sqrt(nx ** 2 + ny ** 2 + nz ** 2)
-            distance = 50
-            nx, ny, nz = nx / n_length * distance, ny / n_length * distance, nz / n_length * distance
-
-            ur.send_command_movel([x5 + nx, y5 + ny, z5 + nz, ax5, ay5, az5], v=speed_set, r=radius)
-
+            ur.send_command_movel([x6, y6, z6, ax6, ay6, az6], v=speed_set, r=radius)
 
             beam_count += 1
 
