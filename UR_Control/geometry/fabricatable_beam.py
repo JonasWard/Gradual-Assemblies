@@ -143,6 +143,7 @@ class FabricatableBeam(object):
         :return line_set:   Dowel line representation set
         :return pln_set:    Dowel plane set
         """
+        print " creating some annoying holes "
 
         beam = self
 
@@ -175,17 +176,35 @@ class FabricatableBeam(object):
                 new_line_neg += dowel_pt.X - beam_origin_x
 
         # average x locations of the joints on the beam
-        start_x = new_line_neg / new_line_neg_count
-        end_x = new_line_pos / new_line_pos_count
+        if (new_line_pos_count > 0.001):
+            end_x = new_line_pos / new_line_pos_count
+            print "there are ", int(new_line_pos_count), " holes on the positive side of the beam"
+        else:
+            print "I don't have any holes in the positive!!!!"
+            end_x = beam.dx *.5
+
+        if (new_line_neg_count > 0.001):
+            start_x = new_line_neg / new_line_neg_count
+            print "there are ", int(new_line_neg_count), " holes on the negative side of the beam"
+        else:
+            print "I don't have any holes in the negative!!!!"
+            start_x = - beam.dx *.5
+
         delta_x = end_x - start_x
 
         spacing_x = delta_x * .25
+
+        print "spacing_x is set as: ", spacing_x
         
-        print "spacing_x before correction", spacing_x
+        # making sure that the annoying holes are far enough, even with short beams
         if spacing_x < 230.0:
             spacing_x = 230
-            
-        print "spacing_x after correction", spacing_x
+            print "spacing_x has been updated to: ", spacing_x
+
+        # checking whether the annoying holes don't get too close
+        if spacing_x * 2 + x_spacing * 4 > delta_x:
+            spacing_x = (delta_x - x_spacing * 4) * .5
+            print "spacing_x has been updated to: ", spacing_x
 
         # setting the raw locations where the holes should be
         neg_x_loc = start_x + spacing_x
@@ -201,8 +220,6 @@ class FabricatableBeam(object):
         # locations in the beam
         bot_y_coordinate = int_y_coordinate - y_delta * drill_depth
         bot_z_coordinate = int_z_coordinate - z_delta * drill_depth
-        
-        print bot_z_coordinate, bot_y_coordinate
 
         # locations outside of the beam
         top_y_coordinate = int_y_coordinate + y_delta * drill_start_tolerance
@@ -276,7 +293,11 @@ class FabricatableBeam(object):
 
         # flip around world xy plane
         if flip:
-            mirror_transform = rg.Transform.Mirror(rg.Plane.WorldXY)
+
+            world_origin = rg.Point3d(0,0,0)
+            world_x = rg.Vector3d(1,0,0)
+
+            mirror_transform = rg.Transform.Rotation(math.pi, world_x, world_origin)
             [line.Transform(mirror_transform) for line in line_set]
             [plane.Transform(mirror_transform) for plane in pln_set]
         
