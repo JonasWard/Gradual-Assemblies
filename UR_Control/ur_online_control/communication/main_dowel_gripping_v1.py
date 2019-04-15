@@ -8,6 +8,8 @@ from __future__ import print_function
 # import time
 import sys
 import os
+import math
+
 
 # set the paths to find library
 file_dir = os.path.dirname(__file__)
@@ -90,7 +92,7 @@ def main():
         # drilling movements
         used_plane_count = 0
         print ("\nstarting with the main loop")
-        
+
         beam_count = 0
 
         for number_of_holes in number_of_holes_list:
@@ -130,7 +132,7 @@ def main():
 
             ur.send_command_wait(0.5)
 
-            
+
             """
             gripper on"""
             ur.send_command_digital_out(0, True)
@@ -173,12 +175,13 @@ def main():
                 ur.send_command_movel([x2, y2, z2, ax2, ay2, az2], v=drill_speed_out, r=radius)
 
 
-            x5, y5, z5, ax5, ay5, az5, speed, radius = commands_drilling[used_plane_count + number_of_holes * 3 + 1] #placing plane
+            x5, y5, z5, ax5, ay5, az5, speed, radius = commands_drilling[used_plane_count + number_of_holes * 3 + 1] # placing plane
+            x6, y6, z6, ax6, ay6, az6, speed, radius = commands_drilling[used_plane_count + number_of_holes * 3 + 2] # safety placing plane
 
             """
             moving to safe placing plane"""
 
-            ur.send_command_movel([x5, y5, z5 + safety_z_height, ax5, ay5, az5], v=speed_set, r=radius)
+            ur.send_command_movel([x6, y6, z6, ax6, ay6, az6], v=speed_set, r=radius)
 
             """"
             rotate wrist 3"""
@@ -190,7 +193,7 @@ def main():
             """
             moving to safe placing plane"""
 
-            ur.send_command_movel([x5, y5, z5 + safety_z_height, ax5, ay5, az5], v=speed_set, r=radius)
+            ur.send_command_movel([x6, y6, z6, ax6, ay6, az6], v=speed_set, r=radius)
 
 
             """
@@ -211,8 +214,7 @@ def main():
             """
             moving to safe placing plane"""
 
-            ur.send_command_movel([x5, y5, z5 + safety_z_height, ax5, ay5, az5], v=speed_set, r=radius)
-
+            ur.send_command_movel([x6, y6, z6, ax6, ay6, az6], v=speed_set, r=radius)
 
             beam_count += 1
 
